@@ -3,7 +3,7 @@ name: Unpack Shopee image batches
 on:
   push:
     paths:
-      - 'upload_chunks/*/READY'
+      - 'upload_bin/*/READY'
 
 permissions:
   contents: write
@@ -22,16 +22,15 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          for ready in upload_chunks/*/READY; do
+          for ready in upload_bin/*/READY; do
             dir="$(dirname "$ready")"
             id="$(basename "$dir")"
-            parts=("$dir"/part-*.b64)
+            parts=("$dir"/part-*.bin)
             if [ ${#parts[@]} -eq 0 ]; then
               echo "No parts for $id"
               exit 1
             fi
-            cat "${parts[@]}" > "/tmp/${id}.b64"
-            base64 -d "/tmp/${id}.b64" > "/tmp/${id}.zip"
+            cat "${parts[@]}" > "/tmp/${id}.zip"
             unzip -t "/tmp/${id}.zip"
             unzip -o "/tmp/${id}.zip" -d .
             rm -rf "$dir"
