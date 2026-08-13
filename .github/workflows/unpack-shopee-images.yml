@@ -1,0 +1,39 @@
+name: Unpack Shopee image batches
+
+on:
+  push:
+    paths:
+      - 'upload_batches/*.zip'
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Unpack image batches
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for zipfile in upload_batches/*.zip; do
+            unzip -o "$zipfile" -d .
+          done
+
+      - name: Commit extracted images
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '*.jpg' '*.jpeg' '*.png'
+          if git diff --cached --quiet; then
+            echo "No extracted image changes to commit."
+            exit 0
+          fi
+          git commit -m "Extract Shopee product images [skip ci]"
+          git push
