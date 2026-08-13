@@ -1,0 +1,44 @@
+name: Reconstruct uploaded product images
+
+on:
+  push:
+    paths:
+      - '.upload-trigger/**'
+
+permissions:
+  contents: write
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstruct images from chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d .upload_chunks ]; then
+            echo "No upload chunks found"
+            exit 0
+          fi
+          shopt -s nullglob
+          for dir in .upload_chunks/*; do
+            [ -d "$dir" ] || continue
+            filename="$(basename "$dir")"
+            parts=("$dir"/part-*)
+            [ ${#parts[@]} -gt 0 ] || continue
+            cat "${parts[@]}" | base64 -d > "$filename"
+            echo "Reconstructed $filename"
+          done
+          rm -rf .upload_chunks .upload-trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "Reconstruct uploaded product images"
+          git push
