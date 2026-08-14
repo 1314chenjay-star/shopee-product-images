@@ -31,6 +31,20 @@ function Get-FactualPromptSectionsV4A1($Product, [string]$Slot) {
     }
 }
 
+function Get-PromptV2([string]$Slot, $Product) {
+    if ($Product -is [string]) { $Product = [pscustomobject]@{ product_name=[string]$Product } }
+    $factual = Get-FactualPromptSectionsV4A1 $Product $Slot
+    $role = switch ($Slot) {
+        'main' { '製作1:1台灣蝦皮封面主圖。商品主體清楚完整、手機縮圖可讀；使用一個低風險主標題與少量已驗證資訊。' }
+        'detail1' { 'detail1：核心資訊總覽。只整理白名單已驗證資訊與商品本體可見細節，版型不得複製主圖。' }
+        'detail2' { 'detail2：商品結構與細節展示。只有白名單確認的配件或內含物才能標成隨附內容；否則只展示商品本體細節。' }
+        'detail3' { 'detail3：使用方式或情境展示。可呈現姿勢與場景，但不得自行寫運動效果、醫療效果或性能提升。' }
+        'detail4' { 'detail4：規格／選購補充。只有白名單已有數值才可做尺寸規格；沒有就做保守選購提醒，不填假數字。' }
+        default { '製作1:1補充詳情圖，只呈現已驗證資訊。' }
+    }
+    return ("依提供的真實參考圖辨識並忠實保持商品本體；不要把蝦皮完整商品標題當成生圖事實來源，也不要自行補商品名稱中的宣稱。`n$role`n" + $factual.text + "`n文字使用自然台灣繁體中文，不用中國大陸電商浮誇詞。")
+}
+
 function Get-CompactTransportPromptV2([string]$Slot, $Product) {
     if ($Product -is [string]) { $Product = [pscustomobject]@{ product_name=[string]$Product } }
     $facts = @(Get-V4A1AllFactValues (Get-V4A1Property $Product 'verified_facts' $null))
@@ -39,5 +53,5 @@ function Get-CompactTransportPromptV2([string]$Slot, $Product) {
     $variant = if (Test-IsMultiVariantV4A1 $flags) { '多規格，只能寫所有選項共同事實。' } else { '' }
     $visual = Get-V4A1VisualVariantGuardText $Product
     $role = switch ($Slot) { 'main' {'封面主圖'} 'detail1' {'重點總覽'} 'detail2' {'結構細節'} 'detail3' {'使用情境'} 'detail4' {'選購補充'} default {'補充詳情'} }
-    return ("製作1:1台灣蝦皮$role。已驗證事實：$factText。$variant 所有具體數字、尺寸、材質、配件、贈品、內含物、功效、認證與安全承諾，未列入已驗證事實就禁止生成；資訊不足就少寫。$visual 忠實保持商品本體外觀與結構，使用自然台灣繁體中文。")
+    return ("製作1:1台灣蝦皮$role。只依真實參考圖辨識商品本體，不使用完整商品標題補事實。已驗證事實：$factText。$variant 所有具體數字、尺寸、材質、配件、贈品、內含物、功效、認證與安全承諾，未列入已驗證事實就禁止生成；資訊不足就少寫。$visual 忠實保持商品本體外觀與結構，使用自然台灣繁體中文。")
 }
