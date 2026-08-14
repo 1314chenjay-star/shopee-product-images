@@ -1,8 +1,9 @@
 Shopee TinySnow Image Tool V2
-Build: V4-A.1｜真實資料＋視覺數量鎖定版
+Build: V4-A.2｜Reference Safety 原圖安全選擇版
 Transport: API-R3-120S
 Date: 2026-08-15
 Runtime: Windows PowerShell 5.1 compatible
-Factual policy: Shopee structured variants -> common verified facts -> strict prompt allowlist; multi-variant parser guard plus visual quantity neutrality for variant-specific bundle counts.
+Factual policy: Shopee structured variants -> common verified facts -> strict prompt allowlist; multi-variant visual quantity neutrality; all usable originals participate in local Reference Safety scoring, then each output slot sends only the safest relevant subset (max 2, high-conflict products default to 1).
+Reference Safety limitation: local preflight does not use OCR and does not claim semantic understanding of image text; it uses deterministic visual-risk proxies plus strict prompt isolation, and real TinySnow regression images remain required before promotion.
 Transport profile: max 2 compressed JPEG references; adaptive medium -> low -> 1-reference retry on transport timeout.
 START.bat runs UTF-8 BOM normalization and self-check before the menu opens.
