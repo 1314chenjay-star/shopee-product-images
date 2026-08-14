@@ -1,5 +1,16 @@
 $ErrorActionPreference = 'Stop'
 
+function Join-Chars([int[]]$Codes, [string]$Suffix = '') {
+    $builder = New-Object System.Text.StringBuilder
+    foreach ($code in $Codes) {
+        [void]$builder.Append([char]$code)
+    }
+    if (-not [string]::IsNullOrEmpty($Suffix)) {
+        [void]$builder.Append($Suffix)
+    }
+    return $builder.ToString()
+}
+
 function Get-XlsxColumnNumber([string]$Reference) {
     if ([string]::IsNullOrWhiteSpace($Reference)) { return -1 }
     $letters = ($Reference -replace '\d', '').ToUpperInvariant()
@@ -13,12 +24,21 @@ function Get-XlsxColumnNumber([string]$Reference) {
 
 function Get-XlsxCellValue($Cell, [object[]]$SharedStrings) {
     $referenceAttr = $Cell.Attributes.GetNamedItem('r')
-    if ($null -eq $referenceAttr) { return [pscustomobject]@{ Column = -1; Value = '' } }
+    if ($null -eq $referenceAttr) {
+        return [pscustomobject]@{ Column = -1; Value = '' }
+    }
+
     $column = Get-XlsxColumnNumber ([string]$referenceAttr.Value)
-    if ($column -lt 0) { return [pscustomobject]@{ Column = -1; Value = '' } }
+    if ($column -lt 0) {
+        return [pscustomobject]@{ Column = -1; Value = '' }
+    }
+
     $type = ''
     $typeAttr = $Cell.Attributes.GetNamedItem('t')
-    if ($null -ne $typeAttr) { $type = [string]$typeAttr.Value }
+    if ($null -ne $typeAttr) {
+        $type = [string]$typeAttr.Value
+    }
+
     $value = ''
     if ($type -eq 'inlineStr') {
         $parts = @($Cell.SelectNodes('.//*[local-name()="t"]') | ForEach-Object { $_.InnerText })
@@ -30,96 +50,219 @@ function Get-XlsxCellValue($Cell, [object[]]$SharedStrings) {
             $value = [string]$valueNode.InnerText
             if ($type -eq 's' -and -not [string]::IsNullOrWhiteSpace($value)) {
                 $sharedIndex = 0
-                if ([int]::TryParse($value, [ref]$sharedIndex) -and $sharedIndex -ge 0 -and $sharedIndex -lt $SharedStrings.Count) {
-                    $value = [string]$SharedStrings[$sharedIndex]
+                if ([int]::TryParse($value, [ref]$sharedIndex)) {
+                    if ($sharedIndex -ge 0 -and $sharedIndex -lt $SharedStrings.Count) {
+                        $value = [string]$SharedStrings[$sharedIndex]
+                    }
                 }
             }
         }
     }
+
     return [pscustomobject]@{ Column = $column; Value = [string]$value }
 }
 
+function Get-ShopeeHeaderAliases {
+    $product = Join-Chars @(0x5546, 0x54C1)
+    $name = Join-Chars @(0x540D, 0x7A31)
+    $main = Join-Chars @(0x4E3B)
+    $image = Join-Chars @(0x5716, 0x7247)
+    $number = Join-Chars @(0x7DE8, 0x865F)
+
+    $aliases = @{}
+    $aliases.id = @($product + 'ID', $product + ' ID', $product + $number)
+    $aliases.name = @($product + $name, $product + (Join-Chars @(0x540D)))
+    $aliases.main = @($main + $product + $image, $product + $main + (Join-Chars @(0x5716)))
+
+    for ($i = 1; $i -le 8; $i++) {
+        $key = 'image' + $i
+        $aliases[$key] = @($product + $image + $i, $product + $image + ' ' + $i)
+    }
+
+    return $aliases
+}
+
 function Import-ShopeeExcelV2([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw '找不到 Excel 檔案。' }
-    if ([IO.Path]::GetExtension($Path) -ne '.xlsx') { throw '請選擇 .xlsx 格式的蝦皮媒體資訊 Excel。' }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw 'Excel file not found.'
+    }
+    if ([IO.Path]::GetExtension($Path) -ne '.xlsx') {
+        throw 'Please select an .xlsx Shopee media file.'
+    }
+
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = $null
+
     try {
-        $archive = [IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $Path).Path)
+        $resolvedPath = (Resolve-Path -LiteralPath $Path).Path
+        $archive = [IO.Compression.ZipFile]::OpenRead($resolvedPath)
+
         $entries = @{}
-        foreach ($entry in $archive.Entries) { $entries[$entry.FullName] = $entry }
+        foreach ($entry in $archive.Entries) {
+            $entries[$entry.FullName] = $entry
+        }
+
         $sheet = $null
-        if ($entries.ContainsKey('xl/worksheets/sheet1.xml')) { $sheet = $entries['xl/worksheets/sheet1.xml'] }
-        if ($null -eq $sheet) { $sheet = @($archive.Entries | Where-Object { $_.FullName -like 'xl/worksheets/sheet*.xml' }) | Select-Object -First 1 }
-        if ($null -eq $sheet) { throw 'Excel 中找不到工作表。' }
+        if ($entries.ContainsKey('xl/worksheets/sheet1.xml')) {
+            $sheet = $entries['xl/worksheets/sheet1.xml']
+        }
+        if ($null -eq $sheet) {
+            $sheet = @($archive.Entries | Where-Object { $_.FullName -like 'xl/worksheets/sheet*.xml' }) | Select-Object -First 1
+        }
+        if ($null -eq $sheet) {
+            throw 'No worksheet XML was found in the XLSX file.'
+        }
+
         $sharedStrings = @()
         if ($entries.ContainsKey('xl/sharedStrings.xml')) {
             $reader = New-Object IO.StreamReader($entries['xl/sharedStrings.xml'].Open())
-            try { [xml]$sharedXml = $reader.ReadToEnd() } finally { $reader.Dispose() }
+            try {
+                [xml]$sharedXml = $reader.ReadToEnd()
+            }
+            finally {
+                $reader.Dispose()
+            }
+
             foreach ($item in $sharedXml.SelectNodes('//*[local-name()="sst"]/*[local-name()="si"]')) {
                 $parts = @($item.SelectNodes('.//*[local-name()="t"]') | ForEach-Object { $_.InnerText })
                 $sharedStrings += ($parts -join '')
             }
         }
+
         $reader = New-Object IO.StreamReader($sheet.Open())
-        try { [xml]$sheetXml = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        try {
+            [xml]$sheetXml = $reader.ReadToEnd()
+        }
+        finally {
+            $reader.Dispose()
+        }
+
         $rows = New-Object Collections.Generic.List[object]
         foreach ($row in $sheetXml.SelectNodes('//*[local-name()="sheetData"]/*[local-name()="row"]')) {
             $values = @{}
             foreach ($cell in $row.SelectNodes('./*[local-name()="c"]')) {
                 $parsed = Get-XlsxCellValue $cell $sharedStrings
-                if ($parsed.Column -ge 0) { $values[[int]$parsed.Column] = [string]$parsed.Value }
-            }
-            $rows.Add($values)
-        }
-        if ($rows.Count -lt 2) { throw 'Excel 沒有可讀取的資料列。' }
-        $aliases = @{ id=@('商品ID','商品 ID','商品編號'); name=@('商品名稱','商品名'); main=@('主商品圖片','商品主圖'); image1=@('商品圖片1','商品圖片 1'); image2=@('商品圖片2','商品圖片 2'); image3=@('商品圖片3','商品圖片 3'); image4=@('商品圖片4','商品圖片 4'); image5=@('商品圖片5','商品圖片 5'); image6=@('商品圖片6','商品圖片 6'); image7=@('商品圖片7','商品圖片 7'); image8=@('商品圖片8','商品圖片 8') }
-        $headerRowIndex = -1; $header = $null; $scanLimit = [Math]::Min($rows.Count,30)
-        for ($scanIndex=0; $scanIndex -lt $scanLimit; $scanIndex++) {
-            $candidate=$rows[$scanIndex]; $foundId=$false; $foundName=$false; $foundMain=$false
-            foreach ($candidateColumn in $candidate.Keys) {
-                $candidateText=([string]$candidate[$candidateColumn]).Trim()
-                if ($aliases.id -contains $candidateText) { $foundId=$true }
-                if ($aliases.name -contains $candidateText) { $foundName=$true }
-                if ($aliases.main -contains $candidateText) { $foundMain=$true }
-            }
-            if ($foundId -and $foundName -and $foundMain) { $headerRowIndex=$scanIndex; $header=$candidate; break }
-        }
-        if ($headerRowIndex -lt 0 -or $null -eq $header) { throw '找不到必要欄位：商品ID、商品名稱、主商品圖片。已搜尋前 30 列。' }
-        $columns=@{}
-        foreach ($key in $aliases.Keys) {
-            foreach ($column in $header.Keys) {
-                if ($aliases[$key] -contains ([string]$header[$column]).Trim()) { $columns[$key]=[int]$column; break }
-            }
-        }
-        $products=New-Object Collections.Generic.List[object]
-        for ($rowIndex=$headerRowIndex+1; $rowIndex -lt $rows.Count; $rowIndex++) {
-            $data=$rows[$rowIndex]; $productId=''
-            if ($data.ContainsKey($columns.id)) { $productId=([string]$data[$columns.id]).Trim() }
-            if ($productId -notmatch '^\d{5,30}$') { continue }
-            $productName=''; if ($data.ContainsKey($columns.name)) { $productName=([string]$data[$columns.name]).Trim() }
-            $urls=New-Object Collections.Generic.List[string]
-            foreach ($key in @('main','image1','image2','image3','image4','image5','image6','image7','image8')) {
-                if ($columns.ContainsKey($key) -and $data.ContainsKey($columns[$key])) {
-                    $url=([string]$data[$columns[$key]]).Trim(); if ($url -match '^https?://') { $urls.Add($url) }
+                if ($parsed.Column -ge 0) {
+                    $values[[int]$parsed.Column] = [string]$parsed.Value
                 }
             }
-            if ($urls.Count -eq 0) { continue }
-            $products.Add([pscustomobject]@{product_id=$productId;product_name=$productName;image_urls=@($urls)})
+            [void]$rows.Add($values)
         }
-        if ($products.Count -eq 0) { throw '已找到標題列，但沒有讀到有效商品資料。' }
+
+        if ($rows.Count -lt 2) {
+            throw 'The XLSX file does not contain enough readable rows.'
+        }
+
+        $aliases = Get-ShopeeHeaderAliases
+        $headerRowIndex = -1
+        $header = $null
+        $scanLimit = [Math]::Min($rows.Count, 30)
+
+        for ($scanIndex = 0; $scanIndex -lt $scanLimit; $scanIndex++) {
+            $candidate = $rows[$scanIndex]
+            $foundId = $false
+            $foundName = $false
+            $foundMain = $false
+
+            foreach ($candidateColumn in $candidate.Keys) {
+                $candidateText = ([string]$candidate[$candidateColumn]).Trim()
+                if ($aliases.id -contains $candidateText) { $foundId = $true }
+                if ($aliases.name -contains $candidateText) { $foundName = $true }
+                if ($aliases.main -contains $candidateText) { $foundMain = $true }
+            }
+
+            if ($foundId -and $foundName -and $foundMain) {
+                $headerRowIndex = $scanIndex
+                $header = $candidate
+                break
+            }
+        }
+
+        if ($headerRowIndex -lt 0 -or $null -eq $header) {
+            throw 'Required Shopee columns were not found in the first 30 rows.'
+        }
+
+        $columns = @{}
+        foreach ($key in $aliases.Keys) {
+            foreach ($column in $header.Keys) {
+                $headerText = ([string]$header[$column]).Trim()
+                if ($aliases[$key] -contains $headerText) {
+                    $columns[$key] = [int]$column
+                    break
+                }
+            }
+        }
+
+        if (-not $columns.ContainsKey('id') -or -not $columns.ContainsKey('name') -or -not $columns.ContainsKey('main')) {
+            throw 'Shopee header row was found, but required column mapping failed.'
+        }
+
+        $products = New-Object Collections.Generic.List[object]
+        for ($rowIndex = $headerRowIndex + 1; $rowIndex -lt $rows.Count; $rowIndex++) {
+            $data = $rows[$rowIndex]
+
+            $productId = ''
+            if ($data.ContainsKey($columns.id)) {
+                $productId = ([string]$data[$columns.id]).Trim()
+            }
+            if ($productId -notmatch '^\d{5,30}$') {
+                continue
+            }
+
+            $productName = ''
+            if ($data.ContainsKey($columns.name)) {
+                $productName = ([string]$data[$columns.name]).Trim()
+            }
+
+            $urls = New-Object Collections.Generic.List[string]
+            foreach ($key in @('main', 'image1', 'image2', 'image3', 'image4', 'image5', 'image6', 'image7', 'image8')) {
+                if ($columns.ContainsKey($key) -and $data.ContainsKey($columns[$key])) {
+                    $url = ([string]$data[$columns[$key]]).Trim()
+                    if ($url -match '^https?://') {
+                        [void]$urls.Add($url)
+                    }
+                }
+            }
+
+            if ($urls.Count -eq 0) {
+                continue
+            }
+
+            [void]$products.Add([pscustomobject]@{
+                product_id   = $productId
+                product_name = $productName
+                image_urls   = @($urls)
+            })
+        }
+
+        if ($products.Count -eq 0) {
+            throw 'Shopee headers were found, but no valid product rows with image URLs were read.'
+        }
+
         return @($products)
     }
-    catch { throw "讀取 Excel 失敗（原檔未被修改）：$($_.Exception.Message)" }
-    finally { if ($null -ne $archive) { $archive.Dispose() } }
+    catch {
+        throw ('Excel import failed. Original file was not modified. ' + $_.Exception.Message)
+    }
+    finally {
+        if ($null -ne $archive) {
+            $archive.Dispose()
+        }
+    }
 }
 
 function Save-ImportedCatalogV2([string]$ExcelPath) {
-    $products=Import-ShopeeExcelV2 $ExcelPath
-    $systemRoot=Split-Path $PSScriptRoot -Parent
-    $workspace=Join-Path $systemRoot 'workspace'
+    $products = Import-ShopeeExcelV2 $ExcelPath
+    $systemRoot = Split-Path $PSScriptRoot -Parent
+    $workspace = Join-Path $systemRoot 'workspace'
     New-Item -ItemType Directory -Path $workspace -Force | Out-Null
-    $catalog=[ordered]@{source_excel=(Resolve-Path -LiteralPath $ExcelPath).Path;imported_at=(Get-Date).ToString('o');products=$products}
+
+    $catalog = [ordered]@{
+        source_excel = (Resolve-Path -LiteralPath $ExcelPath).Path
+        imported_at  = (Get-Date).ToString('o')
+        products     = $products
+    }
+
     $catalog | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $workspace 'catalog.json') -Encoding UTF8
     return @($products)
 }
