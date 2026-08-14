@@ -1,0 +1,12 @@
+{
+  "api_key": "請在工具內設定，不要把真實金鑰分享給別人",
+  "base_url": "https://tinysnow.one/v1",
+  "model": "gpt-image-2",
+  "quality": "medium",
+  "size": "1024x1024",
+  "output_folder": "output",
+  "safe_test_mode": true,
+  "max_reference_images": 4,
+  "imported_excel": "",
+  "selected_product_id": ""
+}
