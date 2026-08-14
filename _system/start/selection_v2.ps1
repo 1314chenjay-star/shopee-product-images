@@ -7,7 +7,7 @@ function Get-SelectionWorkspaceV2 {
     return $path
 }
 
-function Get-Catalog {
+function Get-CatalogV2 {
     $path = Join-Path (Get-SelectionWorkspaceV2) 'catalog.json'
     if (-not (Test-Path -LiteralPath $path)) {
         throw '尚未匯入蝦皮 Excel，請先選主選單 3。'
@@ -15,18 +15,18 @@ function Get-Catalog {
     return (Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
 
-function Select-ShopeeProduct([string]$ProductId) {
+function Select-ShopeeProductV2([string]$ProductId) {
     if ([string]::IsNullOrWhiteSpace($ProductId) -or $ProductId -notmatch '^\d{5,30}$') {
         throw '商品ID格式錯誤。'
     }
 
-    $catalog = Get-Catalog
+    $catalog = Get-CatalogV2
     $matches = @($catalog.products | Where-Object { [string]$_.product_id -eq $ProductId })
     if ($matches.Count -ne 1) {
         throw '找不到該商品，或 Excel 中有重複商品ID。'
     }
 
-    $selection = [ordered]@{
+    $selection = [pscustomobject]@{
         product_id = [string]$matches[0].product_id
         product_name = [string]$matches[0].product_name
         image_urls = @($matches[0].image_urls | ForEach-Object { [string]$_ })
@@ -35,10 +35,10 @@ function Select-ShopeeProduct([string]$ProductId) {
 
     $path = Join-Path (Get-SelectionWorkspaceV2) 'selected_product.json'
     $selection | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $path -Encoding UTF8
-    return [pscustomobject]$selection
+    return $selection
 }
 
-function Get-SelectedProduct {
+function Get-SelectedProductV2 {
     $path = Join-Path (Get-SelectionWorkspaceV2) 'selected_product.json'
     if (-not (Test-Path -LiteralPath $path)) {
         throw '尚未選擇商品，請先選主選單 4。'
