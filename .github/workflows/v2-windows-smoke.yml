@@ -1,0 +1,20 @@
+name: V2 Windows Smoke Test
+
+on:
+  push:
+    branches:
+      - tinysnow-tool-only
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: PowerShell syntax and runtime smoke test
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\tests\windows_smoke.ps1
