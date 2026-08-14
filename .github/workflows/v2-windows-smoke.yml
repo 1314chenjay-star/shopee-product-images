@@ -10,11 +10,16 @@ jobs:
   smoke:
     runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v4
+
+      - name: Normalize PowerShell encoding
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\start\encoding_fix.ps1
 
       - name: PowerShell syntax and runtime smoke test
         shell: powershell
         run: |
-          Set-ExecutionPolicy -Scope Process Bypass -Force
           & .\_system\tests\windows_smoke.ps1
