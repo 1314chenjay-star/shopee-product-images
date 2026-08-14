@@ -5,6 +5,7 @@ $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2'
 
 Import-Module (Join-Path $root 'core\TinySnow.psm1') -Force
 Import-Module (Join-Path $root 'core\ShopeeWorkflow.psm1') -Force
+. (Join-Path $PSScriptRoot 'excel_reader.ps1')
 
 function Pause-Menu {
     Write-Host ''
@@ -91,7 +92,7 @@ while ($true) {
                 $dialog.Filter = 'Excel 活頁簿 (*.xlsx)|*.xlsx'
 
                 if ($dialog.ShowDialog() -eq 'OK') {
-                    $products = Save-ImportedCatalog $dialog.FileName
+                    $products = Save-ImportedCatalogV2 $dialog.FileName
                     $config.imported_excel = $dialog.FileName
                     Save-TinySnowConfig $config
                     Write-Host "匯入成功，共讀到 $($products.Count) 件商品；原始 Excel 完全未修改。" -ForegroundColor Green
