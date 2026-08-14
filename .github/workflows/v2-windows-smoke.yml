@@ -4,78 +4,9 @@ on:
   push:
     branches:
       - tinysnow-tool-only
-      - v4a-layout-diversity
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  apply-v4a-patch:
-    if: github.ref == 'refs/heads/v4a-layout-diversity'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Apply queued V4-A patch when present
-        shell: bash
-        run: |
-          set -euo pipefail
-          PATCH_B64='_system/patches/v4a_patch.gz.b64'
-          if [ ! -f "$PATCH_B64" ]; then
-            echo 'No queued V4-A patch; nothing to apply.'
-            exit 0
-          fi
-
-          base64 -d "$PATCH_B64" | gzip -d > /tmp/v4a.patch
-          printf '\n' >> /tmp/v4a.patch
-          patch -p1 < /tmp/v4a.patch
-
-          python3 - <<'PY'
-          from pathlib import Path
-          import json
-
-          prompt = Path('_system/config/prompt_templates.json')
-          text = prompt.read_text(encoding='utf-8-sig')
-          old = '主標題與賣點只能從商品名稱、參考圖可見文字、可確認用途、配件、情境與優點整合。'
-          new = '主標題可使用商品名稱中的核心商品詞作辨識，但不得從商品名稱引入原圖未支持的規格、功能、贈品或數字；賣點只能從參考圖可見文字、可確認用途、配件、情境與優點整合。'
-          if old not in text:
-              raise SystemExit('Expected main-image truthfulness text not found.')
-          prompt.write_text('\ufeff' + text.replace(old, new), encoding='utf-8')
-          json.loads(prompt.read_text(encoding='utf-8-sig'))
-
-          pipeline = Path('_system/start/image_pipeline_v2.ps1')
-          text = pipeline.read_text(encoding='utf-8-sig')
-          old = "$common = '只依商品名稱與參考圖可確認內容；商品外觀、顏色、數量、結構與可見配件必須忠實。禁止捏造尺寸、材質、功能、品牌、型號、認證、保固、贈品或數據；資訊不明就省略。文字使用自然台灣繁體中文，不用中國大陸電商詞。'"
-          new = "$common = '商品名稱僅供辨識；所有數字、尺寸、規格、材質、功能、品牌、型號、配件、贈品與內含物都只能使用參考圖清楚且一致支持的內容。商品外觀、顏色、數量與結構必須忠實；看不清、資料衝突或無法確認就省略，不得猜測。文字使用自然台灣繁體中文，不用中國大陸電商詞。'"
-          if old not in text:
-              raise SystemExit('Expected compact transport truthfulness text not found.')
-          pipeline.write_text('\ufeff' + text.replace(old, new), encoding='utf-8')
-
-          smoke = Path('_system/tests/windows_smoke.ps1')
-          text = smoke.read_text(encoding='utf-8-sig')
-          needle = "    if ($detailPrompts.detail4 -notmatch '不猜' -or $detailPrompts.detail2 -notmatch '不得') { throw 'Truthful product-data rules missing.' }\n"
-          insert = needle + "    $compactTruth = Get-CompactTransportPromptV2 'detail4' '測試商品 200cm 贈品'\n    if ($compactTruth -notmatch '商品名稱僅供辨識' -or $compactTruth -notmatch '只能使用參考圖清楚且一致支持') { throw 'Compact transport prompt must keep truthful-source rules.' }\n"
-          if needle not in text:
-              raise SystemExit('Expected smoke insertion point not found.')
-          smoke.write_text('\ufeff' + text.replace(needle, insert), encoding='utf-8')
-
-          for path in [prompt, pipeline, smoke, Path('_system/start/menu_beginner.ps1')]:
-              if not path.read_bytes().startswith(b'\xef\xbb\xbf'):
-                  raise SystemExit(f'UTF-8 BOM missing: {path}')
-          PY
-
-          rm -f "$PATCH_B64"
-          git diff --check
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'V4-A: diversify detail layouts and enforce truthful product specs'
-          git push origin HEAD:v4a-layout-diversity
-
   smoke:
     runs-on: windows-latest
     steps:
@@ -92,5 +23,3 @@ jobs:
         shell: powershell
         run: |
           & .\_system\tests\windows_smoke.ps1
-
-# validation trigger for V4-A branch
