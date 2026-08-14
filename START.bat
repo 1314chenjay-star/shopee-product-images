@@ -2,6 +2,14 @@
 chcp 65001 >nul
 set "ROOT=%~dp0"
 
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%ROOT%_system\start\encoding_fix.ps1"
+if errorlevel 1 (
+  echo.
+  echo Encoding normalization failed.
+  pause
+  exit /b 1
+)
+
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%ROOT%_system\start\self_check.ps1"
 if errorlevel 1 (
   echo.
