@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
 $systemRoot = Split-Path $PSScriptRoot -Parent
@@ -88,9 +88,8 @@ try {
     $prompt = Get-PromptV2 'main' '測試商品'
     if ([string]::IsNullOrWhiteSpace($prompt)) { throw 'Prompt template load failed.' }
 
-    # 6) ZIP must contain exactly five final files.
-    $finalDir = Join-Path $workspace 'final_images\48565764183'
-    New-Item -ItemType Directory -Path $finalDir -Force | Out-Null
+    # 6) Final images must be flat in 已生成圖片 beside START.bat; no ZIP is created.
+    $finalDir = Get-GeneratedImagesDirectoryV2
     $names = @('main','detail1','detail2','detail3','detail4')
     foreach ($slot in $names) {
         $target = Join-Path $finalDir ('48565764183_' + $slot + '.jpg')
@@ -98,12 +97,25 @@ try {
         try { $bitmap.Save($target,[Drawing.Imaging.ImageFormat]::Jpeg) }
         finally { $bitmap.Dispose() }
     }
-    $zip = New-ProductZipV2 '48565764183'
-    if (-not (Test-Path -LiteralPath $zip)) { throw 'ZIP creation failed.' }
+    if ((Split-Path $finalDir -Parent) -ne (Get-V2ProjectRoot)) { throw 'Final output is not beside START.bat.' }
+    if (Get-Command New-ProductZipV2 -ErrorAction SilentlyContinue) { throw 'ZIP function should have been removed.' }
 
-    Write-Host '[PASS] Windows V2 smoke test passed: Excel -> selection -> image analysis -> checkpoint -> ZIP.' -ForegroundColor Green
+    # 7) Progress summary exposes six understandable steps and counters.
+    $checkpoint = Get-CheckpointV2 '48565764183'
+    $checkpoint.download_complete = $true
+    $checkpoint.analysis_complete = $true
+    $checkpoint.finalization_complete = $true
+    foreach ($slot in $names) { $checkpoint.states.$slot.status = 'done' }
+    Set-CheckpointActivityV2 $checkpoint '已完成' '測試完成'
+    $progress = Get-ProgressSummaryV2 $selected
+    if ($progress.completed_steps -ne 6 -or $progress.generated -ne 5 -or $progress.failed -ne 0) { throw 'Progress summary failed.' }
+
+    Write-Host '[PASS] Windows V2 smoke test passed: Excel -> selection -> image analysis -> checkpoint -> flat output -> progress.' -ForegroundColor Green
 }
 finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
+        Remove-Item -LiteralPath (Join-Path (Get-GeneratedImagesDirectoryV2) ('48565764183_' + $slot + '.jpg')) -Force -ErrorAction SilentlyContinue
+    }
     Remove-Item -LiteralPath $workspace -Recurse -Force -ErrorAction SilentlyContinue
 }

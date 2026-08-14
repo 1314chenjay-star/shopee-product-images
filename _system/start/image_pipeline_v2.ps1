@@ -1,8 +1,18 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 function Get-V2Workspace {
     $systemRoot = Split-Path $PSScriptRoot -Parent
     $path = Join-Path $systemRoot 'workspace'
+    New-Item -ItemType Directory -Path $path -Force | Out-Null
+    return $path
+}
+
+function Get-V2ProjectRoot {
+    return (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent)
+}
+
+function Get-GeneratedImagesDirectoryV2 {
+    $path = Join-Path (Get-V2ProjectRoot) '已生成圖片'
     New-Item -ItemType Directory -Path $path -Force | Out-Null
     return $path
 }
@@ -171,9 +181,15 @@ function Analyze-ProductImagesV2([string]$ProductId, [string[]]$Paths) {
 
 function Test-SelectedProductImagesV2 {
     $product = Get-SelectedProductV2
+    $checkpoint = Get-CheckpointV2 ([string]$product.product_id)
+    Set-CheckpointActivityV2 $checkpoint '原圖下載中' '準備下載並檢查原圖'
     $download = Download-ProductImagesV2 $product
+    $checkpoint.download_complete = $true
+    Set-CheckpointActivityV2 $checkpoint '原圖分析中' ("已下載 {0} 張原圖，開始分析" -f @($download.paths).Count)
     $pathArray = [string[]]@($download.paths)
     $analysis = Analyze-ProductImagesV2 ([string]$product.product_id) $pathArray
+    $checkpoint.analysis_complete = $true
+    Set-CheckpointActivityV2 $checkpoint '尚未開始' ("原圖檢查完成，共 {0} 張可用" -f @($download.paths).Count)
     return [pscustomobject]@{
         product = $product
         downloaded = @($download.paths)
@@ -192,7 +208,14 @@ function Get-CheckpointPathV2([string]$ProductId) {
 function Get-CheckpointV2([string]$ProductId) {
     $path = Get-CheckpointPathV2 $ProductId
     if (Test-Path -LiteralPath $path) {
-        return (Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json)
+        $checkpoint = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+        $defaults = [ordered]@{ download_complete=$false; analysis_complete=$false; finalization_complete=$false; current_status='尚未開始'; last_log='尚無處理紀錄' }
+        foreach ($name in $defaults.Keys) {
+            if (-not ($checkpoint.PSObject.Properties.Name -contains $name)) {
+                Add-Member -InputObject $checkpoint -NotePropertyName $name -NotePropertyValue $defaults[$name]
+            }
+        }
+        return $checkpoint
     }
 
     $states = [ordered]@{}
@@ -202,10 +225,36 @@ function Get-CheckpointV2([string]$ProductId) {
     $checkpoint = [pscustomobject]@{
         product_id = $ProductId
         states = [pscustomobject]$states
+        download_complete = $false
+        analysis_complete = $false
+        finalization_complete = $false
+        current_status = '尚未開始'
+        last_log = '尚無處理紀錄'
         updated_at = (Get-Date).ToString('o')
     }
     $checkpoint | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $path -Encoding UTF8
     return (Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json)
+}
+
+function Set-CheckpointActivityV2($Checkpoint, [string]$Status, [string]$Summary) {
+    $Checkpoint.current_status = $Status
+    $Checkpoint.last_log = $Summary
+    Save-CheckpointV2 $Checkpoint
+    Write-Host ("[{0}] {1}" -f (Get-Date -Format 'HH:mm:ss'), $Summary) -ForegroundColor Cyan
+}
+
+function Get-ProgressSummaryV2($Product) {
+    $checkpoint = Get-CheckpointV2 ([string]$Product.product_id)
+    $doneSlots = @($checkpoint.states.PSObject.Properties | Where-Object { $_.Value.status -eq 'done' }).Count
+    $failedSlots = @($checkpoint.states.PSObject.Properties | Where-Object { $_.Value.status -eq 'failed' }).Count
+    $steps = 0
+    if ([bool]$checkpoint.download_complete) { $steps++ }
+    if ([bool]$checkpoint.analysis_complete) { $steps++ }
+    if ($checkpoint.states.main.status -eq 'done') { $steps++ }
+    if ($checkpoint.states.detail1.status -eq 'done' -and $checkpoint.states.detail2.status -eq 'done') { $steps++ }
+    if ($checkpoint.states.detail3.status -eq 'done' -and $checkpoint.states.detail4.status -eq 'done') { $steps++ }
+    if ([bool]$checkpoint.finalization_complete) { $steps++ }
+    return [pscustomobject]@{ checkpoint=$checkpoint; completed_steps=$steps; generated=$doneSlots; failed=$failedSlots }
 }
 
 function Save-CheckpointV2($Checkpoint) {
@@ -272,33 +321,26 @@ function Convert-ToFinalJpegV2([string]$Source, [string]$Target) {
     return (Get-ImageInfoV2 $Target)
 }
 
-function New-ProductZipV2([string]$ProductId) {
-    $folder = Join-Path (Get-V2Workspace) ('final_images\' + $ProductId)
-    $names = @(
-        ($ProductId + '_main.jpg'),
-        ($ProductId + '_detail1.jpg'),
-        ($ProductId + '_detail2.jpg'),
-        ($ProductId + '_detail3.jpg'),
-        ($ProductId + '_detail4.jpg')
-    )
-    foreach ($name in $names) {
-        if (-not (Test-Path -LiteralPath (Join-Path $folder $name))) { throw ('尚未完成5張圖片，缺少：' + $name) }
+function Test-MainImageFitnessV2([string]$Path) {
+    Add-Type -AssemblyName System.Drawing
+    $bitmap = New-Object Drawing.Bitmap $Path
+    try {
+        $values = @()
+        for ($x = 0; $x -lt $bitmap.Width; $x += [Math]::Max(1, [int]($bitmap.Width / 16))) {
+            for ($y = 0; $y -lt $bitmap.Height; $y += [Math]::Max(1, [int]($bitmap.Height / 16))) {
+                $pixel = $bitmap.GetPixel($x, $y)
+                $values += (($pixel.R + $pixel.G + $pixel.B) / 3.0)
+            }
+        }
+        $average = ($values | Measure-Object -Average).Average
+        $variance = (($values | ForEach-Object { ($_ - $average) * ($_ - $average) }) | Measure-Object -Average).Average
+        if ([Math]::Sqrt($variance) -lt 10) { throw '主圖適配檢查未通過：畫面過於單調或接近空白。' }
     }
-
-    $zip = Join-Path (Get-V2Workspace) ($ProductId + '_圖片優化完成.zip')
-    if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $tempDir = Join-Path (Get-V2Workspace) ('zip_' + $ProductId)
-    Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-    foreach ($name in $names) { Copy-Item -LiteralPath (Join-Path $folder $name) -Destination $tempDir }
-    [IO.Compression.ZipFile]::CreateFromDirectory($tempDir, $zip)
-    Remove-Item -LiteralPath $tempDir -Recurse -Force
-    return $zip
+    finally { $bitmap.Dispose() }
 }
 
 function Test-RetryableV2([string]$Message) {
-    return ($Message -match '429|HTTP 5\d\d|timeout|timed out|network|connection|reset|暫時|連線|逾時')
+    return ($Message -match '429|HTTP 5\d\d|timeout|timed out|network|connection|reset|暫時|連線|逾時|主圖適配檢查未通過')
 }
 
 function Write-ProductReportV2($Product, $Checkpoint, [datetime]$Started, [string[]]$Errors) {
@@ -328,8 +370,7 @@ function Start-SingleProductOptimizationV2($Config) {
     if ($refCount -eq 0) { throw '沒有可用原圖，已停止。' }
     $maximum = [Math]::Min([Math]::Max(1,[int]$Config.max_reference_images), $refCount)
 
-    $finalDir = Join-Path (Get-V2Workspace) ('final_images\' + $productId)
-    New-Item -ItemType Directory -Path $finalDir -Force | Out-Null
+    $finalDir = Get-GeneratedImagesDirectoryV2
     $checkpoint = Get-CheckpointV2 $productId
     $errors = @()
     $generated = 0
@@ -349,27 +390,33 @@ function Start-SingleProductOptimizationV2($Config) {
             catch { $state.status = 'pending' }
         }
 
+        $labels = @{ main='主圖生成中'; detail1='詳情圖1生成中'; detail2='詳情圖2生成中'; detail3='詳情圖3生成中'; detail4='詳情圖4生成中' }
         $state.status = 'generating'
-        Save-CheckpointV2 $checkpoint
+        Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("正在生成 {0}" -f $slot)
         $prompt = Get-PromptV2 $slot ([string]$product.product_name)
         $refs = [string[]]@(Get-ReferencesForSlotV2 $analysis $slot $maximum)
         $success = $false
 
         for ($attempt = 1; $attempt -le 3; $attempt++) {
             try {
-                $temporary = Invoke-ImageEditMultiV2 $Config $refs $prompt '1024x1024' 'medium'
+                $attemptPrompt = $prompt
+                if ($slot -eq 'main' -and $attempt -gt 1) {
+                    $attemptPrompt += "`n前一次主圖適配檢查未通過。請加大商品主體、加強明確主標題與2到4個可確認的短賣點，避免大片空白，務必做成比詳情圖更鮮明的電商封面。"
+                }
+                $temporary = Invoke-ImageEditMultiV2 $Config $refs $attemptPrompt '1024x1024' 'medium'
                 $info = Convert-ToFinalJpegV2 $temporary $target
                 Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
                 if ($hashes.ContainsKey($info.hash)) {
                     Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
                     throw '生成圖片與本商品先前成品完全重複。'
                 }
+                if ($slot -eq 'main') { Test-MainImageFitnessV2 $target }
                 $hashes[$info.hash] = $true
                 $state.status = 'done'
                 $state.last_error = ''
                 $generated++
                 $success = $true
-                Save-CheckpointV2 $checkpoint
+                Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 已生成完成" -f $slot)
                 break
             }
             catch {
@@ -386,7 +433,7 @@ function Start-SingleProductOptimizationV2($Config) {
         if (-not $success) {
             $state.status = 'failed'
             $errors += ($slot + '：' + [string]$state.last_error)
-            Save-CheckpointV2 $checkpoint
+            Set-CheckpointActivityV2 $checkpoint '失敗' ("{0} 生成失敗：{1}" -f $slot, $state.last_error)
             break
         }
     }
@@ -394,14 +441,17 @@ function Start-SingleProductOptimizationV2($Config) {
     Write-ProductReportV2 $product $checkpoint $started ([string[]]$errors)
     $notDone = @($checkpoint.states.PSObject.Properties | Where-Object { $_.Value.status -ne 'done' }).Count
     $allDone = ($notDone -eq 0)
-    $zip = ''
-    if ($allDone) { $zip = New-ProductZipV2 $productId }
+    if ($allDone) {
+        Set-CheckpointActivityV2 $checkpoint '成品整理中' '正在確認 5 張成品檔名與輸出位置'
+        $checkpoint.finalization_complete = $true
+        Set-CheckpointActivityV2 $checkpoint '已完成' '成品整理完成，5 張圖片已直接放入「已生成圖片」'
+    }
 
     return [pscustomobject]@{
         product_id = $productId
         generated_this_run = $generated
         complete = $allDone
-        zip = $zip
+        output_folder = $finalDir
         failed_urls = @($preflight.failed_urls)
     }
 }

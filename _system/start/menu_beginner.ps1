@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $root = Split-Path $PSScriptRoot -Parent
 $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2'
@@ -44,8 +44,8 @@ while ($true) {
     Write-Host '5. 下載並檢查原圖（不花 API 額度）'
     Write-Host '6. 開始優化目前商品（會花 API 額度）'
     Write-Host '7. 查看處理進度'
-    Write-Host '8. 打開成品資料夾'
-    Write-Host '9. 打包 ZIP'
+    Write-Host '8. 打開「已生成圖片」資料夾'
+    Write-Host '9. 進階設定'
     Write-Host '0. 離開'
     Write-Host '================================='
 
@@ -130,7 +130,7 @@ while ($true) {
                 if ($confirm -eq 'START') {
                     $result = Start-SingleProductOptimizationV2 $config
                     Write-Host ("本次實際生成：{0} 張" -f $result.generated_this_run) -ForegroundColor Cyan
-                    if ($result.complete) { Write-Host ("5張皆完成。ZIP：{0}" -f $result.zip) -ForegroundColor Green }
+                    if ($result.complete) { Write-Host ("5張皆完成。成品資料夾：{0}" -f $result.output_folder) -ForegroundColor Green }
                     else { Write-Host '尚未完成，已保存斷點；再次執行可續跑。' -ForegroundColor Yellow }
                 }
                 else {
@@ -141,23 +141,31 @@ while ($true) {
 
             '7' {
                 $product = Get-SelectedProductV2
-                $checkpoint = Get-CheckpointV2 ([string]$product.product_id)
-                Write-Host ("商品ID：{0}" -f $product.product_id)
-                foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
-                    $state = $checkpoint.states.$slot
-                    Write-Host ("{0}: {1}（重試累計 {2}）" -f $slot, $state.status, $state.retries)
-                }
+                $progress = Get-ProgressSummaryV2 $product
+                $checkpoint = $progress.checkpoint
+                Write-Host ("商品 ID：{0}" -f [string]$product.product_id)
+                Write-Host ("商品名稱：{0}" -f [string]$product.product_name)
+                Write-Host ("目前狀態：{0}" -f [string]$checkpoint.current_status) -ForegroundColor Cyan
+                Write-Host ("總進度：{0}/6{1}" -f $progress.completed_steps, $(if ($progress.completed_steps -eq 6) { '（完成）' } else { '' }))
+                Write-Host ("已生成圖片：{0} 張" -f $progress.generated)
+                Write-Host ("失敗圖片：{0} 張" -f $progress.failed)
+                Write-Host ("最後更新時間：{0}" -f ([datetime]$checkpoint.updated_at).ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss'))
+                Write-Host ("最後日誌：{0}" -f [string]$checkpoint.last_log)
                 Pause-Menu
             }
 
             '8' {
-                Open-FolderV2 (Join-Path $root 'workspace\final_images')
+                Open-FolderV2 (Get-GeneratedImagesDirectoryV2)
             }
 
             '9' {
-                $product = Get-SelectedProductV2
-                $zip = New-ProductZipV2 ([string]$product.product_id)
-                Write-Host ("ZIP 已建立：{0}" -f $zip) -ForegroundColor Green
+                $newMaximum = Read-Host ("每張成品最多使用幾張參考圖？目前 {0}，請輸入 1 到 4（Enter 保留）" -f $config.max_reference_images)
+                if ($newMaximum) {
+                    if ($newMaximum -notmatch '^[1-4]$') { throw '請輸入 1、2、3 或 4。' }
+                    $config.max_reference_images = [int]$newMaximum
+                    Save-TinySnowConfigV2 $config
+                    Write-Host '進階設定已儲存。' -ForegroundColor Green
+                }
                 Pause-Menu
             }
 
