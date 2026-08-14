@@ -12,3 +12,6 @@ if (Test-Path -LiteralPath $referenceSafetyPath -PathType Leaf) { . $referenceSa
 
 $referenceHardeningPath = Join-Path $PSScriptRoot 'v4a2_reference_hardening.ps1'
 if (Test-Path -LiteralPath $referenceHardeningPath -PathType Leaf) { . $referenceHardeningPath }
+
+$referenceHardeningR2Path = Join-Path $PSScriptRoot 'v4a2_reference_hardening_r2.ps1'
+if (Test-Path -LiteralPath $referenceHardeningR2Path -PathType Leaf) { . $referenceHardeningR2Path }
