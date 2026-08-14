@@ -1,0 +1,5 @@
+Shopee TinySnow Image Tool V2
+Build: 2026-08-14 clean-runtime-1
+Runtime: Windows PowerShell 5.1 compatible
+Legacy ShopeeWorkflow.psm1 is not loaded by START.bat.
+START.bat runs syntax/legacy self-check before the menu opens.
