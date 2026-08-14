@@ -88,7 +88,14 @@ try {
     $prompt = Get-PromptV2 'main' '測試商品'
     if ([string]::IsNullOrWhiteSpace($prompt)) { throw 'Prompt template load failed.' }
 
-    # 6) Final images must be flat in 已生成圖片 beside START.bat; no ZIP is created.
+    # 6) R3 transport safeguards.
+    $defaultConfig=[pscustomobject](Get-DefaultTinySnowConfigV2); if([int]$defaultConfig.max_reference_images -ne 2){throw 'R3 default max_reference_images must be 2.'}; if([string]$defaultConfig.transport_profile -ne 'r3_120s_safe'){throw 'R3 transport profile missing.'}
+    if(-not(Test-TransportFailureV2 '发送请求时出错。')){throw 'Send error must be transport retryable.'}; if(-not(Test-TransportFailureV2 'HTTP 524: timeout')){throw 'HTTP 524 must be transport retryable.'}
+    $compactPrompt=Get-CompactTransportPromptV2 'main' '測試商品'; if([string]::IsNullOrWhiteSpace($compactPrompt) -or $compactPrompt.Length -gt $prompt.Length){throw 'Compact prompt invalid.'}
+    $largePng=Join-Path $imageDir 'large_reference.png'; $largeBmp=New-Object Drawing.Bitmap 1800,1200; try{$largeBmp.SetPixel(0,0,[Drawing.Color]::Black);$largeBmp.SetPixel(1799,1199,[Drawing.Color]::Red);$largeBmp.Save($largePng,[Drawing.Imaging.ImageFormat]::Png)}finally{$largeBmp.Dispose()}
+    $apiRef=Convert-ToApiReferenceV2 $largePng '48565764183'; $apiInfo=Get-ImageInfoV2 $apiRef; if($apiInfo.width -gt 1280 -or $apiInfo.height -gt 1280){throw 'API reference resize failed.'}; if([IO.Path]::GetExtension($apiRef).ToLowerInvariant() -ne '.jpg'){throw 'API reference must be JPEG.'}; if($apiInfo.length -gt 1572864){throw 'API reference too large.'}
+
+    # 7) Final images must be flat in 已生成圖片 beside START.bat; no ZIP is created.
     $finalDir = Get-GeneratedImagesDirectoryV2
     $names = @('main','detail1','detail2','detail3','detail4')
     foreach ($slot in $names) {
@@ -100,7 +107,7 @@ try {
     if ((Split-Path $finalDir -Parent) -ne (Get-V2ProjectRoot)) { throw 'Final output is not beside START.bat.' }
     if (Get-Command New-ProductZipV2 -ErrorAction SilentlyContinue) { throw 'ZIP function should have been removed.' }
 
-    # 7) Progress summary exposes six understandable steps and counters.
+    # 8) Progress summary exposes six understandable steps and counters.
     $checkpoint = Get-CheckpointV2 '48565764183'
     $checkpoint.download_complete = $true
     $checkpoint.analysis_complete = $true

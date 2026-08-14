@@ -1,7 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $root = Split-Path $PSScriptRoot -Parent
-$host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2'
+$host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | API-R3-120S'
 
 . (Join-Path $PSScriptRoot 'api_v2.ps1')
 . (Join-Path $PSScriptRoot 'excel_reader.ps1')
@@ -33,7 +33,8 @@ while ($true) {
     Clear-Host
     Write-Host '=================================' -ForegroundColor Cyan
     Write-Host '蝦皮商品圖片優化工具 V2'
-    Write-Host 'SAFE TEST MODE｜一次一件、最多5張' -ForegroundColor Green
+    Write-Host 'Build: API-R3-120S｜120秒超時防護版' -ForegroundColor Yellow
+    Write-Host 'SAFE TEST MODE｜一次一件、最多5張｜每次最多2張壓縮參考圖' -ForegroundColor Green
     Write-Host '=================================' -ForegroundColor Cyan
     Show-SelectedV2
     Write-Host ''
@@ -159,9 +160,9 @@ while ($true) {
             }
 
             '9' {
-                $newMaximum = Read-Host ("每張成品最多使用幾張參考圖？目前 {0}，請輸入 1 到 4（Enter 保留）" -f $config.max_reference_images)
+                $newMaximum = Read-Host ("每張成品最多使用幾張參考圖？目前 {0}，請輸入 1 或 2（Enter 保留）" -f $config.max_reference_images)
                 if ($newMaximum) {
-                    if ($newMaximum -notmatch '^[1-4]$') { throw '請輸入 1、2、3 或 4。' }
+                    if ($newMaximum -notmatch '^[1-2]$') { throw '120秒超時防護版請輸入 1 或 2。' }
                     $config.max_reference_images = [int]$newMaximum
                     Save-TinySnowConfigV2 $config
                     Write-Host '進階設定已儲存。' -ForegroundColor Green
