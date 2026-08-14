@@ -15,3 +15,6 @@ if (Test-Path -LiteralPath $referenceHardeningPath -PathType Leaf) { . $referenc
 
 $referenceHardeningR2Path = Join-Path $PSScriptRoot 'v4a2_reference_hardening_r2.ps1'
 if (Test-Path -LiteralPath $referenceHardeningR2Path -PathType Leaf) { . $referenceHardeningR2Path }
+
+$taiwanLocalizationPath = Join-Path $PSScriptRoot 'v4a2_taiwan_localization.ps1'
+if (Test-Path -LiteralPath $taiwanLocalizationPath -PathType Leaf) { . $taiwanLocalizationPath }
