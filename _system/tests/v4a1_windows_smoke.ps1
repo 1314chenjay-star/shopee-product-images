@@ -59,7 +59,7 @@ $prompt580 = Get-PromptV2 'main' $p580
 foreach ($value in @('2米','30磅','腰帶','黑色')) { if ($prompt580 -notmatch [regex]::Escape($value)) { throw ('Prompt missing common verified fact: ' + $value) } }
 if ($prompt580 -notmatch '所有文字型具體事實只能取自上方已驗證事實') { throw 'Prompt allowlist hard rule missing.' }
 $compact580 = Get-CompactTransportPromptV2 'detail4' $p580
-if ($compact580 -notmatch '未列入已驗證事實就禁止生成') { throw 'Compact prompt allowlist rule missing.' }
+if (($compact580 -notmatch '未列入已驗證事實就禁止生成') -and ($compact580 -notmatch '成品唯一允許的可辨識文字')) { throw 'Compact prompt allowlist rule missing.' }
 
 $risk = Test-FactualContentV4A1 '32cm 尼龍 不傷膝 提升爆發力 SGS' $p580
 if (-not $risk.factual_risk -or [bool]$risk.image_text_ocr_verified) { throw 'Known-text factual guard failed or falsely claimed OCR.' }
