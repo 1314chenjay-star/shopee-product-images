@@ -68,6 +68,19 @@ jobs:
           $runtimeConfig = Join-Path $stageSystem 'config\config.json'
           if (Test-Path -LiteralPath $runtimeConfig) { Remove-Item -LiteralPath $runtimeConfig -Force }
 
+          # CI executes scripts after converting line endings to CRLF. Distribution source is normalized
+          # back to UTF-8 BOM + LF so the R3 transport file keeps its official immutable fingerprint.
+          $utf8Bom = New-Object Text.UTF8Encoding($true)
+          foreach ($ps1 in @(Get-ChildItem -LiteralPath $stageSystem -Recurse -File -Filter '*.ps1')) {
+            $text = [IO.File]::ReadAllText($ps1.FullName, [Text.Encoding]::UTF8)
+            $text = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+            [IO.File]::WriteAllText($ps1.FullName, $text, $utf8Bom)
+          }
+          $apiPath = Join-Path $stageSystem 'start\api_v2.ps1'
+          $apiHash = (Get-FileHash -LiteralPath $apiPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expectedApiHash = 'a27d8107b94c7e5d29aa5e170aea1541f7e95cc6cde6a693556d1d0b0b8bdf0f'
+          if ($apiHash -ne $expectedApiHash) { throw ('R3 transport fingerprint mismatch: ' + $apiHash) }
+
           # Runtime creates workspace/log/output/generated-image folders on first use.
           if (Test-Path -LiteralPath $package) { Remove-Item -LiteralPath $package -Force }
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $package -Force
