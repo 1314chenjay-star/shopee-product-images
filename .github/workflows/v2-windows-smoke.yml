@@ -55,7 +55,9 @@ jobs:
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
           Copy-Item -LiteralPath '.\START.bat' -Destination $stage -Force
-          Copy-Item -LiteralPath '.\README_新手使用說明.txt' -Destination $stage -Force
+          $readme = Get-ChildItem -LiteralPath '.' -File -Filter 'README_*.txt' | Select-Object -First 1
+          if ($null -eq $readme) { throw 'README file not found.' }
+          Copy-Item -LiteralPath $readme.FullName -Destination $stage -Force
           Copy-Item -LiteralPath '.\V2_BUILD.txt' -Destination $stage -Force
 
           $stageSystem = Join-Path $stage '_system'
@@ -66,12 +68,7 @@ jobs:
           $runtimeConfig = Join-Path $stageSystem 'config\config.json'
           if (Test-Path -LiteralPath $runtimeConfig) { Remove-Item -LiteralPath $runtimeConfig -Force }
 
-          # Runtime creates these on first use. Create clean empty directories only; never package CI workspace data.
-          foreach ($dir in @('workspace','logs','reports','output')) {
-            New-Item -ItemType Directory -Path (Join-Path $stageSystem $dir) -Force | Out-Null
-          }
-          New-Item -ItemType Directory -Path (Join-Path $stage '已生成圖片') -Force | Out-Null
-
+          # Runtime creates workspace/log/output/generated-image folders on first use.
           if (Test-Path -LiteralPath $package) { Remove-Item -LiteralPath $package -Force }
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $package -Force
 
@@ -87,7 +84,8 @@ jobs:
             )) {
               if ($names -notcontains $required) { throw ('Distribution package missing: ' + $required) }
             }
-            foreach ($forbidden in @('.github/','_system/tests/','_system/live_e2e_output/','_system/workspace/selected_product.json','_system/config/config.json')) {
+            if (@($names | Where-Object { $_ -like 'README_*.txt' }).Count -lt 1) { throw 'Distribution package missing README.' }
+            foreach ($forbidden in @('.github/','_system/tests/','_system/live_e2e_output/','_system/workspace/','_system/config/config.json')) {
               if (@($names | Where-Object { $_ -eq $forbidden -or $_.StartsWith($forbidden) }).Count -gt 0) {
                 throw ('Distribution package contains forbidden CI/runtime artifact: ' + $forbidden)
               }
