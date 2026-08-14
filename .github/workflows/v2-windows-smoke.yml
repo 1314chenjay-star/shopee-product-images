@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - tinysnow-tool-only
+      - v4a1-factual-guard
   workflow_dispatch:
 
 jobs:
@@ -19,7 +20,12 @@ jobs:
           Set-ExecutionPolicy -Scope Process Bypass -Force
           & .\_system\start\encoding_fix.ps1
 
-      - name: PowerShell syntax and runtime smoke test
+      - name: Existing V4-A PowerShell smoke
         shell: powershell
         run: |
           & .\_system\tests\windows_smoke.ps1
+
+      - name: V4-A.1 factual guard smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4a1_windows_smoke.ps1

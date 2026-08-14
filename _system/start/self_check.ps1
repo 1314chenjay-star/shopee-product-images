@@ -6,6 +6,7 @@ $runtimeFiles = @(
     'excel_reader.ps1',
     'selection_v2.ps1',
     'image_pipeline_v2.ps1',
+    'v4a1_guard.ps1',
     'menu_beginner.ps1'
 )
 
@@ -23,11 +24,23 @@ foreach ($name in $runtimeFiles) {
     [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$parseErrors) | Out-Null
     if ($parseErrors.Count -gt 0) {
         Write-Host ('[FAIL] PowerShell 語法錯誤：' + $name) -ForegroundColor Red
-        foreach ($err in $parseErrors) {
-            Write-Host ('  Line ' + $err.Extent.StartLineNumber + ': ' + $err.Message) -ForegroundColor Red
-        }
+        foreach ($err in $parseErrors) { Write-Host ('  Line ' + $err.Extent.StartLineNumber + ': ' + $err.Message) -ForegroundColor Red }
         $failed = $true
     }
+}
+
+$configPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'config\factual_rules_v4a1.json'
+if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
+    Write-Host '[FAIL] 缺少 factual_rules_v4a1.json' -ForegroundColor Red
+    $failed = $true
+}
+else {
+    try {
+        $configText = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
+        $configText | ConvertFrom-Json | Out-Null
+        if ($configText.Contains([char]0xFFFD)) { throw '包含 U+FFFD replacement character' }
+    }
+    catch { Write-Host ('[FAIL] factual_rules_v4a1.json：' + $_.Exception.Message) -ForegroundColor Red; $failed = $true }
 }
 
 $forbiddenChecks = @(
@@ -42,11 +55,9 @@ foreach ($name in $runtimeFiles) {
     $path = Join-Path $PSScriptRoot $name
     if (-not (Test-Path -LiteralPath $path)) { continue }
     $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+    if ($content.Contains([char]0xFFFD)) { Write-Host ('[FAIL] ' + $name + '：包含 U+FFFD replacement character') -ForegroundColor Red; $failed = $true }
     foreach ($check in $forbiddenChecks) {
-        if ($content -match $check.Pattern) {
-            Write-Host ('[FAIL] ' + $name + '：' + $check.Label) -ForegroundColor Red
-            $failed = $true
-        }
+        if ($content -match $check.Pattern) { Write-Host ('[FAIL] ' + $name + '：' + $check.Label) -ForegroundColor Red; $failed = $true }
     }
 }
 

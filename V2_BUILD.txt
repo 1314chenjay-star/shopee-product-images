@@ -1,7 +1,8 @@
 Shopee TinySnow Image Tool V2
-Build: V4-A｜去重版型優化版
+Build: V4-A.1｜真實資料鎖定版（Direct Guard）
 Transport: API-R3-120S
-Date: 2026-08-14
+Date: 2026-08-15
 Runtime: Windows PowerShell 5.1 compatible
+Factual policy: Shopee structured variants -> common verified facts -> strict prompt allowlist; multi-variant and parser edge-case guard.
 Transport profile: max 2 compressed JPEG references; adaptive medium -> low -> 1-reference retry on transport timeout.
 START.bat runs UTF-8 BOM normalization and self-check before the menu opens.

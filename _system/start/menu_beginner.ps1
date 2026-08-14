@@ -1,12 +1,13 @@
 ﻿$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $root = Split-Path $PSScriptRoot -Parent
-$host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A | API-R3-120S'
+$host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A.1 | API-R3-120S'
 
 . (Join-Path $PSScriptRoot 'api_v2.ps1')
 . (Join-Path $PSScriptRoot 'excel_reader.ps1')
 . (Join-Path $PSScriptRoot 'selection_v2.ps1')
 . (Join-Path $PSScriptRoot 'image_pipeline_v2.ps1')
+. (Join-Path $PSScriptRoot 'v4a1_guard.ps1')
 
 function Pause-Menu {
     Write-Host ''
@@ -33,7 +34,7 @@ while ($true) {
     Clear-Host
     Write-Host '=================================' -ForegroundColor Cyan
     Write-Host '蝦皮商品圖片優化工具 V2'
-    Write-Host 'Build: V4-A｜去重版型優化版' -ForegroundColor Yellow
+    Write-Host 'Build: V4-A.1｜真實資料鎖定版（Direct Guard）' -ForegroundColor Yellow
     Write-Host 'Transport: API-R3-120S' -ForegroundColor Yellow
     Write-Host 'SAFE TEST MODE｜一次一件、最多5張｜每次最多2張壓縮參考圖' -ForegroundColor Green
     Write-Host '=================================' -ForegroundColor Cyan
@@ -156,9 +157,7 @@ while ($true) {
                 Pause-Menu
             }
 
-            '8' {
-                Open-FolderV2 (Get-GeneratedImagesDirectoryV2)
-            }
+            '8' { Open-FolderV2 (Get-GeneratedImagesDirectoryV2) }
 
             '9' {
                 $newMaximum = Read-Host ("每張成品最多使用幾張參考圖？目前 {0}，請輸入 1 或 2（Enter 保留）" -f $config.max_reference_images)
