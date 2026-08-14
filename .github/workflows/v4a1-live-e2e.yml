@@ -1,4 +1,4 @@
-name: V4-A.1 TinySnow Live E2E
+name: V4-A.2 TinySnow Live E2E
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   live:
     if: github.event.head_commit.message == 'RUN-LIVE-E2E'
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
@@ -30,17 +30,22 @@ jobs:
         run: |
           & .\_system\tests\v4a1_windows_smoke.ps1
 
-      - name: TinySnow live API smoke
+      - name: V4-A.2 Reference Safety smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4a2_reference_safety_smoke.ps1
+
+      - name: TinySnow five-product Reference Safety live batch
         shell: powershell
         env:
           TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
         run: |
-          & .\_system\tests\v4a1_live_api.ps1
+          & .\_system\tests\v4a2_live_batch.ps1
 
       - name: Upload live result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: TinySnow-V4-A.1-Live-E2E
+          name: TinySnow-V4-A.2-5Product-ReferenceSafety
           path: _system/live_e2e_output/
           if-no-files-found: ignore
