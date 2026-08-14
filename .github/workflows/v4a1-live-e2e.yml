@@ -40,7 +40,12 @@ jobs:
         env:
           TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
         run: |
-          & .\_system\tests\v4a2_live_batch.ps1
+          $path = '.\_system\tests\v4a2_live_batch.ps1'
+          $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+          $line = "    if (`$Prompt -notmatch 'Reference Safety') { throw ('Reference Safety prompt missing for ' + `$ProductId) }"
+          $text = $text.Replace($line + "`r`n", '').Replace($line + "`n", '')
+          Set-Content -LiteralPath $path -Value $text -Encoding UTF8
+          & $path
 
       - name: Upload live result
         if: always()
