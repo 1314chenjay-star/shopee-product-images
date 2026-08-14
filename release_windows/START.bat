@@ -1,6 +1,13 @@
 @echo off
 chcp 65001 >nul
 set "ROOT=%~dp0"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%ROOT%_system\start\excel_hotfix.ps1"
+if errorlevel 1 (
+  echo.
+  echo Excel compatibility hotfix failed.
+  pause
+  exit /b 1
+)
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%ROOT%_system\start\menu.ps1"
 if errorlevel 1 (
   echo.
