@@ -1,14 +1,9 @@
-# R3 persisted-source validation
 name: V2 Windows Smoke Test
-
-permissions:
-  contents: write
 
 on:
   push:
     branches:
       - tinysnow-tool-only
-      - fix-tinysnow-image-transport
   workflow_dispatch:
 
 jobs:
@@ -17,19 +12,6 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
-
-      - name: Apply API-R3-120S transformations
-        shell: powershell
-        run: |
-          if (Test-Path -LiteralPath '.\_system\tests\apply_r3_a.py') {
-            python .\_system\tests\apply_r3_a.py
-            if ($LASTEXITCODE -ne 0) { throw 'apply_r3_a.py failed' }
-            python .\_system\tests\apply_r3_b.py
-            if ($LASTEXITCODE -ne 0) { throw 'apply_r3_b.py failed' }
-          }
-          else {
-            Write-Host 'R3 source already persisted; skipping temporary transformers.'
-          }
 
       - name: Normalize PowerShell encoding
         shell: powershell
@@ -41,19 +23,3 @@ jobs:
         shell: powershell
         run: |
           & .\_system\tests\windows_smoke.ps1
-
-      - name: Persist tested R3 source changes
-        if: github.ref == 'refs/heads/fix-tinysnow-image-transport'
-        shell: powershell
-        run: |
-          if (Test-Path -LiteralPath '.\_system\tests\apply_r3_a.py') {
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add V2_BUILD.txt _system/config/config.example.json _system/start/api_v2.ps1 _system/start/image_pipeline_v2.ps1 _system/start/menu_beginner.ps1 _system/tests/windows_smoke.ps1
-            git rm _system/tests/apply_r3_a.py _system/tests/apply_r3_b.py
-            git commit -m "Implement API-R3-120S transport safeguards"
-            git push origin HEAD:fix-tinysnow-image-transport
-          }
-          else {
-            Write-Host 'No temporary transformer files remain; source is already persisted.'
-          }
