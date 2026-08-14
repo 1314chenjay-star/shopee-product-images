@@ -84,9 +84,23 @@ try {
     $slotCount = @($checkpoint.states.PSObject.Properties).Count
     if ($slotCount -ne 5) { throw ('Checkpoint expected 5 slots, got ' + $slotCount) }
 
-    # 5) Prompt templates must load.
+    # 5) V4-A slot prompts, truthful-data rules and reference rotations must differ.
     $prompt = Get-PromptV2 'main' '測試商品'
     if ([string]::IsNullOrWhiteSpace($prompt)) { throw 'Prompt template load failed.' }
+    $detailPrompts = @{}
+    foreach ($slot in @('detail1','detail2','detail3','detail4')) { $detailPrompts[$slot] = Get-PromptV2 $slot '測試商品' }
+    if (@($detailPrompts.Values | Select-Object -Unique).Count -ne 4) { throw 'Detail slot roles must be different.' }
+    if ($detailPrompts.detail2 -notmatch '配件' -or $detailPrompts.detail2 -notmatch '內含物' -or $detailPrompts.detail2 -notmatch '結構') { throw 'detail2 priority prompt missing.' }
+    if ($detailPrompts.detail4 -notmatch '尺寸' -or $detailPrompts.detail4 -notmatch '規格') { throw 'detail4 priority prompt missing.' }
+    if ($detailPrompts.detail4 -notmatch '不猜' -or $detailPrompts.detail2 -notmatch '不得') { throw 'Truthful product-data rules missing.' }
+    $compactTruth = Get-CompactTransportPromptV2 'detail4' '測試商品 200cm 贈品'
+    if ($compactTruth -notmatch '商品名稱僅供辨識' -or $compactTruth -notmatch '只能使用參考圖清楚且一致支持') { throw 'Compact transport prompt must keep truthful-source rules.' }
+    $referenceAnalysis = [pscustomobject]@{ reference_order=[string[]]@('main.png','overview.png','structure.png','scene.png','spec.png') }
+    $detail1Refs = @(Get-ReferencesForSlotV2 $referenceAnalysis 'detail1' 2)
+    $detail2Refs = @(Get-ReferencesForSlotV2 $referenceAnalysis 'detail2' 2)
+    $detail3Refs = @(Get-ReferencesForSlotV2 $referenceAnalysis 'detail3' 2)
+    $detail4Refs = @(Get-ReferencesForSlotV2 $referenceAnalysis 'detail4' 2)
+    if ($detail1Refs[1] -eq $detail2Refs[1] -or $detail2Refs[1] -eq $detail3Refs[1] -or $detail3Refs[1] -eq $detail4Refs[1]) { throw 'Slot reference rotation failed.' }
 
     # 6) R3 transport safeguards.
     $defaultConfig=[pscustomobject](Get-DefaultTinySnowConfigV2); if([int]$defaultConfig.max_reference_images -ne 2){throw 'R3 default max_reference_images must be 2.'}; if([string]$defaultConfig.transport_profile -ne 'r3_120s_safe'){throw 'R3 transport profile missing.'}
@@ -95,7 +109,33 @@ try {
     $largePng=Join-Path $imageDir 'large_reference.png'; $largeBmp=New-Object Drawing.Bitmap 1800,1200; try{$largeBmp.SetPixel(0,0,[Drawing.Color]::Black);$largeBmp.SetPixel(1799,1199,[Drawing.Color]::Red);$largeBmp.Save($largePng,[Drawing.Imaging.ImageFormat]::Png)}finally{$largeBmp.Dispose()}
     $apiRef=Convert-ToApiReferenceV2 $largePng '48565764183'; $apiInfo=Get-ImageInfoV2 $apiRef; if($apiInfo.width -gt 1280 -or $apiInfo.height -gt 1280){throw 'API reference resize failed.'}; if([IO.Path]::GetExtension($apiRef).ToLowerInvariant() -ne '.jpg'){throw 'API reference must be JPEG.'}; if($apiInfo.length -gt 1572864){throw 'API reference too large.'}
 
-    # 7) Final images must be flat in 已生成圖片 beside START.bat; no ZIP is created.
+    # 7) Lightweight layout similarity and retry policy are independent from transport retry.
+    $layoutA = Join-Path $imageDir 'layout_a.jpg'
+    $layoutACopy = Join-Path $imageDir 'layout_a_copy.jpg'
+    $layoutB = Join-Path $imageDir 'layout_b.jpg'
+    $layoutBitmap = New-Object Drawing.Bitmap 240,240
+    try {
+        $layoutGraphics = [Drawing.Graphics]::FromImage($layoutBitmap)
+        try { $layoutGraphics.Clear([Drawing.Color]::White); $layoutGraphics.FillRectangle([Drawing.Brushes]::Black,0,0,120,240) }
+        finally { $layoutGraphics.Dispose() }
+        $layoutBitmap.Save($layoutA,[Drawing.Imaging.ImageFormat]::Jpeg)
+        Copy-Item -LiteralPath $layoutA -Destination $layoutACopy
+        $layoutGraphics = [Drawing.Graphics]::FromImage($layoutBitmap)
+        try { $layoutGraphics.Clear([Drawing.Color]::White); $layoutGraphics.FillRectangle([Drawing.Brushes]::Black,0,0,240,120) }
+        finally { $layoutGraphics.Dispose() }
+        $layoutBitmap.Save($layoutB,[Drawing.Imaging.ImageFormat]::Jpeg)
+    }
+    finally { $layoutBitmap.Dispose() }
+    $sameLayout = Test-LayoutDiversityV2 $layoutACopy ([string[]]@($layoutA))
+    $differentLayout = Test-LayoutDiversityV2 $layoutB ([string[]]@($layoutA))
+    if (-not $sameLayout.high_similarity) { throw 'High layout similarity must trigger layout retry.' }
+    if ($differentLayout.high_similarity) { throw 'Different layout should pass diversity check.' }
+    if ((Get-MaxLayoutRetriesV2) -ne 2) { throw 'Layout retry maximum must be 2.' }
+    if ((Get-LayoutRetryPromptV2 'detail2' 1) -notmatch '本次構圖不得沿用上一張') { throw 'Layout retry prompt missing.' }
+    $freshCheckpoint = Get-CheckpointV2 '58015741169'
+    if ([int]$freshCheckpoint.states.detail1.layout_retries -ne 0 -or [int]$freshCheckpoint.states.detail1.retries -ne 0) { throw 'Layout and transport retry counters must be independent.' }
+
+    # 8) Final images must be flat in 已生成圖片 beside START.bat; no ZIP is created.
     $finalDir = Get-GeneratedImagesDirectoryV2
     $names = @('main','detail1','detail2','detail3','detail4')
     foreach ($slot in $names) {
@@ -107,7 +147,12 @@ try {
     if ((Split-Path $finalDir -Parent) -ne (Get-V2ProjectRoot)) { throw 'Final output is not beside START.bat.' }
     if (Get-Command New-ProductZipV2 -ErrorAction SilentlyContinue) { throw 'ZIP function should have been removed.' }
 
-    # 8) Progress summary exposes six understandable steps and counters.
+    # 9) Menu confirmation must use only 1, not START.
+    $menuSource = Get-Content -LiteralPath (Join-Path $startRoot 'menu_beginner.ps1') -Raw -Encoding UTF8
+    if ($menuSource -notmatch 'if \(\$confirm -eq ''1''\)' -or $menuSource -notmatch '輸入 1 開始') { throw 'Menu start confirmation must accept 1.' }
+    if ($menuSource -match '\$confirm -eq ''START''') { throw 'START must no longer be required.' }
+
+    # 10) Progress summary exposes six understandable steps and counters.
     $checkpoint = Get-CheckpointV2 '48565764183'
     $checkpoint.download_complete = $true
     $checkpoint.analysis_complete = $true
@@ -117,7 +162,7 @@ try {
     $progress = Get-ProgressSummaryV2 $selected
     if ($progress.completed_steps -ne 6 -or $progress.generated -ne 5 -or $progress.failed -ne 0) { throw 'Progress summary failed.' }
 
-    Write-Host '[PASS] Windows V2 smoke test passed: Excel -> selection -> image analysis -> checkpoint -> flat output -> progress.' -ForegroundColor Green
+    Write-Host '[PASS] Windows V4-A smoke test passed: Excel -> prompts -> layout diversity -> checkpoint -> flat output -> progress.' -ForegroundColor Green
 }
 finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue

@@ -1,7 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $root = Split-Path $PSScriptRoot -Parent
-$host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | API-R3-120S'
+$host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A | API-R3-120S'
 
 . (Join-Path $PSScriptRoot 'api_v2.ps1')
 . (Join-Path $PSScriptRoot 'excel_reader.ps1')
@@ -33,7 +33,8 @@ while ($true) {
     Clear-Host
     Write-Host '=================================' -ForegroundColor Cyan
     Write-Host '蝦皮商品圖片優化工具 V2'
-    Write-Host 'Build: API-R3-120S｜120秒超時防護版' -ForegroundColor Yellow
+    Write-Host 'Build: V4-A｜去重版型優化版' -ForegroundColor Yellow
+    Write-Host 'Transport: API-R3-120S' -ForegroundColor Yellow
     Write-Host 'SAFE TEST MODE｜一次一件、最多5張｜每次最多2張壓縮參考圖' -ForegroundColor Green
     Write-Host '=================================' -ForegroundColor Cyan
     Show-SelectedV2
@@ -127,8 +128,8 @@ while ($true) {
             '6' {
                 $product = Get-SelectedProductV2
                 Write-Host ("即將處理：{0}｜{1}" -f $product.product_id, $product.product_name) -ForegroundColor Cyan
-                $confirm = Read-Host '會依序生成1張主圖＋4張詳情圖並消耗額度。輸入 START 開始'
-                if ($confirm -eq 'START') {
+                $confirm = Read-Host '會依序生成1張主圖＋4張詳情圖並消耗額度。輸入 1 開始'
+                if ($confirm -eq '1') {
                     $result = Start-SingleProductOptimizationV2 $config
                     Write-Host ("本次實際生成：{0} 張" -f $result.generated_this_run) -ForegroundColor Cyan
                     if ($result.complete) { Write-Host ("5張皆完成。成品資料夾：{0}" -f $result.output_folder) -ForegroundColor Green }

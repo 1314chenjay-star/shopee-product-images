@@ -1,5 +1,6 @@
 Shopee TinySnow Image Tool V2
-Build: API-R3-120S
+Build: V4-A｜去重版型優化版
+Transport: API-R3-120S
 Date: 2026-08-14
 Runtime: Windows PowerShell 5.1 compatible
 Transport profile: max 2 compressed JPEG references; adaptive medium -> low -> 1-reference retry on transport timeout.
