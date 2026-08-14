@@ -7,7 +7,7 @@ function Get-V4A1VisualVariantGuardText($Product) {
     $quantityVaries = [bool](Get-V4A1Property $flags 'has_multiple_quantities' $false)
     $bundleVaries = [bool](Get-V4A1Property $flags 'has_multiple_bundle_counts' $false)
     if ($quantityVaries -or $bundleVaries) {
-        return '本商品的數量／組合會隨規格改變。參考圖中的多人聯動、多件平鋪、重複商品數量、套裝數量或「一套／五套」等畫面都只代表特定規格，不是所有選項的共同事實。生成圖禁止用多個重複商品單位、人數或繩帶數量暗示包裝數量；不得復刻「五人聯動／五套裝」作為商品內容。以單一代表性商品外觀為主，使用情境不可用人數暗示套裝數；需要說明時只可寫「多規格可選／實際內容請依選項為準」。'
+        return '本商品的數量／組合會隨規格改變。參考圖中的多人使用、多件平鋪、重複商品數量、套裝數量與任何特定組合數，都只代表單一規格，不是所有選項的共同事實。生成圖禁止用多個重複商品單位、人數或繩帶數量暗示包裝數量；禁止照抄參考圖中的特定套裝數量或多人組合文案。以單一代表性商品外觀為主，使用情境不可用人數暗示套裝數；需要說明時只可寫「多規格可選／實際內容請依選項為準」。'
     }
 
     if (Test-IsMultiVariantV4A1 $flags) {
