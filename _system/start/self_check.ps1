@@ -10,6 +10,7 @@ $runtimeFiles = @(
     'v4a1_guard_core.ps1',
     'v4a1_visual_truth.ps1',
     'v4a2_reference_safety.ps1',
+    'v4a2_reference_hardening.ps1',
     'menu_beginner.ps1'
 )
 
