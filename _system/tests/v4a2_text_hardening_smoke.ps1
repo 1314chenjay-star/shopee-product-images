@@ -26,6 +26,8 @@ foreach ($unsafe in @('危險商品標題','WORLD TOUR','穩定支撐｜','彈�
     if ($prompt575 -match [regex]::Escape($unsafe)) { throw ('Unsafe title text leaked into exact allowlist prompt: ' + $unsafe) }
 }
 if ($prompt575 -notmatch '商品表面本身有未驗證品牌字') { throw 'Surface marking suppression rule missing.' }
+if ($prompt575 -notmatch '圖示與單位硬限制' -or $prompt575 -notmatch 'KG、LB、CM') { throw 'Unit-icon hardening rule missing.' }
+if ($prompt575 -notmatch 'SUPER、MARBURY、OFFICIAL') { throw 'Final surface-text examples missing.' }
 
 $rows532 = @(
     @{0='et_title_product_id';1='et_title_parent_sku';2='et_title_product_name';3='et_title_product_category';4='ps_item_cover_image';5='et_title_variation_1';6='et_title_option_1_for_variation_1';7='et_title_option_2_for_variation_1'},
@@ -34,15 +36,16 @@ $rows532 = @(
 $p532 = @(Convert-ShopeeRowsToProducts $rows532)[0]
 $p532 | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $selDir 'selected_product.json') -Encoding UTF8
 $prompt532 = Get-PromptV2 'detail2' ([string]$p532.product_name)
-foreach ($unsafe in @('MARBURY','OFFICIAL SIZE','INDOOR OUTDOOR','真皮籃球')) {
-    if ($prompt532 -match [regex]::Escape($unsafe)) { throw ('532 title/surface text leaked: ' + $unsafe) }
+foreach ($unsafe in @('真皮籃球')) {
+    if ($prompt532 -match [regex]::Escape($unsafe)) { throw ('532 title text leaked: ' + $unsafe) }
 }
 $allowed532 = @(Get-V4A2AllowedOutputText $p532 'detail2')
 if ($allowed532 -contains '真皮') { throw 'Variant-specific material entered output allowlist.' }
 if ($allowed532 -notcontains '商品結構與細節展示') { throw 'Safe slot title missing.' }
 
 $compact532 = Get-CompactTransportPromptV2 'detail2' ([string]$p532.product_name)
-if ($compact532 -match 'MARBURY|OFFICIAL SIZE|INDOOR OUTDOOR|真皮籃球') { throw 'Compact prompt leaked title/surface text.' }
+if ($compact532 -match '真皮籃球') { throw 'Compact prompt leaked product title.' }
 if ($compact532 -notmatch '商品表面印刷') { throw 'Compact surface marking suppression missing.' }
+if ($compact532 -notmatch 'KG、LB、CM' -or $compact532 -notmatch 'SUPER、MARBURY、OFFICIAL') { throw 'Compact final hardening missing.' }
 
-Write-Host '[PASS] V4-A.2 exact text allowlist and unverified surface-marking suppression passed.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.2 exact text allowlist, unit-icon suppression, and unverified surface-marking hardening passed.' -ForegroundColor Green
