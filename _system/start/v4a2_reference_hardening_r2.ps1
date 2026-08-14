@@ -6,12 +6,12 @@ $script:V4A2CompactR1 = (Get-Command Get-CompactTransportPromptV2 -ErrorAction S
 
 function Get-PromptV2([string]$Slot, $ProductOrName) {
     $base = & $script:V4A2PromptR1 $Slot $ProductOrName
-    return ($base + "`n[圖示與單位硬限制]`n不要生成任何含可辨識文字、字母、數字或單位縮寫的圖示／徽章／icon。尤其禁止 KG、LB、CM、MM、M、L、PCS、SIZE 等額外字樣。已驗證規格若需要顯示，直接使用逐字白名單中的完整文字，不要另外配單位圖示。純圖形圖示可以使用，但圖示內不得有文字。`n[商品表面印字硬限制]`n若白名單沒有品牌或表面印字，商品表面的英文、中文、數字、Logo 字母必須省略或模糊成不可辨識紋理；不可重建 SUPER、MARBURY、OFFICIAL、INDOOR/OUTDOOR、WORLD TOUR 或其他可讀字樣。")
+    return ($base + "`n[圖示與單位硬限制]`n不要生成任何含可辨識文字、拉丁字母、數字或單位縮寫的圖示／徽章／icon。已驗證規格若需要顯示，直接使用逐字白名單中的完整文字，不要另外配任何帶字母、數字或單位的圖示。純圖形圖示可以使用，但圖示內不得有任何文字。`n[商品表面印字硬限制]`n若逐字白名單沒有品牌或表面印字，商品表面的中文、英文、數字、縮寫、品牌名稱、Logo 字母與標章必須省略或模糊成不可辨識的中性紋理；禁止重建、猜測或補全任何可讀字樣，也不要在負面提示中複述參考圖上的實際字詞。")
 }
 
 function Get-CompactTransportPromptV2([string]$Slot, $ProductOrName) {
     $base = & $script:V4A2CompactR1 $Slot $ProductOrName
-    return ($base + ' 禁止任何含文字或單位縮寫的圖示／徽章：不得生成 KG、LB、CM、MM、M、L、PCS、SIZE 等額外字樣。未列入白名單的商品表面品牌、Logo、英文、數字印刷必須省略或做成不可辨識紋理，不得重建 SUPER、MARBURY、OFFICIAL、INDOOR/OUTDOOR、WORLD TOUR。')
+    return ($base + ' 禁止任何含可辨識文字、拉丁字母、數字或單位縮寫的圖示／徽章；已驗證規格只能直接使用逐字白名單中的完整文字。未列入白名單的商品表面品牌、Logo、中文、英文、縮寫、數字與標章必須省略或做成不可辨識中性紋理，禁止重建、猜測或補全可讀字樣。')
 }
 
 function New-V4A2ReferenceProxy([string]$ProductId, [string]$Source, [double]$Risk, [bool]$HighConflict) {
