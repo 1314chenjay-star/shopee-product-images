@@ -29,3 +29,17 @@ jobs:
         shell: powershell
         run: |
           & .\_system\tests\v4a1_windows_smoke.ps1
+
+      - name: Build Windows test package
+        shell: powershell
+        run: |
+          $short = $env:GITHUB_SHA.Substring(0,7)
+          $package = "TinySnow_V4-A.1_DirectGuard_$short.zip"
+          Get-ChildItem -Force | Where-Object { $_.Name -ne '.git' -and $_.Name -ne $package } | Compress-Archive -DestinationPath $package -Force
+          "PACKAGE_NAME=$package" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload Windows test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-V4-A.1-DirectGuard
+          path: ${{ env.PACKAGE_NAME }}
