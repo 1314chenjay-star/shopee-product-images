@@ -339,9 +339,39 @@ function Test-MainImageFitnessV2([string]$Path) {
     finally { $bitmap.Dispose() }
 }
 
-function Test-RetryableV2([string]$Message) {
-    return ($Message -match '429|HTTP 5\d\d|timeout|timed out|network|connection|reset|暫時|連線|逾時|主圖適配檢查未通過')
+function Get-CompactTransportPromptV2([string]$Slot, [string]$Name) {
+    $common = '只依商品名稱與參考圖可確認內容；商品外觀、顏色、數量、結構與可見配件必須忠實。禁止捏造尺寸、材質、功能、品牌、型號、認證、保固、贈品或數據；資訊不明就省略。文字使用自然台灣繁體中文，不用中國大陸電商詞。'
+    switch ($Slot) {
+        'main' { $role = '製作1:1台灣蝦皮封面主圖。商品清楚完整約佔55%到75%，有一個醒目主標題與2到4個可驗證短賣點，背景有層次，手機縮圖可讀。' }
+        'detail1' { $role = '製作1:1詳情圖，整理3到5個可確認核心賣點，不與主圖只換背景重複。' }
+        'detail2' { $role = '製作1:1詳情圖，呈現可確認的結構、配件與可見細節。' }
+        'detail3' { $role = '製作1:1詳情圖，呈現真實合理的使用方式與適用情境，不暗示未證實效果。' }
+        'detail4' { $role = '製作1:1詳情圖，整理可確認的適用對象、注意事項或選購重點；尺寸不能確認就不要畫尺寸圖。' }
+        default { $role = '製作1:1補充詳情圖，只呈現可確認內容。' }
+    }
+    return ('商品名稱僅供辨識：' + $Name + '。' + $role + $common)
 }
+
+function Save-ApiReferenceJpegV2([string]$Source, [string]$Target, [int]$MaxEdge) {
+    if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) { throw ('找不到 API 參考圖：' + $Source) }
+    Add-Type -AssemblyName System.Drawing
+    $stream=[IO.File]::OpenRead($Source); $sourceImage=$null; $bitmap=$null; $graphics=$null
+    try {
+        $sourceImage=[Drawing.Image]::FromStream($stream,$true,$true); $largest=[Math]::Max($sourceImage.Width,$sourceImage.Height)
+        if ($largest -le 0) { throw 'API 參考圖尺寸異常。' }
+        $scale=[Math]::Min(1.0,$MaxEdge/[double]$largest); $width=[Math]::Max(1,[int][Math]::Round($sourceImage.Width*$scale)); $height=[Math]::Max(1,[int][Math]::Round($sourceImage.Height*$scale))
+        $bitmap=New-Object Drawing.Bitmap $width,$height; $graphics=[Drawing.Graphics]::FromImage($bitmap); $graphics.Clear([Drawing.Color]::White)
+        $graphics.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; $graphics.DrawImage($sourceImage,0,0,$width,$height); $bitmap.Save($Target,[Drawing.Imaging.ImageFormat]::Jpeg)
+    } finally { if($null-ne$graphics){$graphics.Dispose()}; if($null-ne$bitmap){$bitmap.Dispose()}; if($null-ne$sourceImage){$sourceImage.Dispose()}; $stream.Dispose() }
+    $info=Get-ImageInfoV2 $Target; if($info.length -le 0){throw 'API 參考圖壓縮後為 0KB。'}; return $info
+}
+function Convert-ToApiReferenceV2([string]$Source,[string]$ProductId) {
+    $dir=Join-Path (Get-V2Workspace) ('api_refs\'+$ProductId); New-Item -ItemType Directory -Path $dir -Force|Out-Null; $target=Join-Path $dir ([IO.Path]::GetFileNameWithoutExtension($Source)+'.jpg')
+    foreach($edge in @(1280,1024,768)){ Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue; $info=Save-ApiReferenceJpegV2 $Source $target $edge; if($info.length -le 1572864){return $target} }; return $target
+}
+function Get-PreparedApiReferencesV2([string]$ProductId,[string[]]$References) { $prepared=@(); foreach($reference in $References){$prepared+=(Convert-ToApiReferenceV2 ([string]$reference) $ProductId)}; return [string[]]$prepared }
+function Test-TransportFailureV2([string]$Message) { if([string]::IsNullOrWhiteSpace($Message)){return $false}; return ($Message -match '发送请求时出错|發送請求時出錯|傳送要求時發生錯誤|HttpRequestException|TaskCanceledException|HTTP 408|HTTP 502|HTTP 503|HTTP 504|HTTP 520|HTTP 522|HTTP 524|timeout|timed out|connection.*(reset|closed|abort)|network|socket|EOF|連線.*(重設|中斷|關閉)|逾時') }
+function Test-RetryableV2([string]$Message) { return ((Test-TransportFailureV2 $Message) -or ($Message -match '429|HTTP 5\d\d|暫時|主圖適配檢查未通過|生成圖片與本商品先前成品完全重複')) }
 
 function Write-ProductReportV2($Product, $Checkpoint, [datetime]$Started, [string[]]$Errors) {
     $systemRoot = Split-Path $PSScriptRoot -Parent
@@ -368,7 +398,7 @@ function Start-SingleProductOptimizationV2($Config) {
     $productId = [string]$product.product_id
     $refCount = @($analysis.reference_order).Count
     if ($refCount -eq 0) { throw '沒有可用原圖，已停止。' }
-    $maximum = [Math]::Min([Math]::Max(1,[int]$Config.max_reference_images), $refCount)
+    $maximum = [Math]::Min(2, [Math]::Min([Math]::Max(1,[int]$Config.max_reference_images), $refCount))
 
     $finalDir = Get-GeneratedImagesDirectoryV2
     $checkpoint = Get-CheckpointV2 $productId
@@ -394,39 +424,27 @@ function Start-SingleProductOptimizationV2($Config) {
         $state.status = 'generating'
         Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("正在生成 {0}" -f $slot)
         $prompt = Get-PromptV2 $slot ([string]$product.product_name)
-        $refs = [string[]]@(Get-ReferencesForSlotV2 $analysis $slot $maximum)
-        $success = $false
-
+        $sourceRefs = [string[]]@(Get-ReferencesForSlotV2 $analysis $slot $maximum)
+        $refs = [string[]]@(Get-PreparedApiReferencesV2 $productId $sourceRefs)
+        $success = $false; $transportDegraded = $false; $lowQualityRejected = $false
         for ($attempt = 1; $attempt -le 3; $attempt++) {
+            $temporary=$null; $attemptRefs=[string[]]@($refs); $attemptQuality='medium'
+            if($transportDegraded){ if($attempt -ge 3){$attemptRefs=[string[]]@($refs|Select-Object -First 1)}; if(-not $lowQualityRejected){$attemptQuality='low'} }
+            $attemptPrompt=$prompt; if($transportDegraded){$attemptPrompt=Get-CompactTransportPromptV2 $slot ([string]$product.product_name)}
+            if($slot -eq 'main' -and $attempt -gt 1 -and -not $transportDegraded){$attemptPrompt+="`n前一次主圖適配檢查未通過。請加大商品主體、加強明確主標題與2到4個可確認的短賣點，避免大片空白，務必做成比詳情圖更鮮明的電商封面。"}
+            $attemptStarted=Get-Date; Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 第 {1}/3 次｜{2}｜{3} 張壓縮參考圖" -f $slot,$attempt,$attemptQuality,@($attemptRefs).Count)
             try {
-                $attemptPrompt = $prompt
-                if ($slot -eq 'main' -and $attempt -gt 1) {
-                    $attemptPrompt += "`n前一次主圖適配檢查未通過。請加大商品主體、加強明確主標題與2到4個可確認的短賣點，避免大片空白，務必做成比詳情圖更鮮明的電商封面。"
-                }
-                $temporary = Invoke-ImageEditMultiV2 $Config $refs $attemptPrompt '1024x1024' 'medium'
-                $info = Convert-ToFinalJpegV2 $temporary $target
-                Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
-                if ($hashes.ContainsKey($info.hash)) {
-                    Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
-                    throw '生成圖片與本商品先前成品完全重複。'
-                }
-                if ($slot -eq 'main') { Test-MainImageFitnessV2 $target }
-                $hashes[$info.hash] = $true
-                $state.status = 'done'
-                $state.last_error = ''
-                $generated++
-                $success = $true
-                Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 已生成完成" -f $slot)
-                break
-            }
-            catch {
-                $state.retries = [int]$state.retries + 1
-                $state.last_error = Protect-SecretTextV2 $_.Exception.Message ([string]$Config.api_key)
-                Save-CheckpointV2 $checkpoint
-                if ($attempt -lt 3 -and (Test-RetryableV2 $state.last_error)) {
-                    if ($attempt -eq 1) { Start-Sleep -Seconds 15 } else { Start-Sleep -Seconds 30 }
-                }
-                else { break }
+                $temporary=Invoke-ImageEditMultiV2 $Config $attemptRefs $attemptPrompt '1024x1024' $attemptQuality; $info=Convert-ToFinalJpegV2 $temporary $target; Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue; $temporary=$null
+                if($hashes.ContainsKey($info.hash)){Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue; throw '生成圖片與本商品先前成品完全重複。'}
+                if($slot -eq 'main'){Test-MainImageFitnessV2 $target}; $hashes[$info.hash]=$true; $state.status='done'; $state.last_error=''; $generated++; $success=$true; Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 已生成完成" -f $slot); break
+            } catch {
+                if($null-ne$temporary -and (Test-Path -LiteralPath $temporary)){Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}; Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
+                $elapsed=[int]((Get-Date)-$attemptStarted).TotalSeconds; $rawError=Protect-SecretTextV2 $_.Exception.Message ([string]$Config.api_key); $isTransport=Test-TransportFailureV2 $rawError; $timeoutHint=''
+                if($isTransport -and $elapsed -ge 105 -and $elapsed -le 150){$timeoutHint='；疑似上游同步約120秒超時'}
+                $state.retries=[int]$state.retries+1; $state.last_error=($rawError+"（耗時 ${elapsed} 秒${timeoutHint}）"); Save-CheckpointV2 $checkpoint
+                if($isTransport){$transportDegraded=$true}; if($attemptQuality -eq 'low' -and $rawError -match 'HTTP 400' -and $rawError -match '(quality|low|invalid|unsupported|不支持|不支援)'){$lowQualityRejected=$true}
+                $canRetry=Test-RetryableV2 $rawError; if($lowQualityRejected -and $attempt -lt 3){$canRetry=$true}
+                if($attempt -lt 3 -and $canRetry){ if($isTransport){$nextMode=if($attempt -eq 1){'下一次改用 low 並維持最多2張壓縮參考圖'}else{'下一次降為1張壓縮參考圖'}; Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("傳輸失敗，{0}。" -f $nextMode); Start-Sleep -Seconds 3}else{Start-Sleep -Seconds 5} } else {break}
             }
         }
 

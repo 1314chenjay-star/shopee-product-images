@@ -6,7 +6,8 @@
   "size": "1024x1024",
   "output_folder": "output",
   "safe_test_mode": true,
-  "max_reference_images": 4,
+  "max_reference_images": 2,
   "imported_excel": "",
-  "selected_product_id": ""
+  "selected_product_id": "",
+  "transport_profile": "r3_120s_safe"
 }
