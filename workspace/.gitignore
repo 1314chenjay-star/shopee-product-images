@@ -1,8 +1,0 @@
-*
-!.gitignore
-!raw_images/
-!raw_images/.gitkeep
-!checkpoints/
-!checkpoints/.gitkeep
-!final_images/
-!final_images/.gitkeep
