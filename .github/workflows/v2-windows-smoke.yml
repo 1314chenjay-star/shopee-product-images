@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - tinysnow-tool-only
+      - fix-tinysnow-image-transport
   workflow_dispatch:
 
 jobs:
