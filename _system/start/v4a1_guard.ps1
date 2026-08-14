@@ -9,3 +9,6 @@ if (Test-Path -LiteralPath $visualPath -PathType Leaf) { . $visualPath }
 
 $referenceSafetyPath = Join-Path $PSScriptRoot 'v4a2_reference_safety.ps1'
 if (Test-Path -LiteralPath $referenceSafetyPath -PathType Leaf) { . $referenceSafetyPath }
+
+$referenceHardeningPath = Join-Path $PSScriptRoot 'v4a2_reference_hardening.ps1'
+if (Test-Path -LiteralPath $referenceHardeningPath -PathType Leaf) { . $referenceHardeningPath }
