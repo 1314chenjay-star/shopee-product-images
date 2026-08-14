@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 function Get-V2SystemRoot {
     return (Split-Path $PSScriptRoot -Parent)
@@ -110,9 +110,27 @@ function Get-TinySnowHeadersV2($Config) {
     return @{ Authorization = ('Bearer ' + [string]$Config.api_key) }
 }
 
+function Get-ExceptionChainTextV2($Exception) {
+    if ($null -eq $Exception) { return '未知錯誤' }
+    $parts = @()
+    $current = $Exception
+    $depth = 0
+    while ($null -ne $current -and $depth -lt 8) {
+        $typeName = $current.GetType().FullName
+        $message = [string]$current.Message
+        if (-not [string]::IsNullOrWhiteSpace($message)) {
+            $parts += ($typeName + ': ' + $message)
+        }
+        $current = $current.InnerException
+        $depth++
+    }
+    if ($parts.Count -eq 0) { return [string]$Exception }
+    return ($parts -join ' -> ')
+}
+
 function Get-HttpErrorTextV2($Exception) {
     if ($null -eq $Exception) { return '未知錯誤' }
-    $text = [string]$Exception.Message
+    $text = Get-ExceptionChainTextV2 $Exception
     try {
         $prop = $Exception.PSObject.Properties['Response']
         if ($null -ne $prop -and $null -ne $prop.Value) {
@@ -168,11 +186,16 @@ function Invoke-ImageEditMultiV2($Config, [string[]]$ImagePaths, [string]$Prompt
 
     $maxRefs = [Math]::Max(1, [int]$Config.max_reference_images)
     if ($ImagePaths.Count -gt $maxRefs) { throw ('參考圖片超過上限 ' + $maxRefs + ' 張。') }
+    $totalBytes = [long]0
     foreach ($imagePath in $ImagePaths) {
         if (-not (Test-Path -LiteralPath $imagePath -PathType Leaf)) { throw ('找不到參考圖片：' + $imagePath) }
+        $totalBytes += [long](Get-Item -LiteralPath $imagePath).Length
     }
 
     Add-Type -AssemblyName System.Net.Http
+    try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
+    try { [Net.ServicePointManager]::Expect100Continue = $false } catch {}
+
     $endpoint = Get-TinySnowEndpointV2 $Config 'images/edits'
     $client = $null
     $form = $null
@@ -182,6 +205,7 @@ function Invoke-ImageEditMultiV2($Config, [string[]]$ImagePaths, [string]$Prompt
         $client = New-Object System.Net.Http.HttpClient
         $client.Timeout = [TimeSpan]::FromMinutes(10)
         $client.DefaultRequestHeaders.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue -ArgumentList 'Bearer', ([string]$Config.api_key)
+        $client.DefaultRequestHeaders.ExpectContinue = $false
         $form = New-Object System.Net.Http.MultipartFormDataContent
 
         $fields = @{
@@ -198,13 +222,22 @@ function Invoke-ImageEditMultiV2($Config, [string[]]$ImagePaths, [string]$Prompt
         }
 
         foreach ($imagePath in $ImagePaths) {
-            $stream = [IO.File]::OpenRead((Resolve-Path -LiteralPath $imagePath).Path)
+            $resolved = (Resolve-Path -LiteralPath $imagePath).Path
+            $stream = [IO.File]::OpenRead($resolved)
             $streams += $stream
             $fileContent = New-Object System.Net.Http.StreamContent -ArgumentList $stream
-            $fileContent.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue -ArgumentList 'application/octet-stream'
-            $form.Add($fileContent, 'image[]', (Split-Path $imagePath -Leaf))
+            $extension = [IO.Path]::GetExtension($resolved).ToLowerInvariant()
+            $mime = switch ($extension) {
+                '.jpg' { 'image/jpeg' }
+                '.jpeg' { 'image/jpeg' }
+                '.webp' { 'image/webp' }
+                default { 'image/png' }
+            }
+            $fileContent.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue -ArgumentList $mime
+            $form.Add($fileContent, 'image[]', (Split-Path $resolved -Leaf))
         }
 
+        $summary = ('images=' + $ImagePaths.Count + '; input_bytes=' + $totalBytes + '; size=' + $Size + '; quality=' + $Quality)
         $response = $client.PostAsync($endpoint, $form).GetAwaiter().GetResult()
         $raw = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
         if (-not $response.IsSuccessStatusCode) {
@@ -212,12 +245,13 @@ function Invoke-ImageEditMultiV2($Config, [string[]]$ImagePaths, [string]$Prompt
         }
         $json = $raw | ConvertFrom-Json
         $path = Save-B64ImageV2 $json 'edit'
-        Write-TinySnowLogV2 '圖生圖' $endpoint ('images=' + $ImagePaths.Count + '; size=' + $Size + '; quality=' + $Quality) $true '' $path
+        Write-TinySnowLogV2 '圖生圖' $endpoint $summary $true '' $path
         return $path
     }
     catch {
-        $message = Protect-SecretTextV2 $_.Exception.Message ([string]$Config.api_key)
-        Write-TinySnowLogV2 '圖生圖' $endpoint ('images=' + $ImagePaths.Count) $false $message
+        $message = Protect-SecretTextV2 (Get-HttpErrorTextV2 $_.Exception) ([string]$Config.api_key)
+        $summary = ('images=' + $ImagePaths.Count + '; input_bytes=' + $totalBytes + '; size=' + $Size + '; quality=' + $Quality)
+        Write-TinySnowLogV2 '圖生圖' $endpoint $summary $false $message
         throw ('圖生圖失敗：' + $message)
     }
     finally {
