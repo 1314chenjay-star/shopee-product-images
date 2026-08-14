@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - tinysnow-tool-only
+      - codex-feecvc
   workflow_dispatch:
 
 jobs:
