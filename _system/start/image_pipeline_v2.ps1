@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Stop'
 
 function Get-V2Workspace {
     $systemRoot = Split-Path $PSScriptRoot -Parent
@@ -8,6 +8,7 @@ function Get-V2Workspace {
 }
 
 function Get-ImageInfoV2([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw ('找不到圖片：' + $Path) }
     Add-Type -AssemblyName System.Drawing
     $stream = [IO.File]::OpenRead($Path)
     $image = $null
@@ -39,7 +40,7 @@ function Convert-ToPngV2([string]$Source, [string]$Target) {
         $stream.Dispose()
     }
     $info = Get-ImageInfoV2 $Target
-    if ($info.length -le 0) { throw '下載圖片轉存後為 0KB。' }
+    if ($info.length -le 0) { throw '圖片轉存後為 0KB。' }
     return $info
 }
 
@@ -49,7 +50,7 @@ function Download-ProductImagesV2($Product) {
 
     try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 
-    $rawDir = Join-Path (Get-V2Workspace) ("raw_images\" + $productId)
+    $rawDir = Join-Path (Get-V2Workspace) ('raw_images\' + $productId)
     New-Item -ItemType Directory -Path $rawDir -Force | Out-Null
 
     $downloaded = @()
@@ -60,7 +61,8 @@ function Download-ProductImagesV2($Product) {
         $url = ([string]$urls[$index]).Trim()
         if ($url -notmatch '^https?://') { continue }
 
-        $name = if ($index -eq 0) { '00_main_original.png' } else { ('{0:D2}_detail_original.png' -f $index) }
+        if ($index -eq 0) { $name = '00_main_original.png' }
+        else { $name = ('{0:D2}_detail_original.png' -f $index) }
         $target = Join-Path $rawDir $name
 
         if (Test-Path -LiteralPath $target) {
@@ -94,7 +96,7 @@ function Download-ProductImagesV2($Product) {
 
         if (-not $ok) {
             $failures += $url
-            Write-TinySnowLog '原圖下載' $url ("product_id=" + $productId) $false '下載或圖片驗證失敗'
+            Write-TinySnowLogV2 '原圖下載' $url ('product_id=' + $productId) $false '下載或圖片驗證失敗'
         }
     }
 
@@ -120,8 +122,11 @@ function Analyze-ProductImagesV2([string]$ProductId, [string[]]$Paths) {
         $info = Get-ImageInfoV2 $imagePath
         $duplicate = $seen.ContainsKey($info.hash)
         if (-not $duplicate) { $seen[$info.hash] = $true }
-        $ratio = if ($info.height -gt 0) { $info.width / [double]$info.height } else { 0 }
+
+        if ($info.height -gt 0) { $ratio = $info.width / [double]$info.height }
+        else { $ratio = 0 }
         $squareDelta = [Math]::Abs($ratio - 1.0)
+
         $items += [pscustomobject]@{
             path = $imagePath
             file = Split-Path $imagePath -Leaf
@@ -136,7 +141,7 @@ function Analyze-ProductImagesV2([string]$ProductId, [string[]]$Paths) {
         if (-not $duplicate) { $references += $imagePath }
     }
 
-    $analysis = [ordered]@{
+    $analysis = [pscustomobject]@{
         product_id = $ProductId
         analyzed_at = (Get-Date).ToString('o')
         semantic_check = 'not_available_in_local_preflight'
@@ -149,25 +154,26 @@ function Analyze-ProductImagesV2([string]$ProductId, [string[]]$Paths) {
     $analysis | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $folder 'analysis.json') -Encoding UTF8
 
     $lines = @()
-    $lines += "商品ID：$ProductId"
-    $lines += "可用原圖：$($items.Count) 張"
-    $lines += "去重後參考圖：$($references.Count) 張"
-    $lines += '本地預檢內容：能否開啟、尺寸、檔案大小、SHA256重複、接近1:1。'
-    $lines += '注意：本地預檢不能可靠判斷簡體文字、品牌/尺寸/規格語意衝突；生成時仍使用保守提示詞，最終成品需要人工看圖確認。'
+    $lines += ('商品ID：' + $ProductId)
+    $lines += ('可用原圖：' + $items.Count + ' 張')
+    $lines += ('去重後參考圖：' + $references.Count + ' 張')
+    $lines += '本地預檢：能否開啟、尺寸、檔案大小、SHA256重複、接近1:1。'
+    $lines += '注意：本地預檢不能可靠判斷圖片內簡體文字、品牌、尺寸或規格語意衝突；最終成品仍需看圖確認。'
     $lines += ''
     foreach ($item in $items) {
-        $dupText = if ($item.duplicate) { '重複' } else { '正常' }
-        $lines += ("{0}｜{1}x{2}｜{3} bytes｜{4}" -f $item.file, $item.width, $item.height, $item.bytes, $dupText)
+        if ($item.duplicate) { $dupText = '重複' } else { $dupText = '正常' }
+        $lines += ('{0}｜{1}x{2}｜{3} bytes｜{4}' -f $item.file, $item.width, $item.height, $item.bytes, $dupText)
     }
     $lines | Set-Content -LiteralPath (Join-Path $folder 'analysis_summary.txt') -Encoding UTF8
 
-    return [pscustomobject]$analysis
+    return $analysis
 }
 
 function Test-SelectedProductImagesV2 {
-    $product = Get-SelectedProduct
+    $product = Get-SelectedProductV2
     $download = Download-ProductImagesV2 $product
-    $analysis = Analyze-ProductImagesV2 ([string]$product.product_id) ([string[]]@($download.paths))
+    $pathArray = [string[]]@($download.paths)
+    $analysis = Analyze-ProductImagesV2 ([string]$product.product_id) $pathArray
     return [pscustomobject]@{
         product = $product
         downloaded = @($download.paths)
@@ -178,19 +184,26 @@ function Test-SelectedProductImagesV2 {
 }
 
 function Get-CheckpointPathV2([string]$ProductId) {
-    $dir = Join-Path (Get-V2Workspace) ("checkpoints\" + $ProductId)
+    $dir = Join-Path (Get-V2Workspace) ('checkpoints\' + $ProductId)
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
     return (Join-Path $dir 'checkpoint_v2.json')
 }
 
 function Get-CheckpointV2([string]$ProductId) {
     $path = Get-CheckpointPathV2 $ProductId
-    if (Test-Path -LiteralPath $path) { return (Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json) }
+    if (Test-Path -LiteralPath $path) {
+        return (Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json)
+    }
+
     $states = [ordered]@{}
     foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
         $states[$slot] = [ordered]@{ status='pending'; retries=0; last_error='' }
     }
-    $checkpoint = [ordered]@{ product_id=$ProductId; states=$states; updated_at=(Get-Date).ToString('o') }
+    $checkpoint = [pscustomobject]@{
+        product_id = $ProductId
+        states = [pscustomobject]$states
+        updated_at = (Get-Date).ToString('o')
+    }
     $checkpoint | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $path -Encoding UTF8
     return (Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
@@ -202,16 +215,17 @@ function Save-CheckpointV2($Checkpoint) {
 
 function Get-PromptV2([string]$Slot, [string]$Name) {
     $systemRoot = Split-Path $PSScriptRoot -Parent
-    $templates = Get-Content -LiteralPath (Join-Path $systemRoot 'config\prompt_templates.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    $key = switch ($Slot) {
-        'main' { 'main_image' }
-        'detail1' { 'detail_overview' }
-        'detail2' { 'detail_structure' }
-        'detail3' { 'detail_scene' }
-        'detail4' { 'detail_spec' }
-        default { 'detail_general' }
+    $templatePath = Join-Path $systemRoot 'config\prompt_templates.json'
+    $templates = Get-Content -LiteralPath $templatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    switch ($Slot) {
+        'main' { $key = 'main_image' }
+        'detail1' { $key = 'detail_overview' }
+        'detail2' { $key = 'detail_structure' }
+        'detail3' { $key = 'detail_scene' }
+        'detail4' { $key = 'detail_spec' }
+        default { $key = 'detail_general' }
     }
-    return "商品名稱僅供辨識：$Name。`n$($templates.$key)`n共同硬規則：$($templates.common_rules)"
+    return ('商品名稱僅供辨識：' + $Name + "。`n" + [string]$templates.$key + "`n共同硬規則：" + [string]$templates.common_rules)
 }
 
 function Get-ReferencesForSlotV2($Analysis, [string]$Slot, [int]$Maximum) {
@@ -222,26 +236,35 @@ function Get-ReferencesForSlotV2($Analysis, [string]$Slot, [int]$Maximum) {
 
     $details = @($order | Select-Object -Skip 1)
     $refs = @([string]$order[0])
-    $offset = switch ($Slot) { 'detail1'{0} 'detail2'{1} 'detail3'{2} 'detail4'{3} default{0} }
+    switch ($Slot) {
+        'detail1' { $offset = 0 }
+        'detail2' { $offset = 1 }
+        'detail3' { $offset = 2 }
+        'detail4' { $offset = 3 }
+        default { $offset = 0 }
+    }
 
     if ($Slot -eq 'main') {
-        for ($i=0; $i -lt $details.Count -and $refs.Count -lt $maximum; $i++) { $refs += [string]$details[$i] }
+        for ($i = 0; $i -lt $details.Count -and $refs.Count -lt $maximum; $i++) {
+            $refs += [string]$details[$i]
+        }
     }
     else {
-        for ($i=0; $i -lt $details.Count -and $refs.Count -lt $maximum; $i++) {
+        for ($i = 0; $i -lt $details.Count -and $refs.Count -lt $maximum; $i++) {
             $idx = ($offset + $i) % $details.Count
             $candidate = [string]$details[$idx]
             if ($refs -notcontains $candidate) { $refs += $candidate }
         }
     }
-    return @($refs)
+    return $refs
 }
 
 function Convert-ToFinalJpegV2([string]$Source, [string]$Target) {
     $info = Get-ImageInfoV2 $Source
     if ($info.width -lt 100 -or $info.height -lt 100) { throw '生成圖片尺寸異常。' }
     $ratio = $info.width / [double]$info.height
-    if ($ratio -lt 0.9 -or $ratio -gt 1.1) { throw "生成圖片不是接近1:1：$($info.width)x$($info.height)" }
+    if ($ratio -lt 0.9 -or $ratio -gt 1.1) { throw ('生成圖片不是接近1:1：' + $info.width + 'x' + $info.height) }
+
     Add-Type -AssemblyName System.Drawing
     $image = [Drawing.Image]::FromFile($Source)
     try { $image.Save($Target, [Drawing.Imaging.ImageFormat]::Jpeg) }
@@ -250,13 +273,22 @@ function Convert-ToFinalJpegV2([string]$Source, [string]$Target) {
 }
 
 function New-ProductZipV2([string]$ProductId) {
-    $folder = Join-Path (Get-V2Workspace) ("final_images\" + $ProductId)
-    $names = @("${ProductId}_main.jpg","${ProductId}_detail1.jpg","${ProductId}_detail2.jpg","${ProductId}_detail3.jpg","${ProductId}_detail4.jpg")
-    foreach ($name in $names) { if (-not (Test-Path -LiteralPath (Join-Path $folder $name))) { throw "尚未完成5張圖片，缺少：$name" } }
-    $zip = Join-Path (Get-V2Workspace) ("${ProductId}_圖片優化完成.zip")
+    $folder = Join-Path (Get-V2Workspace) ('final_images\' + $ProductId)
+    $names = @(
+        ($ProductId + '_main.jpg'),
+        ($ProductId + '_detail1.jpg'),
+        ($ProductId + '_detail2.jpg'),
+        ($ProductId + '_detail3.jpg'),
+        ($ProductId + '_detail4.jpg')
+    )
+    foreach ($name in $names) {
+        if (-not (Test-Path -LiteralPath (Join-Path $folder $name))) { throw ('尚未完成5張圖片，缺少：' + $name) }
+    }
+
+    $zip = Join-Path (Get-V2Workspace) ($ProductId + '_圖片優化完成.zip')
     if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $tempDir = Join-Path (Get-V2Workspace) ("zip_" + $ProductId)
+    $tempDir = Join-Path (Get-V2Workspace) ('zip_' + $ProductId)
     Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
     foreach ($name in $names) { Copy-Item -LiteralPath (Join-Path $folder $name) -Destination $tempDir }
@@ -265,40 +297,73 @@ function New-ProductZipV2([string]$ProductId) {
     return $zip
 }
 
+function Test-RetryableV2([string]$Message) {
+    return ($Message -match '429|HTTP 5\d\d|timeout|timed out|network|connection|reset|暫時|連線|逾時')
+}
+
+function Write-ProductReportV2($Product, $Checkpoint, [datetime]$Started, [string[]]$Errors) {
+    $systemRoot = Split-Path $PSScriptRoot -Parent
+    $dir = Join-Path $systemRoot 'reports'
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    $done = @($Checkpoint.states.PSObject.Properties | Where-Object { $_.Value.status -eq 'done' }).Count
+    $lines = @()
+    $lines += ('商品ID：' + [string]$Product.product_id)
+    $lines += ('商品名稱：' + [string]$Product.product_name)
+    $lines += ('生成成功數：' + $done)
+    foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
+        $lines += ($slot + '：' + [string]$Checkpoint.states.$slot.status)
+    }
+    $lines += ('總耗時：' + [int]((Get-Date) - $Started).TotalSeconds + ' 秒')
+    $lines += ('錯誤：' + ($Errors -join '；'))
+    $lines | Set-Content -LiteralPath (Join-Path $dir ([string]$Product.product_id + '_report.txt')) -Encoding UTF8
+}
+
 function Start-SingleProductOptimizationV2($Config) {
     if (-not [bool]$Config.safe_test_mode) { throw 'SAFE TEST MODE 必須保持開啟。' }
-    $product = Get-SelectedProduct
+    $product = Get-SelectedProductV2
     $preflight = Test-SelectedProductImagesV2
     $analysis = $preflight.analysis
     $productId = [string]$product.product_id
-    $maximum = [Math]::Min([Math]::Max(1,[int]$Config.max_reference_images), @($analysis.reference_order).Count)
+    $refCount = @($analysis.reference_order).Count
+    if ($refCount -eq 0) { throw '沒有可用原圖，已停止。' }
+    $maximum = [Math]::Min([Math]::Max(1,[int]$Config.max_reference_images), $refCount)
 
-    $finalDir = Join-Path (Get-V2Workspace) ("final_images\" + $productId)
+    $finalDir = Join-Path (Get-V2Workspace) ('final_images\' + $productId)
     New-Item -ItemType Directory -Path $finalDir -Force | Out-Null
     $checkpoint = Get-CheckpointV2 $productId
     $errors = @()
     $generated = 0
     $hashes = @{}
+    $started = Get-Date
 
     foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
-        $target = Join-Path $finalDir ("${productId}_${slot}.jpg")
+        $target = Join-Path $finalDir ($productId + '_' + $slot + '.jpg')
         $state = $checkpoint.states.$slot
+
         if ($state.status -eq 'done' -and (Test-Path -LiteralPath $target)) {
-            try { $existing = Get-ImageInfoV2 $target; $hashes[$existing.hash] = $true; continue } catch { $state.status = 'pending' }
+            try {
+                $existing = Get-ImageInfoV2 $target
+                $hashes[$existing.hash] = $true
+                continue
+            }
+            catch { $state.status = 'pending' }
         }
 
         $state.status = 'generating'
         Save-CheckpointV2 $checkpoint
         $prompt = Get-PromptV2 $slot ([string]$product.product_name)
-        $refs = @(Get-ReferencesForSlotV2 $analysis $slot $maximum)
+        $refs = [string[]]@(Get-ReferencesForSlotV2 $analysis $slot $maximum)
         $success = $false
 
-        for ($attempt=1; $attempt -le 3; $attempt++) {
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
             try {
-                $temporary = Invoke-ImageEditMulti $Config ([string[]]$refs) $prompt '1024x1024' 'medium'
+                $temporary = Invoke-ImageEditMultiV2 $Config $refs $prompt '1024x1024' 'medium'
                 $info = Convert-ToFinalJpegV2 $temporary $target
                 Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
-                if ($hashes.ContainsKey($info.hash)) { Remove-Item -LiteralPath $target -Force; throw '生成圖片與本商品之前成品完全重複。' }
+                if ($hashes.ContainsKey($info.hash)) {
+                    Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
+                    throw '生成圖片與本商品先前成品完全重複。'
+                }
                 $hashes[$info.hash] = $true
                 $state.status = 'done'
                 $state.last_error = ''
@@ -309,22 +374,26 @@ function Start-SingleProductOptimizationV2($Config) {
             }
             catch {
                 $state.retries = [int]$state.retries + 1
-                $state.last_error = Protect-SecretText $_.Exception.Message ([string]$Config.api_key)
+                $state.last_error = Protect-SecretTextV2 $_.Exception.Message ([string]$Config.api_key)
                 Save-CheckpointV2 $checkpoint
-                if ($attempt -lt 3 -and $state.last_error -match '429|HTTP 5\d\d|timed? out|timeout|network|connection|連線') { Start-Sleep -Seconds @(15,30)[$attempt-1] }
+                if ($attempt -lt 3 -and (Test-RetryableV2 $state.last_error)) {
+                    if ($attempt -eq 1) { Start-Sleep -Seconds 15 } else { Start-Sleep -Seconds 30 }
+                }
                 else { break }
             }
         }
 
         if (-not $success) {
             $state.status = 'failed'
-            $errors += ("$slot：" + $state.last_error)
+            $errors += ($slot + '：' + [string]$state.last_error)
             Save-CheckpointV2 $checkpoint
             break
         }
     }
 
-    $allDone = @($checkpoint.states.PSObject.Properties | Where-Object { $_.Value.status -ne 'done' }).Count -eq 0
+    Write-ProductReportV2 $product $checkpoint $started ([string[]]$errors)
+    $notDone = @($checkpoint.states.PSObject.Properties | Where-Object { $_.Value.status -ne 'done' }).Count
+    $allDone = ($notDone -eq 0)
     $zip = ''
     if ($allDone) { $zip = New-ProductZipV2 $productId }
 
@@ -334,6 +403,5 @@ function Start-SingleProductOptimizationV2($Config) {
         complete = $allDone
         zip = $zip
         failed_urls = @($preflight.failed_urls)
-        errors = @($errors)
     }
 }
