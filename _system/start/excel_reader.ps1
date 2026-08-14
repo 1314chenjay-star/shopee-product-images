@@ -136,7 +136,8 @@ function Import-ShopeeExcelV2([string]$Path) {
         $archive = [IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $Path).Path)
         $entries = @{}
         foreach ($entry in $archive.Entries) {
-            $entries[$entry.FullName] = $entry
+            $normalizedName = ([string]$entry.FullName) -replace '\\', '/'
+            $entries[$normalizedName] = $entry
         }
 
         $sharedStrings = @()
@@ -155,7 +156,14 @@ function Import-ShopeeExcelV2([string]$Path) {
             }
         }
 
-        $sheetEntries = @($archive.Entries | Where-Object { $_.FullName -like 'xl/worksheets/sheet*.xml' } | Sort-Object FullName)
+        $sheetEntries = @()
+        foreach ($entry in $archive.Entries) {
+            $normalizedName = ([string]$entry.FullName) -replace '\\', '/'
+            if ($normalizedName -like 'xl/worksheets/sheet*.xml') {
+                $sheetEntries += $entry
+            }
+        }
+        $sheetEntries = @($sheetEntries | Sort-Object FullName)
         if ($sheetEntries.Count -eq 0) {
             throw 'No worksheet XML found.'
         }
