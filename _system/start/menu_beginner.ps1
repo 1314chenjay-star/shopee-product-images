@@ -8,6 +8,7 @@ $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A.1 | API-R
 . (Join-Path $PSScriptRoot 'selection_v2.ps1')
 . (Join-Path $PSScriptRoot 'image_pipeline_v2.ps1')
 . (Join-Path $PSScriptRoot 'v4a1_guard.ps1')
+. (Join-Path $PSScriptRoot 'v4a1_visual_truth.ps1')
 
 function Pause-Menu {
     Write-Host ''
@@ -34,7 +35,7 @@ while ($true) {
     Clear-Host
     Write-Host '=================================' -ForegroundColor Cyan
     Write-Host '蝦皮商品圖片優化工具 V2'
-    Write-Host 'Build: V4-A.1｜真實資料鎖定版（Direct Guard）' -ForegroundColor Yellow
+    Write-Host 'Build: V4-A.1｜真實資料＋視覺數量鎖定版' -ForegroundColor Yellow
     Write-Host 'Transport: API-R3-120S' -ForegroundColor Yellow
     Write-Host 'SAFE TEST MODE｜一次一件、最多5張｜每次最多2張壓縮參考圖' -ForegroundColor Green
     Write-Host '=================================' -ForegroundColor Cyan
