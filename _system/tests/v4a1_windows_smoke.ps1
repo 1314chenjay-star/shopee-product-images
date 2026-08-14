@@ -64,12 +64,11 @@ if ($compact580 -notmatch '未列入已驗證事實就禁止生成') { throw 'Co
 $risk = Test-FactualContentV4A1 '32cm 尼龍 不傷膝 提升爆發力 SGS' $p580
 if (-not $risk.factual_risk -or [bool]$risk.image_text_ocr_verified) { throw 'Known-text factual guard failed or falsely claimed OCR.' }
 
-$apiPath = Join-Path $startRoot 'api_v2.ps1'
-$apiHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $apiPath).Hash.ToLowerInvariant()
-if ($apiHash -ne 'a27d8107b94c7e5d29aa5e170aea1541f7e95cc6cde6a693556d1d0b0b8bdf0f') { throw ('API-R3-120S hash changed: ' + $apiHash) }
+$apiBlob = (& git rev-parse 'HEAD:_system/start/api_v2.ps1').Trim()
+if ($LASTEXITCODE -ne 0 -or $apiBlob -ne '9e81a9c4a0769d5e41b4c1e7dba4b92266c49187') { throw ('API-R3-120S git blob changed: ' + $apiBlob) }
 
 $guardText = Get-Content -LiteralPath (Join-Path $startRoot 'v4a1_guard.ps1') -Raw -Encoding UTF8
 $rulesText = Get-Content -LiteralPath (Join-Path $systemRoot 'config\factual_rules_v4a1.json') -Raw -Encoding UTF8
 if ($guardText.Contains([char]0xFFFD) -or $rulesText.Contains([char]0xFFFD)) { throw 'U+FFFD replacement character found.' }
 
-Write-Host '[PASS] V4-A.1 direct factual guard: real Shopee headers, ordered images, variant facts, parser edge cases, prompt allowlist, and R3 hash all passed.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.1 direct factual guard: real Shopee headers, ordered images, variant facts, parser edge cases, prompt allowlist, and R3 identity all passed.' -ForegroundColor Green
