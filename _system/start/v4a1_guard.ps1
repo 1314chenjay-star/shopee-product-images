@@ -27,6 +27,9 @@ if (Test-Path -LiteralPath $textStabilityPath -PathType Leaf) { . $textStability
 foreach ($v4a3File in @('reference_classifier_v3.ps1','five_image_planner_v3.ps1','layout_memory_v3.ps1','group_validation_v3.ps1')) {
     $v4a3Path = Join-Path $PSScriptRoot $v4a3File
     if (-not (Test-Path -LiteralPath $v4a3Path -PathType Leaf)) { throw ('缺少 V4-A.3 模組：' + $v4a3File) }
+    if ($v4a3File -eq 'group_validation_v3.ps1' -and $null -eq (Get-Command Start-SingleProductOptimizationV2 -ErrorAction SilentlyContinue)) {
+        continue
+    }
     . $v4a3Path
 }
 
