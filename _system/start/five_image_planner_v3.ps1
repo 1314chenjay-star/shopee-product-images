@@ -9,21 +9,21 @@ function Get-V4A3SlotDefinitions {
         [pscustomobject]@{
             slot='main'; role='主成交圖'; content_goal='商品外觀與最重要的共同已驗證資訊';
             preferred_reference_classes=@('pure_product','detail_structure'); blocked_reference_classes=@('promo_risky','single_variant_risky');
-            preferred_layout_family='hero_asymmetric'; blocked_visual_patterns=@('不可把多規格選項排成一次收到的整套','不可使用資訊卡塞滿整張主圖');
+            preferred_layout_family='hero_asymmetric'; blocked_visual_patterns=@('不可把多規格選項排成一次收到的整套','不可使用資訊卡塞滿整張主圖','不得讓手、手指或手掌持拿商品成為主要視覺');
             must_differ_from_slots=@(); text_priority='商品標籤＋最精簡共同規格'; verified_fact_priority='common_only';
-            main_subject_type='single_product_hero'; has_person='avoid'; product_angle_type='full_product'; product_position='center_or_right'; hand_held_style='avoid_if_alternative'
+            main_subject_type='single_product_hero'; has_person='avoid'; product_angle_type='full_product'; product_position='center_or_right'; hand_held_style='blocked_as_primary'
         },
         [pscustomobject]@{
             slot='detail1'; role='賣點／細節總覽'; content_goal='提供主圖沒有的新細節與不同視角';
             preferred_reference_classes=@('detail_structure','pure_product'); blocked_reference_classes=@('promo_risky','single_variant_risky');
-            preferred_layout_family='detail_overview_grid'; blocked_visual_patterns=@('不得沿用 main 的同一手持商品主構圖','不得只換背景複製主圖');
+            preferred_layout_family='detail_overview_grid'; blocked_visual_patterns=@('不得沿用 main 的同一手持商品主構圖','不得只換背景複製主圖','不得讓手、手指或手掌持拿商品成為主要視覺');
             must_differ_from_slots=@('main'); text_priority='一個主標題＋一行已驗證規格'; verified_fact_priority='common_only';
             main_subject_type='detail_or_alternate_angle'; has_person='avoid'; product_angle_type='alternate_or_macro'; product_position='left_or_split'; hand_held_style='blocked_as_primary'
         },
         [pscustomobject]@{
             slot='detail2'; role='結構與細節'; content_goal='局部結構、可確認配件或包裝細節；沒有就只做無字細節';
             preferred_reference_classes=@('detail_structure','accessory','packaging'); blocked_reference_classes=@('promo_risky','single_variant_risky');
-            preferred_layout_family='macro_breakdown'; blocked_visual_patterns=@('局部放大不得自行命名零件','不得重複 main/detail1 的英雄式大商品構圖');
+            preferred_layout_family='macro_breakdown'; blocked_visual_patterns=@('局部放大不得自行命名零件','不得重複 main/detail1 的英雄式大商品構圖','不得讓手、手指或手掌持拿商品成為主要視覺');
             must_differ_from_slots=@('main','detail1'); text_priority='集中單一規格區，局部放大無字'; verified_fact_priority='common_only';
             main_subject_type='macro_detail_panels'; has_person='avoid'; product_angle_type='macro_or_structure'; product_position='distributed_panels'; hand_held_style='blocked_as_primary'
         },
@@ -37,7 +37,7 @@ function Get-V4A3SlotDefinitions {
         [pscustomobject]@{
             slot='detail4'; role='規格／選購補充'; content_goal='共同規格、尺寸、型號或保守選購提醒';
             preferred_reference_classes=@('spec_info','size_info','detail_structure','pure_product'); blocked_reference_classes=@('promo_risky','single_variant_risky');
-            preferred_layout_family='information_card'; blocked_visual_patterns=@('不得再次使用 main 的手持商品英雄式主構圖','沒有共同規格時不得自行補尺寸或材質');
+            preferred_layout_family='information_card'; blocked_visual_patterns=@('不得再次使用 main 的手持商品英雄式主構圖','沒有共同規格時不得自行補尺寸或材質','不得讓手、手指或手掌持拿商品成為主要視覺');
             must_differ_from_slots=@('main','detail1','detail2','detail3'); text_priority='規格／選購資訊卡'; verified_fact_priority='common_only';
             main_subject_type='supporting_product_with_info_cards'; has_person='avoid'; product_angle_type='supporting_product'; product_position='secondary_small'; hand_held_style='blocked_as_primary'
         }
@@ -147,6 +147,7 @@ function New-FiveImagePlanV4A3($Product, $Analysis, [int]$MaximumReferences) {
         semantic_limit = 'proxy_only_no_ocr'
         high_variant_conflict = $highConflict
         high_conflict_reference_policy = if ($highConflict) { 'same_safest_reference_all_slots' } else { 'slot_aware_safe_diversity' }
+        hand_held_primary_policy = 'detail3_only_if_natural_use'
         analyzed_reference_count = $classified.Count
         slots = [object[]]$slotPlans
     }
