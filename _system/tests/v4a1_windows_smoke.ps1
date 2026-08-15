@@ -32,7 +32,7 @@ $p580 = @($products | Where-Object { $_.product_id -eq '58015741169' })[0]
 if (@($p580.image_urls).Count -ne 3) { throw '580 image count/order failed.' }
 if ([string]$p580.image_urls[0] -ne 'https://example.com/cover580.jpg' -or [string]$p580.image_urls[1] -ne 'https://example.com/580-1.jpg' -or [string]$p580.image_urls[2] -ne 'https://example.com/580-2.jpg') { throw 'image_urls must stay cover -> image.1 -> image.2.' }
 foreach ($value in @('2米','30磅')) { if (@($p580.verified_facts.verified_numbers) -notcontains $value) { throw ('580 common number missing: ' + $value) } }
-if (@($p580.verified_facts.verified_dimensions) -notcontains '2米') { throw '580 dimension missing.' }
+if (@($p580.verified_facts.verified_dimensions) -notcontains '2米') { throw '580 raw source dimension missing.' }
 if (@($p580.verified_facts.verified_accessories) -notcontains '腰帶') { throw '580 accessory missing.' }
 if (@($p580.verified_facts.verified_colors) -notcontains '黑色') { throw '580 color missing.' }
 if (@($p580.verified_facts.verified_quantities) -contains '一組' -or @($p580.verified_facts.verified_quantities) -contains '5組') { throw 'Variant-specific quantities leaked into common facts.' }
@@ -56,10 +56,12 @@ $p544 = @($products | Where-Object { $_.product_id -eq '54444444444' })[0]
 if (-not [bool]$p544.multi_variant_flags.has_multiple_colors -or @($p544.verified_facts.verified_colors).Count -ne 0) { throw 'Multi-color common isolation failed.' }
 
 $prompt580 = Get-PromptV2 'main' $p580
-foreach ($value in @('2米','30磅','腰帶','黑色')) { if ($prompt580 -notmatch [regex]::Escape($value)) { throw ('Prompt missing common verified fact: ' + $value) } }
+foreach ($value in @('2公尺','30磅','腰帶','黑色')) { if ($prompt580 -notmatch [regex]::Escape($value)) { throw ('Prompt missing localized/common verified fact: ' + $value) } }
+if ($prompt580 -match '(?<!公)2米') { throw 'Prompt leaked Mainland length unit 2米.' }
 if ($prompt580 -notmatch '所有文字型具體事實只能取自上方已驗證事實') { throw 'Prompt allowlist hard rule missing.' }
 $compact580 = Get-CompactTransportPromptV2 'detail4' $p580
 if (($compact580 -notmatch '未列入已驗證事實就禁止生成') -and ($compact580 -notmatch '成品唯一允許的可辨識文字')) { throw 'Compact prompt allowlist rule missing.' }
+if ($compact580 -notmatch '200公分') { throw 'detail4 compact prompt should expose exact Taiwan equivalent 200公分.' }
 
 $risk = Test-FactualContentV4A1 '32cm 尼龍 不傷膝 提升爆發力 SGS' $p580
 if (-not $risk.factual_risk -or [bool]$risk.image_text_ocr_verified) { throw 'Known-text factual guard failed or falsely claimed OCR.' }
@@ -71,4 +73,4 @@ $guardText = Get-Content -LiteralPath (Join-Path $startRoot 'v4a1_guard.ps1') -R
 $rulesText = Get-Content -LiteralPath (Join-Path $systemRoot 'config\factual_rules_v4a1.json') -Raw -Encoding UTF8
 if ($guardText.Contains([char]0xFFFD) -or $rulesText.Contains([char]0xFFFD)) { throw 'U+FFFD replacement character found.' }
 
-Write-Host '[PASS] V4-A.1 direct factual guard: real Shopee headers, ordered images, variant facts, parser edge cases, prompt allowlist, and R3 identity all passed.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.1 direct factual guard: source facts preserved, Taiwan display localization, real Shopee headers, ordered images, variant facts, parser edge cases, prompt allowlist, and R3 identity all passed.' -ForegroundColor Green
