@@ -1,0 +1,46 @@
+name: V4-A.3 TinySnow Focused Live
+
+on:
+  push:
+    branches:
+      - v4a3-five-image-planner
+
+jobs:
+  live:
+    if: github.event.head_commit.message == 'RUN-V4A3-LIVE'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Normalize PowerShell encoding
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\start\encoding_fix.ps1
+
+      - name: V4-A.2.1 text stability guard
+        shell: powershell
+        run: |
+          & .\_system\tests\v4a21_text_stability_smoke.ps1
+
+      - name: V4-A.3 focused planner smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4a3_five_image_planner_smoke.ps1
+
+      - name: TinySnow V4-A.3 focused 4-image live batch
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+        run: |
+          & .\_system\tests\v4a3_live_focused.ps1
+
+      - name: Upload focused live result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-V4-A.3-Focused-Live
+          path: _system/live_e2e_output_v4a3/
+          if-no-files-found: ignore
