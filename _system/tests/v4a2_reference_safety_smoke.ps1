@@ -73,17 +73,19 @@ if ($refs.Count -ne 1) { throw ('High-conflict product must use one safe referen
 if ((Split-Path $refs[0] -Leaf) -match '^00_main_original') { throw 'Promotional cover should not outrank cleaner gallery references in this fixture.' }
 
 $prompt = Get-PromptV2 'main' '危險標題 夜光 真皮 送氣筒 五人聯動'
-foreach ($required in @('2米','30磅','腰帶','黑色','Reference Safety')) {
+foreach ($required in @('2公尺','30磅','腰帶','黑色','Reference Safety')) {
     if ($prompt -notmatch [regex]::Escape($required)) { throw ('Runtime prompt missing: ' + $required) }
 }
+if ($prompt -match '(?<!公)2米') { throw 'Runtime prompt leaked Mainland length unit 2米.' }
 foreach ($unsafe in @('危險標題','夜光','真皮','送氣筒','五人聯動','各5組')) {
     if ($prompt -match [regex]::Escape($unsafe)) { throw ('Runtime prompt leaked title/variant-specific text: ' + $unsafe) }
 }
 $compact = Get-CompactTransportPromptV2 'main' '危險標題 夜光 真皮 送氣筒 五人聯動'
-foreach ($required in @('2米','30磅','腰帶','黑色')) {
+foreach ($required in @('2公尺','30磅','腰帶','黑色')) {
     if ($compact -notmatch [regex]::Escape($required)) { throw ('Compact runtime prompt missing: ' + $required) }
 }
+if ($compact -match '(?<!公)2米') { throw 'Compact retry leaked Mainland length unit 2米.' }
 if ($compact -match '夜光|真皮|送氣筒|五人聯動|各5組') { throw 'Compact retry leaked unsafe title/variant-specific text.' }
 
 Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
-Write-Host '[PASS] V4-A.2 Reference Safety: runtime loader, all-original analysis, safe subset selection, prompt title isolation, and compact retry facts passed.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.2 Reference Safety: runtime loader, all-original analysis, safe subset selection, Taiwan-localized factual output, prompt title isolation, and compact retry facts passed.' -ForegroundColor Green
