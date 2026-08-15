@@ -1,0 +1,43 @@
+name: V4-B Full 580 End-to-End
+
+on:
+  push:
+    branches:
+      - v4b-original-image-localization
+
+jobs:
+  full-580:
+    if: github.event.head_commit.message == 'RUN-V4B-FULL-580'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Normalize PowerShell encoding
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\start\encoding_fix.ps1
+
+      - name: V4-B final static gates
+        shell: powershell
+        run: |
+          & .\_system\tests\v4b_planner_smoke.ps1
+          & .\_system\tests\v4b_source_conflict_smoke.ps1
+          & .\_system\tests\v4b_verified_overlay_smoke.ps1
+
+      - name: Full 580 V4-B optimization
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+        run: |
+          & .\_system\tests\v4b_live_full_580.ps1
+
+      - name: Upload full 580 result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-V4-B-Full-580
+          path: _system/live_e2e_output_v4b_full_580/
+          if-no-files-found: ignore
