@@ -24,8 +24,13 @@ $guard = Get-V4BVariantConflictPrompt $product
 Assert-V4BConflict ($guard -match '具體件數、片數、入數、組數、套數、條數') 'generic quantity-conflict suppression rule missing'
 Assert-V4BConflict ($guard -match '共同已驗證的長度、重量、阻力') 'non-count shared specs should remain allowed'
 $sellerGuard = Get-V4BSourceSellerPolicyPrompt
-foreach ($term in @('價格','包郵','包退','售後承諾')) {
+foreach ($term in @('價格','包郵','包退','售後承諾','低敏','親膚','整個文字標籤')) {
     Assert-V4BConflict ($sellerGuard -match [regex]::Escape($term)) ('seller-policy cleanup missing: ' + $term)
+}
+Assert-V4BConflict ($sellerGuard -match '禁止把它改寫成') 'seller promise must be removed without replacement claim'
+$iconGuard = Get-V4BIconTextPrompt
+foreach ($term in @('KG','LB','CM','MM','IN','30磅')) {
+    Assert-V4BConflict ($iconGuard -match [regex]::Escape($term)) ('unit-icon guard missing: ' + $term)
 }
 
 $selDir = Get-SelectionWorkspaceV2
@@ -33,8 +38,9 @@ New-Item -ItemType Directory -Path $selDir -Force | Out-Null
 $product | ConvertTo-Json -Depth 14 | Set-Content -LiteralPath (Join-Path $selDir 'selected_product.json') -Encoding UTF8
 $prompt = Get-PromptV2 'detail4' $product
 Assert-V4BConflict ($prompt -match '來源賣家促銷／承諾清理') 'seller-policy cleanup section missing from prompt'
+Assert-V4BConflict ($prompt -match '圖示與單位文字硬限制') 'unit-icon cleanup section missing from prompt'
 Assert-V4BConflict ($prompt -match '數量／套組數有差異') 'quantity-conflict section missing from prompt'
 Assert-V4BConflict ($prompt -notmatch '各5組') 'variant-specific quantity must not be seeded into prompt'
 Assert-V4BConflict ($prompt -match '2公尺' -and $prompt -match '30磅' -and $prompt -match '腰帶' -and $prompt -match '黑色') 'common verified facts were lost while suppressing quantity conflict'
 
-Write-Host 'V4-B source quantity-conflict and seller-policy cleanup smoke: PASS' -ForegroundColor Green
+Write-Host 'V4-B quantity conflict, seller-promise deletion, and unit-icon smoke: PASS' -ForegroundColor Green

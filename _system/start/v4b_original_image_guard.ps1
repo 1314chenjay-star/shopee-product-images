@@ -39,7 +39,11 @@ function Get-V4BVariantConflictPrompt($Product) {
 }
 
 function Get-V4BSourceSellerPolicyPrompt {
-    return '來源圖中的原賣家促銷與交易承諾不是商品屬性：價格、折扣、滿減、包郵／免郵、包退、七天無理由、運費險、限時、銷量、廠家直銷、售後承諾、正品賠付等文字，即使看得清楚也不要翻譯或重建；直接刪除或用乾淨版面取代。除非未來有本賣場獨立驗證的交易政策資料，否則不得沿用其他賣家的承諾。'
+    return '來源圖中的原賣家促銷與交易承諾不是商品屬性。價格、折扣、滿減、包郵／免郵、包退、退貨承諾、七天無理由、運費險、限時、銷量、廠家直銷、售後承諾、正品賠付等文字，即使看得清楚也必須把「整個文字標籤／整個承諾詞組」刪除，不翻譯、不重建、不保留其中一半。尤其看到含「包退／退換／售後」的詞組時，禁止把它改寫成「低敏、溫和、親膚、安全、安心、品質保證」等替代商品賣點。刪除後寧可留白、延續背景或使用純圖形，不補任何替代宣稱。除非未來有本賣場獨立驗證的交易政策資料，否則不得沿用其他賣家的承諾。'
+}
+
+function Get-V4BIconTextPrompt {
+    return '純裝飾圖示可以保留或重新整理，但圖示／徽章內不要自行加入可辨識的拉丁字母、數字或單位縮寫，例如 KG、LB、CM、MM、IN。已驗證的尺寸或阻力若要顯示，直接在一般文字區使用完整台灣顯示值（例如 2公尺、30磅），不要再配一個帶不同單位字母的 icon，以免產生錯誤單位或矛盾。'
 }
 
 function Get-V4BSlotRoleText([string]$Slot) {
@@ -98,6 +102,8 @@ function Get-PromptV2([string]$Slot, $ProductOrName) {
         '看不清楚、被遮住、語意不確定或來源彼此衝突的文字不要猜；可保留成不可辨識視覺、減少文字或省略。不要假裝 OCR 已驗證成功，本地流程沒有 OCR 真值保證。',
         '[來源賣家促銷／承諾清理]',
         (Get-V4BSourceSellerPolicyPrompt),
+        '[圖示與單位文字硬限制]',
+        (Get-V4BIconTextPrompt),
         '[禁止虛構]',
         '禁止自行新增或推測：功能、材質、尺寸、數量、規格、型號、配件、贈品、套組內容、認證、醫療／防護／安全承諾，以及防水、防汗、透氣、親膚、耐磨、減震、支撐、矯正等效果。只有來源原圖清楚存在或結構化共同已驗證資訊支持時才可保留。',
         ('[多規格／衝突規則] ' + $variantGuard),
@@ -115,11 +121,10 @@ function Get-CompactTransportPromptV2([string]$Slot, $ProductOrName) {
     $label = Get-V4BSafeProductLabel $product
     $generic = Get-V4BGenericPromptText $slotPlan
     $variantGuard = Get-V4BVariantConflictPrompt $product
-    $text = "V4-B EDIT/PRESERVE/LOCALIZE：商品類型僅辨識為「$label」。只編修提供的真實原圖，不重新設計商品。保留原圖清楚存在的商品與商品屬性並翻成自然台灣繁體；看不清就省略，不猜測，不假裝OCR成功。原圖沒有的人物、場景、零件、功能、材質、尺寸、數量、配件、贈品、認證、功效與安全承諾都禁止新增。品牌、型號、SKU與數值不得改義。來源圖的價格、折扣、包郵、包退、售後承諾、限時與原賣家促銷文字不要重建。$variantGuard 安全通用文字僅可用：$generic。資訊不足就少寫。"
+    $text = "V4-B EDIT/PRESERVE/LOCALIZE：商品類型僅辨識為「$label」。只編修提供的真實原圖，不重新設計商品。保留原圖清楚存在的商品與商品屬性並翻成自然台灣繁體；看不清就省略，不猜測，不假裝OCR成功。原圖沒有的人物、場景、零件、功能、材質、尺寸、數量、配件、贈品、認證、功效與安全承諾都禁止新增。品牌、型號、SKU與數值不得改義。來源圖的價格、折扣、包郵、包退、售後承諾、限時與原賣家促銷文字必須整個刪除，禁止改寫成低敏、親膚、安全、安心等替代賣點。規格圖示不要自行放 KG、LB、CM、MM、IN 或其他單位字母。$variantGuard 安全通用文字僅可用：$generic。資訊不足就少寫。"
     return (Convert-ToTaiwanCommerceTextV4B $text)
 }
 
-# V4-B does not use layout novelty as a reason to redesign a faithful source image.
 function Get-LayoutRetryPromptV2([string]$Slot, [int]$LayoutAttempt) {
     if ($LayoutAttempt -le 0) {
         return "`n[V4-B 構圖規則] 以來源原圖構圖為基礎，只做必要的1:1裁切、留白與資訊整理；不要為了和其他五圖不同而創造新商品畫面。"
