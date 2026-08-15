@@ -49,4 +49,9 @@ foreach ($required in @("round='R9'",'schema_version=2','head_sha','run_id','run
     Assert-V4BMetadata ($fullRunner -match [regex]::Escape($required)) ('R9 summary metadata missing: ' + $required)
 }
 
+$highRiskWorkflow = Get-Content -LiteralPath (Join-Path $root '.github\workflows\v4b-live-high-risk-r10.yml') -Raw -Encoding UTF8
+foreach ($required in @('RUN-V4B-HIGH-RISK-R10','V4B_ARTIFACT_NAME: TinySnow-V4-B-High-Risk-R10','id: payload','steps.payload.outputs.artifact-id','v4b_high_risk_r10_artifact_receipt.json','artifact_id = $env:PAYLOAD_ARTIFACT_ID','head_sha = $env:GITHUB_SHA','run_id = $env:GITHUB_RUN_ID')) {
+    Assert-V4BMetadata ($highRiskWorkflow -match [regex]::Escape($required)) ('R10 artifact receipt missing: ' + $required)
+}
+
 Write-Host 'V4-B round/head/run/artifact metadata smoke: PASS' -ForegroundColor Green
