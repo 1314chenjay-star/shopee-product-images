@@ -38,4 +38,9 @@ $watch.Stop()
 if ([string]$returnValue -ne '') { throw 'Legacy menu pause was not auto-answered.' }
 if ($watch.ElapsedMilliseconds -gt 2500) { throw ('Legacy menu pause took too long: ' + $watch.ElapsedMilliseconds + 'ms') }
 
-Write-Host '[PASS] V4-A.2 menu loader regression: legacy visual reload cannot override final guards, and the old Enter-to-return prompt now returns automatically.' -ForegroundColor Green
+# Cosmetic stale build text in the old menu file must render as V4-A.2 without rewriting API-key input logic.
+$rendered = (& { Write-Host 'Build: V4-A.1｜真實資料＋視覺數量鎖定版' -ForegroundColor Yellow } 6>&1 | Out-String)
+if ($rendered -notmatch 'V4-A\.2｜Reference Safety＋台灣在地化版') { throw 'Legacy V4-A.1 menu build label was not replaced.' }
+if ($rendered -match 'V4-A\.1｜真實資料') { throw 'Legacy V4-A.1 menu build label still rendered.' }
+
+Write-Host '[PASS] V4-A.2 menu loader/UX regression: final guards survive duplicate legacy load, Enter-to-return is automatic, and the stale menu build label renders as V4-A.2.' -ForegroundColor Green
