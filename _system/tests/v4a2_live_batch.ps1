@@ -10,6 +10,7 @@ $startRoot = Join-Path $systemRoot 'start'
 . (Join-Path $startRoot 'v4a1_guard.ps1')
 
 if ($null -eq (Get-Command Get-V4A2ImageSignal -ErrorAction SilentlyContinue)) { throw 'V4-A.2 runtime layer not loaded.' }
+if ($null -eq (Get-Command Convert-ToTaiwanCommerceTextV4A2 -ErrorAction SilentlyContinue)) { throw 'Taiwan localization runtime layer not loaded.' }
 $key = [string]$env:TINYSNOW_API_KEY
 if ([string]::IsNullOrWhiteSpace($key)) { throw 'TINYSNOW_API_KEY repository secret is missing.' }
 
@@ -58,24 +59,27 @@ function Save-LiveSelectionV4A2($Product) {
 function Test-LivePromptV4A2([string]$ProductId, [string]$Prompt) {
     switch ($ProductId) {
         '58015741169' {
-            foreach ($v in @('2米','30磅','腰帶','黑色')) { if ($Prompt -notmatch [regex]::Escape($v)) { throw ('580 prompt missing ' + $v) } }
-            if ($Prompt -match '5組|五人聯動|32cm|60cm|9cm|尼龍|橡膠|金屬') { throw '580 unsafe fact leaked.' }
+            foreach ($v in @('2公尺','30磅','腰帶','黑色','籃球訓練阻力繩')) { if ($Prompt -notmatch [regex]::Escape($v)) { throw ('580 prompt missing Taiwan/common fact: ' + $v) } }
+            if ($Prompt -match '(?<!公)2米|5組|五人聯動|32cm|60cm|9cm|尼龍|橡膠|金屬') { throw '580 unsafe or non-Taiwan fact leaked.' }
         }
         '57565745174' {
-            if ($Prompt -notmatch 'VZJ-004S') { throw '575 model missing.' }
+            foreach ($v in @('VZJ-004S','排球訓練器')) { if ($Prompt -notmatch [regex]::Escape($v)) { throw ('575 prompt missing Taiwan/model value: ' + $v) } }
             if ($Prompt -match '尼龍|D-ring|D型環|附球|提升反應|提升球技') { throw '575 unsafe fact leaked.' }
         }
         '52915734564' {
-            if ($Prompt -match '不傷膝|不傷肌膚|降低不適|高彈棉質|親膚黏膠|防汗防水|20片|40片|10片') { throw '529 unsafe or variant quantity leaked.' }
+            if ($Prompt -notmatch '運動肌貼') { throw '529 Taiwan product label missing.' }
+            if ($Prompt -match '肌肉貼|不傷膝|不傷肌膚|降低不適|高彈棉質|親膚黏膠|防汗防水|20片|40片|10片') { throw '529 unsafe, Mainland, or variant quantity leaked.' }
         }
         '53615734484' {
+            if ($Prompt -notmatch '排球') { throw '536 neutral Taiwan product label missing.' }
             if ($Prompt -match '夜光|發光|變色|真皮|柔韌手感|氣筒|收納袋|精美套裝') { throw '536 variant-specific/unsupported fact leaked.' }
         }
         '53215734553' {
+            if ($Prompt -notmatch '籃球') { throw '532 neutral Taiwan product label missing.' }
             if ($Prompt -match '真皮|吸汗防滑|內外通用|耐磨耐打|氣筒|收納袋|OFFICIAL SIZE|INDOOR') { throw '532 variant-specific/unsupported fact leaked.' }
         }
     }
-    if ($Prompt -notmatch 'Reference Safety') { throw ('Reference Safety prompt missing for ' + $ProductId) }
+    if ($Prompt -notmatch '台灣') { throw ('Taiwan localization hard rule missing for ' + $ProductId) }
 }
 
 $cases = @(
@@ -108,7 +112,7 @@ $cases = @(
 
 $summary = @()
 foreach ($case in $cases) {
-    Write-Host ('[LIVE] ' + $case.id + '｜download all originals -> Reference Safety -> TinySnow') -ForegroundColor Cyan
+    Write-Host ('[LIVE] ' + $case.id + '｜download all originals -> Reference Safety -> Taiwan Localization -> TinySnow') -ForegroundColor Cyan
     $product = New-LiveProductV4A2 $case.id $case.name $case.category ([string[]]$case.urls) $case.variation ([string[]]$case.options)
     Save-LiveSelectionV4A2 $product
     $download = Download-ProductImagesV2 $product
@@ -141,4 +145,4 @@ foreach ($case in $cases) {
     }
 }
 $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $outDir 'v4a2_batch_summary.json') -Encoding UTF8
-Write-Host '[PASS] V4-A.2 five-product real Shopee batch completed: all originals analyzed, safe subsets selected, and five TinySnow images generated.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.2 five-product Taiwan live batch completed: all originals analyzed, safe subsets selected, Taiwan-localized prompts validated, and five TinySnow images generated.' -ForegroundColor Green
