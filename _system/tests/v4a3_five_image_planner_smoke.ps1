@@ -40,7 +40,7 @@ try {
     Assert-V4A3 ([string]$selectedFixture.product_category -eq 'Sports & Outdoors/Basketball/Training') 'selection must preserve product category'
     $selectedReloaded = Get-SelectedProductV2
     Assert-V4A3 (@($selectedReloaded.variants).Count -eq 2) 'selected_product.json must persist variants'
-    Assert-V4A3 ([string]$selectedReloaded.verified_facts.verified_dimensions[0] -eq '2米') 'selected_product.json must persist verified fact values'
+    Assert-V4A3 (@($selectedReloaded.verified_facts.verified_dimensions) -contains '2米') 'selected_product.json must persist verified fact values'
 }
 finally {
     if (Test-Path -LiteralPath $catalogBackup) { Move-Item -LiteralPath $catalogBackup -Destination $catalogPath -Force } else { Remove-Item -LiteralPath $catalogPath -Force -ErrorAction SilentlyContinue }
