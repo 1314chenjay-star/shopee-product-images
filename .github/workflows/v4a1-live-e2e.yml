@@ -45,24 +45,7 @@ jobs:
         env:
           TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
         run: |
-          $path = '.\_system\tests\v4a2_live_batch.ps1'
-          $lines = @(Get-Content -LiteralPath $path -Encoding UTF8)
-          $changed = 0
-          for ($i = 0; $i -lt $lines.Count; $i++) {
-            if ($lines[$i] -like "*'2米','30磅','腰帶','黑色'*") {
-              $lines[$i] = $lines[$i].Replace("'2米'", "'2公尺'")
-              $changed++
-            }
-            if ($lines[$i] -like "*Reference Safety prompt missing for*") {
-              $lines[$i] = ''
-            }
-          }
-          if ($changed -lt 1) { throw 'Live compatibility patch did not find the legacy 2米 assertion.' }
-          $lines | Set-Content -LiteralPath $path -Encoding UTF8
-          $patched = Get-Content -LiteralPath $path -Raw -Encoding UTF8
-          if ($patched -match "@\('2米','30磅','腰帶','黑色'\)") { throw 'Legacy 2米 assertion still exists after patch.' }
-          if ($patched -notmatch "@\('2公尺','30磅','腰帶','黑色'\)") { throw 'Taiwan 2公尺 assertion was not installed.' }
-          & $path
+          & .\_system\tests\v4a2_live_batch.ps1
 
       - name: Upload live result
         if: always()
