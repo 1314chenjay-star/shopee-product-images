@@ -52,7 +52,7 @@ $refs = [string[]]@(Get-ReferencesForSlotV2 $analysis $slot 2)
 if ($refs.Count -lt 1 -or $refs.Count -gt 2) { throw '580 detail2 invalid reference count.' }
 if ([bool]$plan.high_variant_conflict -and $refs.Count -ne 1) { throw '580 high-conflict detail2 must use one safest reference.' }
 $prepared = [string[]]@(Get-PreparedApiReferencesV2 '58015741169' $refs)
-$prompt = Get-PromptV2 $slot $product
+$prompt = Get-PromptV2 $slot ([string]$product.product_name)
 if ($null -ne (Get-Command Get-LayoutRetryPromptV2 -ErrorAction SilentlyContinue)) { $prompt += Get-LayoutRetryPromptV2 $slot 0 }
 foreach ($required in @('2公尺','30磅','腰帶','黑色','籃球訓練阻力繩')) { if ($prompt -notmatch [regex]::Escape($required)) { throw ('580 prompt missing: ' + $required) } }
 if ($prompt -match '(?<!公)2米|5組|五人聯動|32cm|60cm|9cm|尼龍|橡膠|金屬|彈力繩|連接扣') { throw '580 unsafe/invented fact or local label leaked.' }
