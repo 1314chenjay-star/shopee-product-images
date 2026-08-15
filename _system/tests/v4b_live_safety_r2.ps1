@@ -11,7 +11,12 @@ $startRoot = Join-Path $systemRoot 'start'
 
 $key = [string]$env:TINYSNOW_API_KEY
 if ([string]::IsNullOrWhiteSpace($key)) { throw 'TINYSNOW_API_KEY repository secret is missing.' }
-$outDir = Join-Path $systemRoot 'live_e2e_output_v4b_safety_r2'
+$round = if ([string]::IsNullOrWhiteSpace([string]$env:V4B_SAFETY_ROUND)) { 'R2' } else { ([string]$env:V4B_SAFETY_ROUND).Trim().ToUpperInvariant() }
+$slug = if ([string]::IsNullOrWhiteSpace([string]$env:V4B_SAFETY_SLUG)) { $round.ToLowerInvariant() } else { ([string]$env:V4B_SAFETY_SLUG).Trim().ToLowerInvariant() }
+if ($slug -notmatch '^[a-z0-9_-]+$') { throw ('V4B_SAFETY_SLUG is invalid: ' + $slug) }
+$artifactName = if ([string]::IsNullOrWhiteSpace([string]$env:V4B_ARTIFACT_NAME)) { 'TinySnow-V4-B-Safety-' + $round } else { ([string]$env:V4B_ARTIFACT_NAME).Trim() }
+$outDirName = 'live_e2e_output_v4b_safety_' + $slug
+$outDir = Join-Path $systemRoot $outDirName
 if (Test-Path -LiteralPath $outDir) { Remove-Item -LiteralPath $outDir -Recurse -Force }
 New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 $config = [pscustomobject]@{api_key=$key;base_url='https://tinysnow.one/v1';model='gpt-image-2';quality='medium';size='1024x1024';safe_test_mode=$true;max_reference_images=2;transport_profile='r3_120s_safe'}
@@ -40,7 +45,7 @@ function Invoke-R2($Prepared,[string]$Slot){
     $prompt|Set-Content -LiteralPath (Join-Path $outDir ($id+'_'+$Slot+'_prompt.txt')) -Encoding UTF8
     $sp|ConvertTo-Json -Depth 12|Set-Content -LiteralPath (Join-Path $outDir ($id+'_'+$Slot+'_slot_plan.json')) -Encoding UTF8
     for($i=0;$i-lt$refs.Count;$i++){Copy-Item -LiteralPath $refs[$i] -Destination (Join-Path $outDir ($id+'_'+$Slot+'_selected_ref'+($i+1)+'.png')) -Force}
-    $apiRefs=[string[]]@(Get-PreparedApiReferencesV2 $id $refs);Write-Host ('[LIVE V4-B SAFETY R2] '+$id+' / '+$Slot) -ForegroundColor Cyan
+    $apiRefs=[string[]]@(Get-PreparedApiReferencesV2 $id $refs);Write-Host ('[LIVE V4-B SAFETY '+$round+'] '+$id+' / '+$Slot) -ForegroundColor Cyan
     $tmp=Invoke-ImageEditMultiV2 $config $apiRefs $prompt '1024x1024' 'medium';$out=Join-Path $outDir ($id+'_'+$Slot+'_live.jpg');Convert-ToFinalJpegV2 $tmp $out|Out-Null;Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
     return [pscustomobject]@{product_id=$id;slot=$Slot;source_mode=[string]$sp.source_mode;output_file=(Split-Path $out -Leaf);bytes=(Get-Item -LiteralPath $out).Length;sha256=(Get-FileHash -LiteralPath $out -Algorithm SHA256).Hash.ToLowerInvariant()}
 }
@@ -59,5 +64,22 @@ Assert-LiveR2 ($pr529-notmatch'10片|20片|40片') '529 variant-only quantities 
 Assert-LiveR2 ($pr529-match'包退') '529 prompt must explicitly suppress source seller return promise'
 
 $results=@();$results+=Invoke-R2 $a580 'detail4';$results+=Invoke-R2 $a529 'detail4'
-[pscustomobject]@{version='V4-B safety R2';generated_image_count=2;tests=[object[]]$results;visual_review_required=$true}|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $outDir 'v4b_safety_r2_summary.json') -Encoding UTF8
-Write-Host '[PASS] V4-B safety R2 technical gate: 580 detail4 + 529 detail4 generated.' -ForegroundColor Green
+$summaryName = 'v4b_safety_' + $slug + '_summary.json'
+[pscustomobject]@{
+    schema_version=2
+    version=('V4-B Safety '+$round)
+    round=$round
+    head_sha=[string]$env:GITHUB_SHA
+    run_id=[string]$env:GITHUB_RUN_ID
+    run_attempt=[string]$env:GITHUB_RUN_ATTEMPT
+    workflow_name=[string]$env:GITHUB_WORKFLOW
+    repository=[string]$env:GITHUB_REPOSITORY
+    artifact_name=$artifactName
+    artifact_id=$null
+    artifact_id_status='assigned_after_payload_upload; see matching artifact receipt and GitHub job summary'
+    output_directory=$outDirName
+    generated_image_count=2
+    tests=[object[]]$results
+    visual_review_required=$true
+}|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $outDir $summaryName) -Encoding UTF8
+Write-Host ('[PASS] V4-B Safety '+$round+' technical gate: 580 detail4 + 529 detail4 generated. Summary: '+$summaryName) -ForegroundColor Green

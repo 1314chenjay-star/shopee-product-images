@@ -15,10 +15,15 @@ function Test-V4BQuantityConflict($Product) {
 }
 
 function Test-V4BNeedsConflictTextShield($Product, $Analysis, [string]$Slot) {
-    if ($Slot -ne 'main' -and $Slot -ne 'detail4') { return $false }
+    if (@('main','detail2','detail3','detail4') -notcontains $Slot) { return $false }
     $highConflict = [bool](Get-V4A1Property $Analysis 'high_variant_conflict' $false)
     if (-not $highConflict) { return $false }
     return (Test-V4BQuantityConflict $Product)
+}
+
+function Test-V4BNeedsConflictProductFocus([string]$Slot, [bool]$HighConflict, [bool]$QuantityConflict) {
+    if (-not $HighConflict -or -not $QuantityConflict) { return $false }
+    return (@('main','detail2','detail4') -contains $Slot)
 }
 
 function Get-V4BAnalysisCandidates($Analysis) {
@@ -151,12 +156,14 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             }
         }
 
-        # For a high-conflict quantity product, detail4 must not default to a busy scene merely because
-        # it is next in position/risk order. Prefer a deterministic center-dominant visual source.
+        # For a high-conflict quantity product, the cover, structure view and specification view must
+        # not default to a busy scene or seller-package label merely because it is next in position/risk
+        # order. Prefer one deterministic center-dominant visual source for the affected slots.
         # This remains category-agnostic and does not claim semantic image understanding.
-        if ($slot -eq 'detail4' -and $highConflict -and $quantityConflict -and $null -ne $productFocus) {
+        $productFocusRequired = Test-V4BNeedsConflictProductFocus $slot $highConflict $quantityConflict
+        if ($productFocusRequired -and $null -ne $productFocus) {
             $sourceItems = @($productFocus)
-            $reason = '多規格數量衝突的規格／補充圖：優先使用中心商品訊號較強、外圍場景較少的真實原圖，再遮蔽衝突文字；不依商品ID或類目硬編碼。'
+            $reason = '多規格數量衝突的高風險 slot：優先使用中心商品訊號較強、外圍場景／包裝標籤較少的真實原圖，再遮蔽衝突文字；不依商品ID或類目硬編碼。'
         }
 
         $shield = Test-V4BNeedsConflictTextShield $Product $Analysis $slot
@@ -173,6 +180,9 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             semantic_check = 'no_local_ocr_no_fake_semantic_certainty'
             text_shield_required = $shield
             runtime_reference_strategy = $(if ($shield) { 'conflict_text_shield_proxy' } else { 'original_source' })
+            source_selection_policy = $(if ($productFocusRequired) { 'product_focus_proxy' } else { 'direct_source_order' })
+            verified_text_policy = $(if ($shield) { 'deterministic_overlay_only' } else { 'source_localization_allowed' })
+            reference_proxy_max_edge = $(if ($shield) { 384 } else { 0 })
             visual_proxy_center_dominance = $(if ($sourceItems.Count -gt 0) { [double](Get-V4A1Property $sourceItems[0] 'center_dominance' 0.0) } else { 0.0 })
             visual_proxy_product_focus = $(if ($sourceItems.Count -gt 0) { [double](Get-V4A1Property $sourceItems[0] 'product_focus_proxy' 0.0) } else { 0.0 })
         }
@@ -188,6 +198,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
         quantity_conflict = $quantityConflict
         strategy = 'edit_preserve_localize_fill_to_five'
         no_ocr_claim = $true
+        conflict_closure_policy = 'product_focus_main_detail2_detail4_and_text_free_main_detail2_detail3_detail4'
         slots = [object[]]$slotPlans
     }
 
@@ -251,7 +262,10 @@ function Get-ReferencesForSlotV2($Analysis, [string]$Slot, [int]$Maximum) {
                 $shielded = @()
                 foreach ($path in $paths) {
                     $risk = Get-V4BReferenceRisk $Analysis $path
-                    $proxy = New-V4A2ReferenceProxy $productId $path $risk $true
+                    # Force the strongest existing downscale tier for conflict-shielded slots. The local
+                    # runtime still does not claim OCR; this only reduces direct source-text reconstruction.
+                    $proxyRisk = [Math]::Max(0.58, $risk)
+                    $proxy = New-V4A2ReferenceProxy $productId $path $proxyRisk $true
                     if ($shielded -notcontains $proxy) { $shielded += $proxy }
                 }
                 if ($shielded.Count -gt 0) { return [string[]]$shielded }

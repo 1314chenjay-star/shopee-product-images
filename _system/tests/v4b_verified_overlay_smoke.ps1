@@ -43,6 +43,18 @@ $analysis=[pscustomobject]@{product_id='90000040001';high_variant_conflict=$true
 $plan=New-V4BSourceImagePlan $product $analysis
 $script:V4BSourcePlanCache[[string]$product.product_id]=$plan
 
+foreach($slot in @('main','detail2','detail3','detail4')){
+    $slotPlan=Get-V4BPlanSlot $plan $slot
+    Assert-V4BOverlay ([bool]$slotPlan.text_shield_required) ($slot+' must use conflict text shield')
+    Assert-V4BOverlay ([string]$slotPlan.verified_text_policy -eq 'deterministic_overlay_only') ($slot+' verified-text policy mismatch')
+    $slotContent=Get-V4BVerifiedOverlayContent $product $slot
+    Assert-V4BOverlay ([string]$slotContent.title-eq'籃球訓練阻力繩') ($slot+' overlay must use the verified Taiwan product label')
+    Assert-V4BOverlay ([string]$slotContent.title-notmatch'區域聯防') ($slot+' overlay leaked unsupported source wording')
+    $slotPrompt=Get-PromptV2 $slot $product
+    Assert-V4BOverlay ($slotPrompt-match'不要生成任何可辨識文字') ($slot+' TinySnow stage must remain text-free')
+    Assert-V4BOverlay ($slotPrompt-notmatch'區域聯防') ($slot+' prompt seeded unsupported source wording')
+}
+
 $content=Get-V4BVerifiedOverlayContent $product 'detail4'
 Assert-V4BOverlay ([string]$content.title -eq '籃球訓練阻力繩') ('unexpected overlay title: '+[string]$content.title)
 foreach($required in @('2公尺','30磅','腰帶','黑色')){Assert-V4BOverlay ([string]$content.secondary -match [regex]::Escape($required)) ('verified overlay missing: '+$required)}

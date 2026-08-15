@@ -34,6 +34,9 @@ jobs:
         shell: powershell
         env:
           TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+          V4B_SAFETY_ROUND: R4
+          V4B_SAFETY_SLUG: r4
+          V4B_ARTIFACT_NAME: TinySnow-V4-B-Safety-R4
         run: |
           & .\_system\tests\v4b_live_safety_r2.ps1
 
@@ -42,5 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TinySnow-V4-B-Safety-R4
-          path: _system/live_e2e_output_v4b_safety_r2/
+          path: _system/live_e2e_output_v4b_safety_r4/
           if-no-files-found: ignore

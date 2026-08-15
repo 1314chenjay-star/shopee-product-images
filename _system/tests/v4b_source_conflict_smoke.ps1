@@ -42,9 +42,16 @@ $analysis = [pscustomobject]@{
 }
 $plan = New-V4BSourceImagePlan $product $analysis
 Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'main').text_shield_required) 'quantity-conflict main must request text shield'
+Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'detail2').text_shield_required) 'quantity-conflict detail2 must request text shield'
+Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'detail3').text_shield_required) 'quantity-conflict detail3 must request text shield'
 Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'detail4').text_shield_required) 'quantity-conflict detail4 must request text shield'
 Assert-V4BConflict (-not [bool](Get-V4BPlanSlot $plan 'detail1').text_shield_required) 'detail1 should retain source-text localization ability'
 Assert-V4BConflict ([string](Get-V4BPlanSlot $plan 'detail4').runtime_reference_strategy -eq 'conflict_text_shield_proxy') 'detail4 runtime strategy must be conflict_text_shield_proxy'
+foreach ($slot in @('main','detail2','detail3','detail4')) {
+    $shieldedSlotPlan = Get-V4BPlanSlot $plan $slot
+    Assert-V4BConflict ([string]$shieldedSlotPlan.verified_text_policy -eq 'deterministic_overlay_only') ($slot + ' must use deterministic verified text only')
+    Assert-V4BConflict ([int]$shieldedSlotPlan.reference_proxy_max_edge -eq 384) ($slot + ' must use the strongest text-shield proxy tier')
+}
 Assert-V4BConflict ((Get-V4BSourceModePrompt (Get-V4BPlanSlot $plan 'detail4')) -match '不要猜測、還原、補全') 'shielded slot prompt must prohibit reconstruction of blurred source text'
 
 # Slot-aware visual source selection must prefer center-dominant product structure over a safer-looking busy scene.
@@ -59,11 +66,15 @@ $visualCandidates = @(
 $analysisVisual = [pscustomobject]@{product_id='90000030002';high_variant_conflict=$true;reference_safety=[object[]]$visualCandidates;images=[object[]]$visualCandidates}
 $productVisual = $product.PSObject.Copy(); $productVisual.product_id='90000030002'
 $planVisual = New-V4BSourceImagePlan $productVisual $analysisVisual
-$d4Visual = Get-V4BPlanSlot $planVisual 'detail4'
-Assert-V4BConflict (@($d4Visual.source_indices).Count -eq 1) 'detail4 product-focus source must remain one source'
-Assert-V4BConflict ([int]$d4Visual.source_indices[0] -eq 2) ('detail4 should choose center-dominant product source, got position ' + [string]$d4Visual.source_indices[0])
-Assert-V4BConflict ([double]$d4Visual.visual_proxy_center_dominance -gt 0.10) 'detail4 selected source should expose positive center-dominance proxy'
-Assert-V4BConflict ($d4Visual.fill_reason -match '中心商品訊號') 'detail4 plan must explain proxy-based source preference'
+foreach ($slot in @('main','detail2','detail4')) {
+    $visual = Get-V4BPlanSlot $planVisual $slot
+    Assert-V4BConflict (@($visual.source_indices).Count -eq 1) ($slot + ' product-focus source must remain one source')
+    Assert-V4BConflict ([int]$visual.source_indices[0] -eq 2) ($slot + ' should choose center-dominant product source, got position ' + [string]$visual.source_indices[0])
+    Assert-V4BConflict ([double]$visual.visual_proxy_center_dominance -gt 0.10) ($slot + ' selected source should expose positive center-dominance proxy')
+    Assert-V4BConflict ($visual.fill_reason -match '中心商品訊號') ($slot + ' plan must explain proxy-based source preference')
+    Assert-V4BConflict ([string]$visual.source_selection_policy -eq 'product_focus_proxy') ($slot + ' source-selection policy mismatch')
+}
+Assert-V4BConflict ([bool](Test-V4BSourcePlan $planVisual $false).passed) 'conflict-closure source plan validation failed'
 
 $selDir = Get-SelectionWorkspaceV2
 New-Item -ItemType Directory -Path $selDir -Force | Out-Null
@@ -76,5 +87,8 @@ Assert-V4BConflict ($prompt -match '衝突文字遮蔽') 'shield directive missi
 Assert-V4BConflict ($prompt -match '數量／套組數有差異') 'quantity-conflict section missing from prompt'
 Assert-V4BConflict ($prompt -notmatch '各5組') 'variant-specific quantity must not be seeded into prompt'
 Assert-V4BConflict ($prompt -match '2公尺' -and $prompt -match '30磅' -and $prompt -match '腰帶' -and $prompt -match '黑色') 'common verified facts were lost while suppressing quantity conflict'
+$detail3Prompt = Get-PromptV2 'detail3' $product
+Assert-V4BConflict ($detail3Prompt -match '程式化驗證文字覆蓋') 'detail3 conflict output must be generated text-free before deterministic overlay'
+Assert-V4BConflict ($detail3Prompt -notmatch '區域聯防') 'unsupported source phrase must not be seeded into detail3 prompt'
 
-Write-Host 'V4-B conflict cleanup, text shield, and proxy-based detail4 source selection smoke: PASS' -ForegroundColor Green
+Write-Host 'V4-B conflict cleanup, product-focus routing, four-slot text shield, and deterministic-overlay policy smoke: PASS' -ForegroundColor Green

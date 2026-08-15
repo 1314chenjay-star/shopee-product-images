@@ -57,6 +57,37 @@ function Test-V4BSourcePlan($Plan, [bool]$RequireFiles) {
             $failedSlots += $slot
         }
     }
+
+    $highConflict = [bool](Get-V4A1Property $Plan 'high_variant_conflict' $false)
+    $quantityConflict = [bool](Get-V4A1Property $Plan 'quantity_conflict' $false)
+    if ($highConflict -and $quantityConflict) {
+        foreach ($slot in @('main','detail2','detail3','detail4')) {
+            $slotPlan = Get-V4BPlanSlot $Plan $slot
+            if ($null -eq $slotPlan -or -not [bool](Get-V4A1Property $slotPlan 'text_shield_required' $false)) {
+                $errors += ($slot + ' 高數量衝突 slot 必須啟用文字遮罩。')
+                $failedSlots += $slot
+            }
+            elseif ([string](Get-V4A1Property $slotPlan 'verified_text_policy' '') -ne 'deterministic_overlay_only') {
+                $errors += ($slot + ' 高數量衝突 slot 必須只使用確定性驗證文字疊加。')
+                $failedSlots += $slot
+            }
+        }
+        foreach ($slot in @('main','detail2','detail4')) {
+            $slotPlan = Get-V4BPlanSlot $Plan $slot
+            $slotPaths = @()
+            if ($null -ne $slotPlan) {
+                $slotPaths = @(Get-V4A1Property $slotPlan 'source_paths' @())
+            }
+            if ($null -eq $slotPlan -or [string](Get-V4A1Property $slotPlan 'source_selection_policy' '') -ne 'product_focus_proxy') {
+                $errors += ($slot + ' 高數量衝突 slot 必須使用商品聚焦來源代理。')
+                $failedSlots += $slot
+            }
+            elseif ($slotPaths.Count -ne 1) {
+                $errors += ($slot + ' 商品聚焦來源必須只使用一張真實原圖。')
+                $failedSlots += $slot
+            }
+        }
+    }
     $failedSlots = [string[]]@($failedSlots | Where-Object { $_ } | Select-Object -Unique)
     return [pscustomobject]@{
         passed = ($errors.Count -eq 0)

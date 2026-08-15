@@ -34,6 +34,9 @@ jobs:
         shell: powershell
         env:
           TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+          V4B_SAFETY_ROUND: R2
+          V4B_SAFETY_SLUG: r2
+          V4B_ARTIFACT_NAME: TinySnow-V4-B-Safety-R2
         run: |
           & .\_system\tests\v4b_live_safety_r2.ps1
 
