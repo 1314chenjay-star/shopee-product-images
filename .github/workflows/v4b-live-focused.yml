@@ -1,0 +1,41 @@
+name: V4-B TinySnow Focused Live
+
+on:
+  push:
+    branches:
+      - v4b-original-image-localization
+
+jobs:
+  live-v4b:
+    if: github.event.head_commit.message == 'RUN-V4B-LIVE-FOCUSED'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Normalize PowerShell encoding
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\start\encoding_fix.ps1
+
+      - name: V4-B static source-planner smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4b_planner_smoke.ps1
+
+      - name: V4-B focused TinySnow live
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+        run: |
+          & .\_system\tests\v4b_live_focused.ps1
+
+      - name: Upload V4-B live review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-V4-B-Focused-Live
+          path: _system/live_e2e_output_v4b/
+          if-no-files-found: ignore
