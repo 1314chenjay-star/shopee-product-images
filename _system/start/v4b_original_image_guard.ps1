@@ -67,7 +67,8 @@ function Get-V4BSourceModePrompt($SlotPlan) {
         default { '來源模式：' + $mode + '。只允許原圖保真編修。' }
     }
     if ([bool](Get-V4A1Property $SlotPlan 'text_shield_required' $false)) {
-        $base += ' [衝突文字遮蔽] 本 slot 因多規格數量衝突，參考圖已被低解析處理以保留商品／人物／場景輪廓但阻止直接抄來源文字。不要猜測、還原、補全或模仿模糊的來源字樣；本張所有新可讀文字只能使用「結構化共同已驗證資訊」或「本 slot 安全通用文字」。來源圖中原本的功能句、件數、促銷字、售後字在此 slot 都不要重建。'
+        $shieldReason = [string](Get-V4A1Property $SlotPlan 'text_shield_reason' 'unspecified_source_text_risk')
+        $base += (' [來源文字遮蔽｜' + $shieldReason + '] 本 slot 的來源文字或規格具有高風險，參考圖已被低解析處理以保留商品／人物／場景輪廓但阻止直接抄來源文字。不要猜測、還原、補全或模仿模糊的來源字樣；本張所有新可讀文字只能使用「結構化共同已驗證資訊」或「本 slot 安全通用文字」。來源圖中原本的功能句、件數、尺寸、材質、促銷字、售後字在此 slot 都不要重建。')
     }
     return $base
 }

@@ -26,6 +26,29 @@ function Test-V4BNeedsConflictProductFocus([string]$Slot, [bool]$HighConflict, [
     return (@('main','detail2','detail4') -contains $Slot)
 }
 
+function Get-V4BVerifiedClaimFactCount($Product) {
+    if ($null -eq $Product) { return 0 }
+    $facts = Get-V4A1Property $Product 'verified_facts' $null
+    if ($null -eq $facts) { return 0 }
+    $values = @()
+    foreach ($name in @('verified_dimensions','verified_materials','verified_accessories','verified_gifts','verified_bundle_contents','verified_resistance_levels','verified_sizes','verified_features','verified_use_cases','verified_certifications')) {
+        $values += @(Get-V4A1Property $facts $name @())
+    }
+    return @($values | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique).Count
+}
+
+function Test-V4BNeedsSparseFactSourceTextShield($Product, [string]$Slot, $SourceItems) {
+    if ($Slot -ne 'detail1') { return $false }
+    if ((Get-V4BVerifiedClaimFactCount $Product) -gt 0) { return $false }
+    $selected = @($SourceItems)
+    if ($selected.Count -eq 0) { return $false }
+    # Reference Safety is deliberately a visual proxy, not OCR. A moderate high-frequency risk
+    # combined with no structured dimensions/materials/accessories/features is enough to make
+    # free source-text localization unsafe for detail1; use text-free generation + verified overlay.
+    $risk = [double](Get-V4A1Property $selected[0] 'local_risk_score' 0.50)
+    return ($risk -ge 0.25)
+}
+
 function Get-V4BAnalysisCandidates($Analysis) {
     $raw = @()
     if ($null -ne $Analysis -and $Analysis.PSObject.Properties.Name -contains 'reference_safety') {
@@ -166,7 +189,10 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             $reason = '多規格數量衝突的高風險 slot：優先使用中心商品訊號較強、外圍場景／包裝標籤較少的真實原圖，再遮蔽衝突文字；不依商品ID或類目硬編碼。'
         }
 
-        $shield = Test-V4BNeedsConflictTextShield $Product $Analysis $slot
+        $quantityShield = Test-V4BNeedsConflictTextShield $Product $Analysis $slot
+        $sparseFactShield = Test-V4BNeedsSparseFactSourceTextShield $Product $slot $sourceItems
+        $shield = ($quantityShield -or $sparseFactShield)
+        $shieldReason = if ($quantityShield) { 'high_quantity_conflict' } elseif ($sparseFactShield) { 'sparse_verified_facts_source_text_risk' } else { 'none' }
         $slotPlans += [pscustomobject]@{
             slot = $slot
             source_mode = $mode
@@ -179,6 +205,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             localization_mode = 'taiwan_traditional_commerce'
             semantic_check = 'no_local_ocr_no_fake_semantic_certainty'
             text_shield_required = $shield
+            text_shield_reason = $shieldReason
             runtime_reference_strategy = $(if ($shield) { 'conflict_text_shield_proxy' } else { 'original_source' })
             source_selection_policy = $(if ($productFocusRequired) { 'product_focus_proxy' } else { 'direct_source_order' })
             verified_text_policy = $(if ($shield) { 'deterministic_overlay_only' } else { 'source_localization_allowed' })
@@ -198,7 +225,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
         quantity_conflict = $quantityConflict
         strategy = 'edit_preserve_localize_fill_to_five'
         no_ocr_claim = $true
-        conflict_closure_policy = 'product_focus_main_detail2_detail4_and_text_free_main_detail2_detail3_detail4'
+        conflict_closure_policy = 'product_focus_main_detail2_detail4; text_free_quantity_conflict_main_detail2_detail3_detail4; sparse_fact_risky_detail1_text_shield'
         slots = [object[]]$slotPlans
     }
 

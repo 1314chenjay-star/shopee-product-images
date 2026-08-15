@@ -54,4 +54,9 @@ foreach ($required in @('RUN-V4B-HIGH-RISK-R10','V4B_ARTIFACT_NAME: TinySnow-V4-
     Assert-V4BMetadata ($highRiskWorkflow -match [regex]::Escape($required)) ('R10 artifact receipt missing: ' + $required)
 }
 
+$r11Workflow = Get-Content -LiteralPath (Join-Path $root '.github\workflows\v4b-live-575-r11.yml') -Raw -Encoding UTF8
+foreach ($required in @('RUN-V4B-575-R11','V4B_ARTIFACT_NAME: TinySnow-V4-B-575-R11','id: payload','steps.payload.outputs.artifact-id','v4b_575_r11_artifact_receipt.json','artifact_id = $env:PAYLOAD_ARTIFACT_ID','head_sha = $env:GITHUB_SHA','run_id = $env:GITHUB_RUN_ID')) {
+    Assert-V4BMetadata ($r11Workflow -match [regex]::Escape($required)) ('R11 artifact receipt missing: ' + $required)
+}
+
 Write-Host 'V4-B round/head/run/artifact metadata smoke: PASS' -ForegroundColor Green

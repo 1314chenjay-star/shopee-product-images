@@ -91,4 +91,34 @@ $detail3Prompt = Get-PromptV2 'detail3' $product
 Assert-V4BConflict ($detail3Prompt -match '程式化驗證文字覆蓋') 'detail3 conflict output must be generated text-free before deterministic overlay'
 Assert-V4BConflict ($detail3Prompt -notmatch '區域聯防') 'unsupported source phrase must not be seeded into detail3 prompt'
 
-Write-Host 'V4-B conflict cleanup, product-focus routing, four-slot text shield, and deterministic-overlay policy smoke: PASS' -ForegroundColor Green
+# A single-variant detail1 can still reconstruct source dimensions/material/performance text even
+# without a variant conflict. When structured claim facts are sparse and the selected source has
+# moderate visual risk, route through the same text-free + deterministic-overlay closure.
+$productSparse = [pscustomobject]@{
+    product_id='90000030003';product_name='排球訓練器材';product_category='Sports/Volleyball';variation_name='款式';variants=[object[]]@();
+    verified_facts=[pscustomobject]@{verified_numbers=[string[]]@();verified_dimensions=[string[]]@();verified_materials=[string[]]@();verified_accessories=[string[]]@();verified_gifts=[string[]]@();verified_bundle_contents=[string[]]@();verified_colors=[string[]]@();verified_sizes=[string[]]@();verified_models=[string[]]@('VZJ-004S');verified_quantities=[string[]]@();verified_resistance_levels=[string[]]@();verified_features=[string[]]@();verified_use_cases=[string[]]@();verified_certifications=[string[]]@();verified_origin=[string[]]@()};
+    multi_variant_flags=[pscustomobject]@{variant_count=1;has_multiple_variants=$false;has_multiple_sizes=$false;has_multiple_colors=$false;has_multiple_quantities=$false;has_multiple_bundle_counts=$false;has_multiple_models=$false;has_multiple_resistance_levels=$false}
+}
+$sparseCandidates = @(
+    [pscustomobject]@{path='C:\refs\cover.png';position=0;duplicate=$false;local_risk_score=0.12;local_safe_score=0.88;center_edge_density=0.10;outer_edge_density=0.08},
+    [pscustomobject]@{path='C:\refs\source_text.png';position=1;duplicate=$false;local_risk_score=0.28;local_safe_score=0.72;center_edge_density=0.14;outer_edge_density=0.09}
+)
+$sparseAnalysis = [pscustomobject]@{product_id='90000030003';high_variant_conflict=$false;reference_safety=[object[]]$sparseCandidates;images=[object[]]$sparseCandidates}
+$sparsePlan = New-V4BSourceImagePlan $productSparse $sparseAnalysis
+$sparseDetail1 = Get-V4BPlanSlot $sparsePlan 'detail1'
+Assert-V4BConflict ([bool]$sparseDetail1.text_shield_required) 'sparse-fact risky detail1 must use source text shield'
+Assert-V4BConflict ([string]$sparseDetail1.text_shield_reason -eq 'sparse_verified_facts_source_text_risk') 'sparse detail1 shield reason mismatch'
+Assert-V4BConflict ([string]$sparseDetail1.verified_text_policy -eq 'deterministic_overlay_only') 'sparse detail1 must use deterministic overlay'
+Assert-V4BConflict ([int]$sparseDetail1.reference_proxy_max_edge -eq 384) 'sparse detail1 must use 384px proxy'
+Assert-V4BConflict ([bool](Test-V4BSourcePlan $sparsePlan $false).passed) 'sparse-fact source text closure plan validation failed'
+$selDir = Get-SelectionWorkspaceV2;New-Item -ItemType Directory -Path $selDir -Force|Out-Null
+$productSparse|ConvertTo-Json -Depth 14|Set-Content -LiteralPath (Join-Path $selDir 'selected_product.json') -Encoding UTF8
+$script:V4BSourcePlanCache[[string]$productSparse.product_id]=$sparsePlan
+$sparsePrompt = Get-PromptV2 'detail1' $productSparse
+Assert-V4BConflict ($sparsePrompt -match '不要生成任何可辨識文字') 'sparse-fact risky detail1 TinySnow stage must be text-free'
+Assert-V4BConflict ($sparsePrompt -match 'sparse_verified_facts_source_text_risk') 'sparse detail1 prompt must record shield reason'
+$sparseContent = Get-V4BVerifiedOverlayContent $productSparse 'detail1'
+Assert-V4BConflict ([string]$sparseContent.secondary -match 'VZJ-004S') 'sparse detail1 overlay must retain verified model'
+Assert-V4BConflict ([string]$sparseContent.secondary -notmatch '公分|尼龍|耐用|穩固') 'sparse detail1 overlay invented claims'
+
+Write-Host 'V4-B conflict cleanup, product-focus routing, quantity/sparse-fact text shields, and deterministic-overlay policy smoke: PASS' -ForegroundColor Green

@@ -56,6 +56,20 @@ function Test-V4BSourcePlan($Plan, [bool]$RequireFiles) {
             $errors += ($slot + ' 未標記 preserve_existing_content。')
             $failedSlots += $slot
         }
+        if ([bool](Get-V4A1Property $slotPlan 'text_shield_required' $false)) {
+            if ([string](Get-V4A1Property $slotPlan 'verified_text_policy' '') -ne 'deterministic_overlay_only') {
+                $errors += ($slot + ' 已啟用來源文字遮蔽，但未限制為確定性驗證文字疊加。')
+                $failedSlots += $slot
+            }
+            if ([int](Get-V4A1Property $slotPlan 'reference_proxy_max_edge' 0) -ne 384) {
+                $errors += ($slot + ' 已啟用來源文字遮蔽，但不是 384px 強遮罩代理。')
+                $failedSlots += $slot
+            }
+            if ([string]::IsNullOrWhiteSpace([string](Get-V4A1Property $slotPlan 'text_shield_reason' ''))) {
+                $errors += ($slot + ' 已啟用來源文字遮蔽，但缺少原因欄位。')
+                $failedSlots += $slot
+            }
+        }
     }
 
     $highConflict = [bool](Get-V4A1Property $Plan 'high_variant_conflict' $false)
