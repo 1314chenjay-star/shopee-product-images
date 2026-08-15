@@ -36,6 +36,14 @@ $plan = New-FiveImagePlanV4A3 $product $analysis 2
 Assert-V4A3 (@($plan.slots).Count -eq 5) 'planner must create exactly five slots'
 $families = @($plan.slots | ForEach-Object { [string]$_.preferred_layout_family })
 Assert-V4A3 (@($families | Select-Object -Unique).Count -eq 5) 'five slot layout families must be distinct'
+Assert-V4A3 ([string]$plan.hand_held_primary_policy -eq 'detail3_only_if_natural_use') 'planner must reserve hand-held primary composition for natural detail3 usage only'
+foreach ($slot in @('main','detail1','detail2','detail4')) {
+    $slotPlan = Get-V4A3PlanSlot $plan $slot
+    Assert-V4A3 ([string]$slotPlan.hand_held_style -eq 'blocked_as_primary') ($slot + ' must block hand-held primary composition')
+    $plannerText = Get-V4A3PlannerPromptText $slot
+    Assert-V4A3 ($plannerText -match '不得讓手、手指或手掌持拿商品成為主要視覺') ($slot + ' prompt must contain explicit no-hand-held-primary directive')
+}
+Assert-V4A3 ([string](Get-V4A3PlanSlot $plan 'detail3').hand_held_style -eq 'allowed_only_if_natural_use') 'detail3 may use hand/person only for natural usage'
 foreach ($slotPlan in @($plan.slots)) {
     Assert-V4A3 (@($slotPlan.selected_reference_paths).Count -ge 1) ([string]$slotPlan.slot + ' must have a reference')
     Assert-V4A3 (@($slotPlan.selected_reference_paths).Count -le 2) ([string]$slotPlan.slot + ' must keep max two references')
