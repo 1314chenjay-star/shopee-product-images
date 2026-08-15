@@ -5,16 +5,26 @@ $script:V4BOverlayCompactBase = (Get-Command Get-CompactTransportPromptV2 -Error
 $script:V4BFinalJpegBase = (Get-Command Convert-ToFinalJpegV2 -ErrorAction Stop).ScriptBlock
 $script:V4BPendingOverlay = $null
 
+function Test-V4BOverlayConflictingCountToken($Product, [string]$Text) {
+    if (-not (Test-V4BQuantityConflict $Product)) { return $false }
+    if ([string]::IsNullOrWhiteSpace($Text)) { return $false }
+    return ($Text -match '(?<![A-Za-z0-9])(?:\d+|[一二兩三四五六七八九十百]+)\s*(?:片|件|入|雙|組|套|包|條)(?![A-Za-z])')
+}
+
 function Get-V4BOverlayFactValues($Product, [string]$Slot) {
     if ($null -eq $Product) { return [string[]]@() }
     $facts = Get-V4A1Property $Product 'verified_facts' $null
     if ($null -eq $facts) { return [string[]]@() }
-    $priority = @('verified_dimensions','verified_resistance_levels','verified_models','verified_sizes','verified_materials','verified_accessories','verified_colors','verified_bundle_contents','verified_features')
+    # verified_numbers is intentionally immediately after dimensions: older factual structures
+    # store common resistance values such as 30磅 there even when verified_resistance_levels is absent.
+    $priority = @('verified_dimensions','verified_numbers','verified_resistance_levels','verified_models','verified_sizes','verified_materials','verified_accessories','verified_colors','verified_bundle_contents','verified_features')
     $values = @()
     foreach ($name in $priority) {
         foreach ($raw in @(Get-V4A1Property $facts $name @())) {
             $text = Convert-ToTaiwanCommerceTextV4B ([string]$raw)
-            if (-not [string]::IsNullOrWhiteSpace($text) -and $values -notcontains $text) { $values += $text }
+            if ([string]::IsNullOrWhiteSpace($text)) { continue }
+            if (Test-V4BOverlayConflictingCountToken $Product $text) { continue }
+            if ($values -notcontains $text) { $values += $text }
         }
     }
     return [string[]]@($values | Select-Object -First 4)
