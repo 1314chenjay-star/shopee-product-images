@@ -50,6 +50,11 @@ jobs:
         run: |
           & .\_system\tests\v4a2_taiwan_localization_smoke.ps1
 
+      - name: V4-A.2 menu loader regression smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4a2_menu_loader_smoke.ps1
+
       - name: Build clean Windows package
         shell: powershell
         run: |
@@ -93,7 +98,7 @@ jobs:
             $names = @($zip.Entries | ForEach-Object { $_.FullName -replace '\\','/' })
             foreach ($required in @(
               'START.bat','V2_BUILD.txt','_system/start/api_v2.ps1','_system/start/menu_beginner.ps1',
-              '_system/start/v4a1_guard.ps1','_system/start/v4a2_reference_safety.ps1',
+              '_system/start/v4a1_guard.ps1','_system/start/v4a1_visual_truth.ps1','_system/start/v4a2_reference_safety.ps1',
               '_system/start/v4a2_reference_hardening.ps1','_system/start/v4a2_reference_hardening_r2.ps1',
               '_system/start/v4a2_taiwan_localization.ps1',
               '_system/config/factual_rules_v4a1.json','_system/config/taiwan_terms_v4a2.json'
