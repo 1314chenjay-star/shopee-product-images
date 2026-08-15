@@ -34,4 +34,9 @@ foreach ($required in @('id: payload','steps.payload.outputs.artifact-id','v4b_c
     Assert-V4BMetadata ($closureWorkflow -match [regex]::Escape($required)) ('R7 artifact receipt missing: ' + $required)
 }
 
+$detail3Workflow = Get-Content -LiteralPath (Join-Path $root '.github\workflows\v4b-live-detail3-r8.yml') -Raw -Encoding UTF8
+foreach ($required in @('RUN-V4B-DETAIL3-R8','id: payload','steps.payload.outputs.artifact-id','v4b_detail3_r8_artifact_receipt.json','artifact_id = $env:PAYLOAD_ARTIFACT_ID','head_sha = $env:GITHUB_SHA','run_id = $env:GITHUB_RUN_ID')) {
+    Assert-V4BMetadata ($detail3Workflow -match [regex]::Escape($required)) ('R8 artifact receipt missing: ' + $required)
+}
+
 Write-Host 'V4-B round/head/run/artifact metadata smoke: PASS' -ForegroundColor Green
