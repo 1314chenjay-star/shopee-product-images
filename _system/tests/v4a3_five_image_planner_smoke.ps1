@@ -55,6 +55,8 @@ $conflictPlan = New-FiveImagePlanV4A3 $product $highConflict 2
 foreach ($slotPlan in @($conflictPlan.slots)) {
     Assert-V4A3 (@($slotPlan.selected_reference_paths).Count -eq 1) 'high-conflict products must default to one reference per slot'
 }
+$conflictPrimary = @($conflictPlan.slots | ForEach-Object { [string]$_.primary_reference_source } | Select-Object -Unique)
+Assert-V4A3 ($conflictPrimary.Count -eq 1) 'high-conflict products must keep one safest primary reference across slots rather than chase diversity through variant images'
 
 # Production modules must be product-agnostic. Known regression fixture IDs may appear in tests/docs only.
 foreach ($module in @('reference_classifier_v3.ps1','five_image_planner_v3.ps1','layout_memory_v3.ps1','group_validation_v3.ps1')) {
@@ -108,7 +110,9 @@ finally {
     Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-$apiHash = (Get-FileHash -LiteralPath (Join-Path $start 'api_v2.ps1') -Algorithm SHA256).Hash.ToLowerInvariant()
-Assert-V4A3 ($apiHash -eq 'a27d8107b94c7e5d29aa5e170aea1541f7e95cc6cde6a693556d1d0b0b8bdf0f') 'API-R3 transport fingerprint changed'
+# Compare exact Git bytes to the tested V4-A.2.1 api_v2.ps1 blob. The distribution step separately
+# keeps the official API-R3-120S SHA-256 lock after packaging normalization.
+$apiBlob = (& git -C $root hash-object -- '_system/start/api_v2.ps1').Trim().ToLowerInvariant()
+Assert-V4A3 ($apiBlob -eq '9e81a9c4a0769d5e41b4c1e7dba4b92266c49187') ('API-R3 transport Git blob changed: ' + $apiBlob)
 
 Write-Host 'V4-A.3 Five-Image Planner focused smoke: PASS' -ForegroundColor Green
