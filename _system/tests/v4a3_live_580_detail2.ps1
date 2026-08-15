@@ -54,7 +54,9 @@ if ([bool]$plan.high_variant_conflict -and $refs.Count -ne 1) { throw '580 high-
 $prepared = [string[]]@(Get-PreparedApiReferencesV2 '58015741169' $refs)
 $prompt = Get-PromptV2 $slot ([string]$product.product_name)
 if ($null -ne (Get-Command Get-LayoutRetryPromptV2 -ErrorAction SilentlyContinue)) { $prompt += Get-LayoutRetryPromptV2 $slot 0 }
-foreach ($required in @('2公尺','30磅','腰帶','黑色','籃球訓練阻力繩')) { if ($prompt -notmatch [regex]::Escape($required)) { throw ('580 prompt missing: ' + $required) } }
+# detail2 intentionally does not require the product label to be rendered. Its stable text role is
+# the detail-section title plus verified common facts; this avoids repeating the hero/main copy.
+foreach ($required in @('2公尺','30磅','腰帶','黑色','商品結構與細節展示')) { if ($prompt -notmatch [regex]::Escape($required)) { throw ('580 prompt missing: ' + $required) } }
 if ($prompt -match '(?<!公)2米|5組|五人聯動|32cm|60cm|9cm|尼龍|橡膠|金屬|彈力繩|連接扣') { throw '580 unsafe/invented fact or local label leaked.' }
 if ($prompt -notmatch '局部放大圖與圈選細節全部禁止加文字標籤') { throw '580 detail2 text-free local callout rule missing.' }
 if ($prompt -notmatch 'V4-A\.3 五圖整體規劃') { throw '580 V4-A.3 planner directive missing.' }
