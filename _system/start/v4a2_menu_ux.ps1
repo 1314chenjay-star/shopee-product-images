@@ -29,6 +29,36 @@ function Read-Host {
     return Microsoft.PowerShell.Utility\Read-Host -Prompt $Prompt
 }
 
+# The old menu file still contains one stale V4-A.1 display label. Replace only that exact
+# cosmetic line at render time; all other Write-Host calls are delegated unchanged.
+function Write-Host {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromRemainingArguments=$true)]
+        [object[]]$Object,
+        [object]$Separator = ' ',
+        [switch]$NoNewline,
+        [ConsoleColor]$ForegroundColor,
+        [ConsoleColor]$BackgroundColor
+    )
+
+    process {
+        $items = @($Object)
+        for ($i = 0; $i -lt $items.Count; $i++) {
+            if ([string]$items[$i] -eq 'Build: V4-A.1｜真實資料＋視覺數量鎖定版') {
+                $items[$i] = 'Build: V4-A.2｜Reference Safety＋台灣在地化版'
+            }
+        }
+
+        $argsMap = @{ Object = $items }
+        if ($PSBoundParameters.ContainsKey('Separator')) { $argsMap.Separator = $Separator }
+        if ($NoNewline) { $argsMap.NoNewline = $true }
+        if ($PSBoundParameters.ContainsKey('ForegroundColor')) { $argsMap.ForegroundColor = $ForegroundColor }
+        if ($PSBoundParameters.ContainsKey('BackgroundColor')) { $argsMap.BackgroundColor = $BackgroundColor }
+        Microsoft.PowerShell.Utility\Write-Host @argsMap
+    }
+}
+
 try {
     if ($null -ne $host -and $null -ne $host.UI -and $null -ne $host.UI.RawUI) {
         $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A.2 Taiwan Reference Safety | API-R3-120S'
