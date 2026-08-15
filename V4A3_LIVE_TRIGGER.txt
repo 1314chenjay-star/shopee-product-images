@@ -1,1 +1,4 @@
-Focused live trigger for V4-A.3 529 main/detail1/detail4. Delete or update only when another explicitly scoped live run is required.
+V4-A.3 focused live trigger
+Scope: 529 main/detail1/detail4 + 580 detail2
+Expected TinySnow generations: 4
+Branch: v4a3-five-image-planner
