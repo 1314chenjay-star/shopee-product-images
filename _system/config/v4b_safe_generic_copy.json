@@ -1,0 +1,26 @@
+{
+  "version": "V4-B-SAFE-GENERIC-COPY-1",
+  "unconditional": [
+    "商品展示",
+    "細節展示",
+    "選購前請確認規格",
+    "商品外觀如圖所示",
+    "商品細節如圖所示",
+    "圖片僅供參考，請以實際收到商品為準"
+  ],
+  "slot_defaults": {
+    "main": ["商品展示"],
+    "detail1": ["細節展示"],
+    "detail2": ["商品細節如圖所示"],
+    "detail3": ["使用方式參考"],
+    "detail4": ["選購前請確認規格"]
+  },
+  "conditional": {
+    "multi_variant": ["實際規格請依商品選項為準", "依不同款式／規格，內容可能略有差異"],
+    "multi_color": ["多色可選"],
+    "multi_size": ["多尺寸可選"],
+    "multi_style": ["多款式可選"],
+    "has_verified_dimensions": ["尺寸資訊請參考圖示"]
+  },
+  "hard_rule": "Generic copy may describe only presentation or shopping guidance. It must never invent material, function, dimension, quantity, accessory, gift, certification, performance, medical, safety, waterproof, sweatproof, breathable, skin-friendly, durable, shock absorption, support, correction, or other product claims."
+}

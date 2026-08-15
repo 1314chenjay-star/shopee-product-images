@@ -22,8 +22,7 @@ if (Test-Path -LiteralPath $taiwanLocalizationPath -PathType Leaf) { . $taiwanLo
 $textStabilityPath = Join-Path $PSScriptRoot 'v4a21_text_stability.ps1'
 if (Test-Path -LiteralPath $textStabilityPath -PathType Leaf) { . $textStabilityPath }
 
-# V4-A.3 is intentionally loaded after factual/reference/Taiwan/text-stability layers.
-# It may plan references/layouts and perform set-level retries, but may not weaken those prior safeguards.
+# V4-A.3 remains loaded for backwards-compatible analysis/checkpoint plumbing.
 foreach ($v4a3File in @('reference_classifier_v3.ps1','five_image_planner_v3.ps1','layout_memory_v3.ps1','group_validation_v3.ps1')) {
     $v4a3Path = Join-Path $PSScriptRoot $v4a3File
     if (-not (Test-Path -LiteralPath $v4a3Path -PathType Leaf)) { throw ('缺少 V4-A.3 模組：' + $v4a3File) }
@@ -31,6 +30,14 @@ foreach ($v4a3File in @('reference_classifier_v3.ps1','five_image_planner_v3.ps1
         continue
     }
     . $v4a3Path
+}
+
+# V4-B is the final runtime layer. It intentionally supersedes V4-A.3's novelty-first planner:
+# source fidelity, Taiwan localization, and safe fill-to-five are now the primary behavior.
+foreach ($v4bFile in @('v4b_localization.ps1','v4b_fill_to_five.ps1','v4b_source_image_planner.ps1','v4b_original_image_guard.ps1','v4b_output_validator.ps1')) {
+    $v4bPath = Join-Path $PSScriptRoot $v4bFile
+    if (-not (Test-Path -LiteralPath $v4bPath -PathType Leaf)) { throw ('缺少 V4-B 模組：' + $v4bFile) }
+    . $v4bPath
 }
 
 $menuUxPath = Join-Path $PSScriptRoot 'v4a2_menu_ux.ps1'
