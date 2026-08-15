@@ -33,8 +33,8 @@ foreach ($v4a3File in @('reference_classifier_v3.ps1','five_image_planner_v3.ps1
 }
 
 # V4-B is the final runtime layer. It intentionally supersedes V4-A.3's novelty-first planner:
-# source fidelity, Taiwan localization, and safe fill-to-five are now the primary behavior.
-foreach ($v4bFile in @('v4b_localization.ps1','v4b_fill_to_five.ps1','v4b_source_image_planner.ps1','v4b_original_image_guard.ps1','v4b_output_validator.ps1')) {
+# source fidelity, Taiwan localization, safe fill-to-five, and deterministic verified overlays are primary.
+foreach ($v4bFile in @('v4b_localization.ps1','v4b_fill_to_five.ps1','v4b_source_image_planner.ps1','v4b_original_image_guard.ps1','v4b_verified_overlay.ps1','v4b_output_validator.ps1')) {
     $v4bPath = Join-Path $PSScriptRoot $v4bFile
     if (-not (Test-Path -LiteralPath $v4bPath -PathType Leaf)) { throw ('缺少 V4-B 模組：' + $v4bFile) }
     . $v4bPath

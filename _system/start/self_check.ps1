@@ -22,6 +22,7 @@ $runtimeFiles = @(
     'v4b_fill_to_five.ps1',
     'v4b_source_image_planner.ps1',
     'v4b_original_image_guard.ps1',
+    'v4b_verified_overlay.ps1',
     'v4b_output_validator.ps1',
     'v4a2_menu_ux.ps1',
     'menu_beginner.ps1'

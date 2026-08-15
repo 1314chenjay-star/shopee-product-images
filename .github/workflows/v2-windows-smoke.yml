@@ -80,6 +80,8 @@ jobs:
         shell: powershell
         run: |
           & .\_system\tests\v4b_planner_smoke.ps1
+          & .\_system\tests\v4b_source_conflict_smoke.ps1
+          & .\_system\tests\v4b_verified_overlay_smoke.ps1
 
       - name: Build clean Windows package
         shell: powershell
@@ -142,8 +144,8 @@ jobs:
               $required += @(
                 '_system/start/v4b_localization.ps1','_system/start/v4b_fill_to_five.ps1',
                 '_system/start/v4b_source_image_planner.ps1','_system/start/v4b_original_image_guard.ps1',
-                '_system/start/v4b_output_validator.ps1','_system/config/taiwan_terms_v4b.json',
-                '_system/config/v4b_safe_generic_copy.json'
+                '_system/start/v4b_verified_overlay.ps1','_system/start/v4b_output_validator.ps1',
+                '_system/config/taiwan_terms_v4b.json','_system/config/v4b_safe_generic_copy.json'
               )
             }
             foreach ($entry in $required) {
