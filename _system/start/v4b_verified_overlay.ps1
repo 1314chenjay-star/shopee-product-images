@@ -122,13 +122,13 @@ function Add-V4BVerifiedOverlay([string]$Path, $Content) {
 
 function Get-PromptV2([string]$Slot, $ProductOrName) {
     $product=Get-V4BResolvedProduct $ProductOrName;$base=& $script:V4BOverlayPromptBase $Slot $ProductOrName;$shielded=Set-V4BPendingOverlay $product $Slot
-    if($shielded){$base+="`n[V4-B 程式化驗證文字覆蓋]`n本張 TinySnow 階段只製作乾淨、忠實的商品視覺。不要生成任何可辨識文字、數字、單位、徽章、icon 字母或標題；請保留畫面下方約 17% 的乾淨空間或簡潔背景。生成完成後，Windows 程式會自行疊加共同已驗證的台灣繁體文字，因此不要自行補任何文字。"}
+    if($shielded){$base+="`n[V4-B 程式化驗證文字覆蓋]`n本張 TinySnow 階段只製作乾淨、忠實的商品視覺。不要生成任何可辨識文字、數字、單位、徽章、icon 字母或標題；這項禁令涵蓋商品表面、織帶、標籤、包裝與背景。不要把模糊來源字樣替換成新的英文詞、地名、品牌或仿 Logo，必須改成與商品表面同色的無字中性紋理。請保留畫面下方約 17% 的乾淨空間或簡潔背景。生成完成後，Windows 程式會自行疊加共同已驗證的台灣繁體文字，因此不要自行補任何文字。"}
     return $base
 }
 
 function Get-CompactTransportPromptV2([string]$Slot, $ProductOrName) {
     $product=Get-V4BResolvedProduct $ProductOrName;$base=& $script:V4BOverlayCompactBase $Slot $ProductOrName;$shielded=Set-V4BPendingOverlay $product $Slot
-    if($shielded){$base+=' 本張 TinySnow 只輸出乾淨商品視覺，不生成任何可讀文字、數字、單位或帶字母 icon；下方留乾淨空間，驗證文字由 Windows 程式後處理疊加。'}
+    if($shielded){$base+=' 本張 TinySnow 只輸出乾淨商品視覺，商品表面、織帶、標籤、包裝與背景都不得生成任何可讀文字、數字、單位、品牌、Logo 或帶字母 icon；模糊來源印字必須改成同色無字中性紋理，不得替換成新英文詞、地名或仿品牌字樣。下方留乾淨空間，驗證文字由 Windows 程式後處理疊加。'}
     return $base
 }
 

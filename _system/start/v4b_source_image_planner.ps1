@@ -206,10 +206,12 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             semantic_check = 'no_local_ocr_no_fake_semantic_certainty'
             text_shield_required = $shield
             text_shield_reason = $shieldReason
-            runtime_reference_strategy = $(if ($shield) { 'conflict_text_shield_proxy' } else { 'original_source' })
+            runtime_reference_strategy = $(if ($sparseFactShield) { 'sparse_surface_text_shield_proxy' } elseif ($shield) { 'conflict_text_shield_proxy' } else { 'original_source' })
             source_selection_policy = $(if ($productFocusRequired) { 'product_focus_proxy' } else { 'direct_source_order' })
             verified_text_policy = $(if ($shield) { 'deterministic_overlay_only' } else { 'source_localization_allowed' })
-            reference_proxy_max_edge = $(if ($shield) { 384 } else { 0 })
+            reference_proxy_max_edge = $(if ($sparseFactShield) { 320 } elseif ($shield) { 384 } else { 0 })
+            reference_proxy_stage_edge = $(if ($sparseFactShield) { 64 } elseif ($shield) { 128 } else { 0 })
+            surface_text_policy = $(if ($sparseFactShield) { 'neutral_texture_only' } elseif ($shield) { 'no_unverified_surface_text' } else { 'preserve_verified_source_text' })
             visual_proxy_center_dominance = $(if ($sourceItems.Count -gt 0) { [double](Get-V4A1Property $sourceItems[0] 'center_dominance' 0.0) } else { 0.0 })
             visual_proxy_product_focus = $(if ($sourceItems.Count -gt 0) { [double](Get-V4A1Property $sourceItems[0] 'product_focus_proxy' 0.0) } else { 0.0 })
         }
@@ -225,7 +227,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
         quantity_conflict = $quantityConflict
         strategy = 'edit_preserve_localize_fill_to_five'
         no_ocr_claim = $true
-        conflict_closure_policy = 'product_focus_main_detail2_detail4; text_free_quantity_conflict_main_detail2_detail3_detail4; sparse_fact_risky_detail1_text_shield'
+        conflict_closure_policy = 'product_focus_main_detail2_detail4; text_free_quantity_conflict_main_detail2_detail3_detail4; sparse_fact_risky_detail1_text_shield; sparse_surface_text_neutral_texture_64px'
         slots = [object[]]$slotPlans
     }
 
@@ -273,6 +275,44 @@ function Get-V4BReferenceRisk($Analysis, [string]$Path) {
     return 0.50
 }
 
+function New-V4BStrongTextShieldProxy([string]$ProductId, [string]$Source) {
+    # Sparse-fact detail images cannot safely reconstruct source branding/spec text. Preserve the
+    # product silhouette through a 64px intermediate, then upscale to 320px so the edit model sees
+    # structure but not letter shapes. This is a visual proxy only and does not claim OCR.
+    $dir = Join-Path (Get-V2Workspace) ('safe_refs\' + $ProductId)
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    $target = Join-Path $dir (([IO.Path]::GetFileNameWithoutExtension($Source)) + '_textshield.jpg')
+    Add-Type -AssemblyName System.Drawing
+    $stream = [IO.File]::OpenRead($Source)
+    $sourceImage = $null; $stage = $null; $stageGraphics = $null; $output = $null; $outputGraphics = $null
+    try {
+        $sourceImage = [Drawing.Image]::FromStream($stream,$true,$true)
+        $largest = [Math]::Max($sourceImage.Width,$sourceImage.Height)
+        if ($largest -le 0) { throw 'Reference image size invalid.' }
+        $stageScale = [Math]::Min(1.0,64.0/[double]$largest)
+        $stageW = [Math]::Max(1,[int][Math]::Round($sourceImage.Width*$stageScale))
+        $stageH = [Math]::Max(1,[int][Math]::Round($sourceImage.Height*$stageScale))
+        $stage = New-Object Drawing.Bitmap $stageW,$stageH
+        $stageGraphics = [Drawing.Graphics]::FromImage($stage)
+        $stageGraphics.Clear([Drawing.Color]::White)
+        $stageGraphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBilinear
+        $stageGraphics.DrawImage($sourceImage,0,0,$stageW,$stageH)
+        $outputScale = 320.0/[double][Math]::Max($stageW,$stageH)
+        $outputW = [Math]::Max(1,[int][Math]::Round($stageW*$outputScale))
+        $outputH = [Math]::Max(1,[int][Math]::Round($stageH*$outputScale))
+        $output = New-Object Drawing.Bitmap $outputW,$outputH
+        $outputGraphics = [Drawing.Graphics]::FromImage($output)
+        $outputGraphics.Clear([Drawing.Color]::White)
+        $outputGraphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $outputGraphics.DrawImage($stage,0,0,$outputW,$outputH)
+        $output.Save($target,[Drawing.Imaging.ImageFormat]::Jpeg)
+    }
+    finally {
+        if($null-ne$outputGraphics){$outputGraphics.Dispose()};if($null-ne$output){$output.Dispose()};if($null-ne$stageGraphics){$stageGraphics.Dispose()};if($null-ne$stage){$stage.Dispose()};if($null-ne$sourceImage){$sourceImage.Dispose()};$stream.Dispose()
+    }
+    return $target
+}
+
 function Get-ReferencesForSlotV2($Analysis, [string]$Slot, [int]$Maximum) {
     try {
         $productId = [string](Get-V4A1Property $Analysis 'product_id' '')
@@ -292,7 +332,10 @@ function Get-ReferencesForSlotV2($Analysis, [string]$Slot, [int]$Maximum) {
                     # Force the strongest existing downscale tier for conflict-shielded slots. The local
                     # runtime still does not claim OCR; this only reduces direct source-text reconstruction.
                     $proxyRisk = [Math]::Max(0.58, $risk)
-                    $proxy = New-V4A2ReferenceProxy $productId $path $proxyRisk $true
+                    $proxy = if ([string](Get-V4A1Property $slotPlan 'text_shield_reason' '') -eq 'sparse_verified_facts_source_text_risk') {
+                        New-V4BStrongTextShieldProxy $productId $path
+                    }
+                    else { New-V4A2ReferenceProxy $productId $path $proxyRisk $true }
                     if ($shielded -notcontains $proxy) { $shielded += $proxy }
                 }
                 if ($shielded.Count -gt 0) { return [string[]]$shielded }

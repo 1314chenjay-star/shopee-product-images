@@ -69,6 +69,9 @@ function Get-V4BSourceModePrompt($SlotPlan) {
     if ([bool](Get-V4A1Property $SlotPlan 'text_shield_required' $false)) {
         $shieldReason = [string](Get-V4A1Property $SlotPlan 'text_shield_reason' 'unspecified_source_text_risk')
         $base += (' [來源文字遮蔽｜' + $shieldReason + '] 本 slot 的來源文字或規格具有高風險，參考圖已被低解析處理以保留商品／人物／場景輪廓但阻止直接抄來源文字。不要猜測、還原、補全或模仿模糊的來源字樣；本張所有新可讀文字只能使用「結構化共同已驗證資訊」或「本 slot 安全通用文字」。來源圖中原本的功能句、件數、尺寸、材質、促銷字、售後字在此 slot 都不要重建。')
+        if ($shieldReason -eq 'sparse_verified_facts_source_text_risk') {
+            $base += ' [商品表面文字閉鎖] 此規則優先於保留原有印字：商品本體、織帶、標籤、包裝與背景都不得生成任何可辨識中文、英文、字母、數字、品牌、Logo 或標章。模糊來源印字必須改成與商品表面同色的無字中性紋理；禁止替換成新的英文詞、地名、品牌樣式或仿 Logo。'
+        }
     }
     return $base
 }
@@ -127,6 +130,7 @@ function Get-CompactTransportPromptV2([string]$Slot, $ProductOrName) {
     $generic = Get-V4BGenericPromptText $slotPlan
     $variantGuard = Get-V4BVariantConflictPrompt $product
     $shield = if ([bool](Get-V4A1Property $slotPlan 'text_shield_required' $false)) { ' 本張使用來源文字遮蔽參考；禁止還原或猜測模糊來源文字，新可讀文字只准共同已驗證資訊或安全通用文字。' } else { '' }
+    if ([string](Get-V4A1Property $slotPlan 'text_shield_reason' '') -eq 'sparse_verified_facts_source_text_risk') { $shield += ' 商品本體、織帶、標籤、包裝與背景一律不得出現可辨識中文、英文、字母、數字、品牌、Logo 或標章；來源印字改成同色無字中性紋理，禁止創造新英文詞、地名或仿品牌字樣。' }
     $text = "V4-B EDIT/PRESERVE/LOCALIZE：商品類型僅辨識為「$label」。只編修提供的真實原圖，不重新設計商品。保留原圖清楚存在的商品與商品屬性並翻成自然台灣繁體；看不清就省略，不猜測，不假裝OCR成功。原圖沒有的人物、場景、零件、功能、材質、尺寸、數量、配件、贈品、認證、功效與安全承諾都禁止新增。品牌、型號、SKU與數值不得改義。來源圖的價格、折扣、包郵、包退、售後承諾、限時與原賣家促銷文字必須整個刪除，禁止改寫成低敏、親膚、安全、安心等替代賣點。規格圖示不要自行放 KG、LB、CM、MM、IN 或其他單位字母。$shield $variantGuard 安全通用文字僅可用：$generic。資訊不足就少寫。"
     return (Convert-ToTaiwanCommerceTextV4B $text)
 }

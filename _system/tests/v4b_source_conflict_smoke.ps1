@@ -109,7 +109,10 @@ $sparseDetail1 = Get-V4BPlanSlot $sparsePlan 'detail1'
 Assert-V4BConflict ([bool]$sparseDetail1.text_shield_required) 'sparse-fact risky detail1 must use source text shield'
 Assert-V4BConflict ([string]$sparseDetail1.text_shield_reason -eq 'sparse_verified_facts_source_text_risk') 'sparse detail1 shield reason mismatch'
 Assert-V4BConflict ([string]$sparseDetail1.verified_text_policy -eq 'deterministic_overlay_only') 'sparse detail1 must use deterministic overlay'
-Assert-V4BConflict ([int]$sparseDetail1.reference_proxy_max_edge -eq 384) 'sparse detail1 must use 384px proxy'
+Assert-V4BConflict ([int]$sparseDetail1.reference_proxy_max_edge -eq 320) 'sparse detail1 must use 320px output proxy'
+Assert-V4BConflict ([int]$sparseDetail1.reference_proxy_stage_edge -eq 64) 'sparse detail1 must use 64px intermediate proxy'
+Assert-V4BConflict ([string]$sparseDetail1.surface_text_policy -eq 'neutral_texture_only') 'sparse detail1 must neutralize unverified surface text'
+Assert-V4BConflict ([string]$sparseDetail1.runtime_reference_strategy -eq 'sparse_surface_text_shield_proxy') 'sparse detail1 runtime strategy mismatch'
 Assert-V4BConflict ([bool](Test-V4BSourcePlan $sparsePlan $false).passed) 'sparse-fact source text closure plan validation failed'
 $selDir = Get-SelectionWorkspaceV2;New-Item -ItemType Directory -Path $selDir -Force|Out-Null
 $productSparse|ConvertTo-Json -Depth 14|Set-Content -LiteralPath (Join-Path $selDir 'selected_product.json') -Encoding UTF8
@@ -117,6 +120,7 @@ $script:V4BSourcePlanCache[[string]$productSparse.product_id]=$sparsePlan
 $sparsePrompt = Get-PromptV2 'detail1' $productSparse
 Assert-V4BConflict ($sparsePrompt -match '不要生成任何可辨識文字') 'sparse-fact risky detail1 TinySnow stage must be text-free'
 Assert-V4BConflict ($sparsePrompt -match 'sparse_verified_facts_source_text_risk') 'sparse detail1 prompt must record shield reason'
+Assert-V4BConflict ($sparsePrompt -match '新的英文詞、地名、品牌或仿 Logo') 'sparse detail1 prompt must forbid invented surface branding'
 $sparseContent = Get-V4BVerifiedOverlayContent $productSparse 'detail1'
 Assert-V4BConflict ([string]$sparseContent.secondary -match 'VZJ-004S') 'sparse detail1 overlay must retain verified model'
 Assert-V4BConflict ([string]$sparseContent.secondary -notmatch '公分|尼龍|耐用|穩固') 'sparse detail1 overlay invented claims'

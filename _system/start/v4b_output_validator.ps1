@@ -61,13 +61,21 @@ function Test-V4BSourcePlan($Plan, [bool]$RequireFiles) {
                 $errors += ($slot + ' 已啟用來源文字遮蔽，但未限制為確定性驗證文字疊加。')
                 $failedSlots += $slot
             }
-            if ([int](Get-V4A1Property $slotPlan 'reference_proxy_max_edge' 0) -ne 384) {
-                $errors += ($slot + ' 已啟用來源文字遮蔽，但不是 384px 強遮罩代理。')
+            $shieldReason = [string](Get-V4A1Property $slotPlan 'text_shield_reason' '')
+            $expectedMaxEdge = if ($shieldReason -eq 'sparse_verified_facts_source_text_risk') { 320 } else { 384 }
+            if ([int](Get-V4A1Property $slotPlan 'reference_proxy_max_edge' 0) -ne $expectedMaxEdge) {
+                $errors += ($slot + ' 已啟用來源文字遮蔽，但代理尺寸不符合該遮蔽原因。')
                 $failedSlots += $slot
             }
-            if ([string]::IsNullOrWhiteSpace([string](Get-V4A1Property $slotPlan 'text_shield_reason' ''))) {
+            if ([string]::IsNullOrWhiteSpace($shieldReason)) {
                 $errors += ($slot + ' 已啟用來源文字遮蔽，但缺少原因欄位。')
                 $failedSlots += $slot
+            }
+            if ($shieldReason -eq 'sparse_verified_facts_source_text_risk') {
+                if ([int](Get-V4A1Property $slotPlan 'reference_proxy_stage_edge' 0) -ne 64 -or [string](Get-V4A1Property $slotPlan 'surface_text_policy' '') -ne 'neutral_texture_only') {
+                    $errors += ($slot + ' 稀疏事實文字遮蔽未啟用 64px 中介與無字中性紋理政策。')
+                    $failedSlots += $slot
+                }
             }
         }
     }
