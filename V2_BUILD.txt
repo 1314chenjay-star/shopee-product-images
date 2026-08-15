@@ -12,4 +12,5 @@ Reference Safety limitation: local preflight does not use OCR and does not claim
 Runtime loader guard: legacy visual-truth files cannot overwrite the final Reference Safety, exact-text hardening, Taiwan localization, or text-stability layers if loaded again by an older menu path.
 Transport profile: max 2 compressed JPEG references; adaptive medium -> low -> 1-reference retry on transport timeout.
 Distribution guard: clean package only; no CI workspace/test artifacts or API key; api_v2.ps1 package SHA-256 locked to the official API-R3-120S fingerprint.
+Live validation gate: running focused real TinySnow regression for 52915734564 detail4 plus all five slots of 58015741169. Do not promote until images are visually reviewed.
 START.bat runs UTF-8 BOM normalization and self-check before the menu opens.
