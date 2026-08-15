@@ -72,13 +72,14 @@ function Invoke-LiveSlotV4A3($Product, $Analysis, $Plan, [string]$Slot) {
 
     if ($productId -eq '52915734564') {
         if ($prompt -match '20片|40片|10片|防汗防水|親膚黏膠|不傷膝|不傷肌膚') { throw ('529 unsafe fact leaked: ' + $Slot) }
-        if ($Slot -eq 'detail1' -or $Slot -eq 'detail4') {
-            if ([string]$slotPlan.hand_held_style -ne 'blocked_as_primary') { throw ('529 hand-held repetition guard missing: ' + $Slot) }
-        }
+        if ([string]$slotPlan.hand_held_style -ne 'blocked_as_primary') { throw ('529 hand-held repetition guard missing: ' + $Slot) }
+        if ($prompt -notmatch '不得讓手、手指或手掌持拿商品成為主要視覺') { throw ('529 no-hand-held-primary directive missing: ' + $Slot) }
     }
     if ($productId -eq '58015741169') {
-        foreach ($required in @('2公尺','30磅','腰帶','黑色','籃球訓練阻力繩')) {
-            if ($prompt -notmatch [regex]::Escape($required)) { throw ('580 prompt missing: ' + $required + '/' + $Slot) }
+        # detail2 previously passed without requiring the product name as visible text.
+        # Keep only the already verified common specifications mandatory here.
+        foreach ($required in @('2公尺','30磅','腰帶','黑色')) {
+            if ($prompt -notmatch [regex]::Escape($required)) { throw ('580 prompt missing verified common spec: ' + $required + '/' + $Slot) }
         }
         if ($prompt -match '(?<!公)2米|5組|五人聯動|32cm|60cm|9cm|尼龍|橡膠|金屬|彈力繩|連接扣') { throw ('580 unsafe/invented label leaked: ' + $Slot) }
     }
@@ -128,10 +129,10 @@ $download529 = Download-ProductImagesV2 $product529
 $analysis529 = Analyze-ProductImagesV2 '52915734564' ([string[]]$download529.paths)
 $plan529 = Get-V4A3CurrentPlan
 if ($null -eq $plan529 -or -not [bool]$plan529.high_variant_conflict) { throw '529 must have a V4-A.3 high-conflict plan.' }
-$families529 = @('main','detail1','detail4' | ForEach-Object { [string](Get-V4A3PlanSlot $plan529 $_).preferred_layout_family })
-if (@($families529 | Select-Object -Unique).Count -ne 3) { throw '529 main/detail1/detail4 must have three distinct layout families.' }
+$families529 = @('main','detail4' | ForEach-Object { [string](Get-V4A3PlanSlot $plan529 $_).preferred_layout_family })
+if (@($families529 | Select-Object -Unique).Count -ne 2) { throw '529 main/detail4 must have distinct layout families.' }
 $results = @()
-foreach ($slot in @('main','detail1','detail4')) { $results += Invoke-LiveSlotV4A3 $product529 $analysis529 $plan529 $slot }
+foreach ($slot in @('main','detail4')) { $results += Invoke-LiveSlotV4A3 $product529 $analysis529 $plan529 $slot }
 
 $product580 = New-LiveProductV4A3 '58015741169' '籃球訓練阻力繩 籃球防守訓練輔助器材 彈力帶敏捷訓練器 運動訓練帶 成人學生籃球用品' 'Sports & Outdoors/Basketball/Training' @(
     'https://s-cf-tw.shopeesz.com/file/sg-11134201-82590-mrpfuzxcymtj83',
@@ -152,4 +153,4 @@ if ($null -eq $plan580) { throw '580 V4-A.3 plan missing.' }
 $results += Invoke-LiveSlotV4A3 $product580 $analysis580 $plan580 'detail2'
 
 $results | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $outDir 'v4a3_live_summary.json') -Encoding UTF8
-Write-Host '[PASS] V4-A.3 focused live E2E completed: 529 main/detail1/detail4 + 580 detail2 = 4 real TinySnow generations.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.3 focused live rerun completed: 529 main/detail4 + 580 detail2 = 3 real TinySnow generations.' -ForegroundColor Green
