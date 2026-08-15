@@ -13,6 +13,7 @@ $runtimeFiles = @(
     'v4a2_reference_hardening.ps1',
     'v4a2_reference_hardening_r2.ps1',
     'v4a2_taiwan_localization.ps1',
+    'v4a21_text_stability.ps1',
     'v4a2_menu_ux.ps1',
     'menu_beginner.ps1'
 )
