@@ -47,9 +47,7 @@ jobs:
         run: |
           $path = '.\_system\tests\v4a2_live_batch.ps1'
           $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
-          $oldFacts = "foreach (`$v in @('2米','30磅','腰帶','黑色'))"
-          $newFacts = "foreach (`$v in @('2公尺','30磅','腰帶','黑色'))"
-          $text = $text.Replace($oldFacts, $newFacts)
+          $text = $text.Replace("'2米','30磅','腰帶','黑色'", "'2公尺','30磅','腰帶','黑色'")
           $line = "    if (`$Prompt -notmatch 'Reference Safety') { throw ('Reference Safety prompt missing for ' + `$ProductId) }"
           $text = $text.Replace($line + "`r`n", '').Replace($line + "`n", '')
           Set-Content -LiteralPath $path -Value $text -Encoding UTF8
