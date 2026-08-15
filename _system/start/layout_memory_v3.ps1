@@ -19,7 +19,7 @@ function Get-V4A3PlannerPromptText([string]$Slot) {
     $different = @($slotPlan.must_differ_from_slots)
     $differentText = if ($different.Count -gt 0) { $different -join '、' } else { '無' }
 
-    return ("`n[V4-A.3 五圖整體規劃] 本張角色：{0}。內容目標：{1}。指定版型家族：{2}。必須與 {3} 在至少兩個視覺維度上明顯不同（商品位置／人物有無／主視角／資訊區位置／場景／版面骨架擇二以上），但不得為了差異度選擇風險更高或與共同已驗證事實衝突的內容。禁止：{4}。同商品五張圖是同一組商品頁素材，不可只換背景反覆複製同一個手持商品或英雄式主視覺。" -f [string]$slotPlan.role,[string]$slotPlan.content_goal,[string]$slotPlan.preferred_layout_family,$differentText,$blockedText)
+    return ("`n[V4-A.3 五圖整體規劃] 本張角色：{0}。內容目標：{1}。指定版型家族：{2}。必須與 {3} 在至少兩個視覺維度上明顯不同（商品位置／人物有無／主視角／資訊區位置／場景／版面骨架擇二以上），但不得為了差異度選擇風險更高或與共同已驗證事實衝突的內容。禁止：{4}。同商品五張圖屬於同一商品頁素材，不可只換背景反覆複製同一個手持商品或英雄式主視覺。" -f [string]$slotPlan.role,[string]$slotPlan.content_goal,[string]$slotPlan.preferred_layout_family,$differentText,$blockedText)
 }
 
 function Get-PromptV2([string]$Slot, $ProductOrName) {
