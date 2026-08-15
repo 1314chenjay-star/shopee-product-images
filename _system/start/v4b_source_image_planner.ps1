@@ -37,11 +37,21 @@ function Get-V4BAnalysisCandidates($Analysis) {
         if ([bool](Get-V4A1Property $item 'duplicate' $false)) { continue }
         if ($seen.ContainsKey($path)) { continue }
         $seen[$path] = $true
+        $center = [double](Get-V4A1Property $item 'center_edge_density' 0.0)
+        $outer = [double](Get-V4A1Property $item 'outer_edge_density' 0.0)
+        $risk = [double](Get-V4A1Property $item 'local_risk_score' 0.50)
+        $safe = [double](Get-V4A1Property $item 'local_safe_score' (1.0 - $risk))
+        $centerDominance = [Math]::Max(0.0, $center - $outer)
+        $productFocusProxy = 2.5 * $centerDominance + 0.25 * $safe
         $result += [pscustomobject]@{
             path = $path
             position = [int](Get-V4A1Property $item 'position' $result.Count)
-            local_risk_score = [double](Get-V4A1Property $item 'local_risk_score' 0.50)
-            local_safe_score = [double](Get-V4A1Property $item 'local_safe_score' 0.50)
+            local_risk_score = $risk
+            local_safe_score = $safe
+            center_edge_density = $center
+            outer_edge_density = $outer
+            center_dominance = [Math]::Round($centerDominance,4)
+            product_focus_proxy = [Math]::Round($productFocusProxy,4)
         }
     }
     return [object[]]@($result | Sort-Object @{Expression='position';Ascending=$true})
@@ -51,6 +61,14 @@ function Get-V4BSafestCandidate($Candidates) {
     $items = @($Candidates)
     if ($items.Count -eq 0) { return $null }
     return @($items | Sort-Object @{Expression='local_risk_score';Ascending=$true}, @{Expression='position';Ascending=$true} | Select-Object -First 1)[0]
+}
+
+function Get-V4BProductFocusCandidate($Candidates) {
+    $items = @($Candidates)
+    if ($items.Count -eq 0) { return $null }
+    # This is deliberately a visual proxy, not semantic recognition or OCR.
+    # A detail/spec-friendly source tends to have stronger central structure than outer scene clutter.
+    return @($items | Sort-Object @{Expression='product_focus_proxy';Descending=$true}, @{Expression='local_risk_score';Ascending=$true}, @{Expression='position';Ascending=$true} | Select-Object -First 1)[0]
 }
 
 function Get-V4BDirectFiveCandidates($Candidates) {
@@ -75,7 +93,9 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
     if ($candidates.Count -eq 0) { throw 'V4-B：沒有可用原圖。' }
 
     $highConflict = [bool](Get-V4A1Property $Analysis 'high_variant_conflict' $false)
+    $quantityConflict = Test-V4BQuantityConflict $Product
     $safest = Get-V4BSafestCandidate $candidates
+    $productFocus = Get-V4BProductFocusCandidate $candidates
     $direct = @(Get-V4BDirectFiveCandidates $candidates)
     $slots = Get-V4BSlotNames
     $slotPlans = @()
@@ -131,6 +151,14 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             }
         }
 
+        # For a high-conflict quantity product, detail4 must not default to a busy scene merely because
+        # it is next in position/risk order. Prefer a deterministic center-dominant visual source.
+        # This remains category-agnostic and does not claim semantic image understanding.
+        if ($slot -eq 'detail4' -and $highConflict -and $quantityConflict -and $null -ne $productFocus) {
+            $sourceItems = @($productFocus)
+            $reason = '多規格數量衝突的規格／補充圖：優先使用中心商品訊號較強、外圍場景較少的真實原圖，再遮蔽衝突文字；不依商品ID或類目硬編碼。'
+        }
+
         $shield = Test-V4BNeedsConflictTextShield $Product $Analysis $slot
         $slotPlans += [pscustomobject]@{
             slot = $slot
@@ -145,6 +173,8 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             semantic_check = 'no_local_ocr_no_fake_semantic_certainty'
             text_shield_required = $shield
             runtime_reference_strategy = $(if ($shield) { 'conflict_text_shield_proxy' } else { 'original_source' })
+            visual_proxy_center_dominance = $(if ($sourceItems.Count -gt 0) { [double](Get-V4A1Property $sourceItems[0] 'center_dominance' 0.0) } else { 0.0 })
+            visual_proxy_product_focus = $(if ($sourceItems.Count -gt 0) { [double](Get-V4A1Property $sourceItems[0] 'product_focus_proxy' 0.0) } else { 0.0 })
         }
     }
 
@@ -155,7 +185,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
         original_count = $candidates.Count
         output_count = 5
         high_variant_conflict = $highConflict
-        quantity_conflict = (Test-V4BQuantityConflict $Product)
+        quantity_conflict = $quantityConflict
         strategy = 'edit_preserve_localize_fill_to_five'
         no_ocr_claim = $true
         slots = [object[]]$slotPlans

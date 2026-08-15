@@ -33,11 +33,12 @@ foreach ($term in @('KG','LB','CM','MM','IN','30磅')) {
     Assert-V4BConflict ($iconGuard -match [regex]::Escape($term)) ('unit-icon guard missing: ' + $term)
 }
 
+# Basic high-conflict shield behavior.
 $analysis = [pscustomobject]@{
     product_id='90000030001'
     high_variant_conflict=$true
-    reference_safety=[object[]]@([pscustomobject]@{path='C:\refs\conflicted.png';position=0;duplicate=$false;local_risk_score=0.2;local_safe_score=0.8})
-    images=[object[]]@([pscustomobject]@{path='C:\refs\conflicted.png';position=0;duplicate=$false;local_risk_score=0.2;local_safe_score=0.8})
+    reference_safety=[object[]]@([pscustomobject]@{path='C:\refs\conflicted.png';position=0;duplicate=$false;local_risk_score=0.2;local_safe_score=0.8;center_edge_density=0.10;outer_edge_density=0.09})
+    images=[object[]]@([pscustomobject]@{path='C:\refs\conflicted.png';position=0;duplicate=$false;local_risk_score=0.2;local_safe_score=0.8;center_edge_density=0.10;outer_edge_density=0.09})
 }
 $plan = New-V4BSourceImagePlan $product $analysis
 Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'main').text_shield_required) 'quantity-conflict main must request text shield'
@@ -45,6 +46,24 @@ Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'detail4').text_shield_required
 Assert-V4BConflict (-not [bool](Get-V4BPlanSlot $plan 'detail1').text_shield_required) 'detail1 should retain source-text localization ability'
 Assert-V4BConflict ([string](Get-V4BPlanSlot $plan 'detail4').runtime_reference_strategy -eq 'conflict_text_shield_proxy') 'detail4 runtime strategy must be conflict_text_shield_proxy'
 Assert-V4BConflict ((Get-V4BSourceModePrompt (Get-V4BPlanSlot $plan 'detail4')) -match '不要猜測、還原、補全') 'shielded slot prompt must prohibit reconstruction of blurred source text'
+
+# Slot-aware visual source selection must prefer center-dominant product structure over a safer-looking busy scene.
+# These are deterministic proxy values only; the test does not claim semantic image understanding.
+$visualCandidates = @(
+    [pscustomobject]@{path='C:\refs\scene_main.png';position=0;duplicate=$false;local_risk_score=0.30;local_safe_score=0.70;center_edge_density=0.10;outer_edge_density=0.11},
+    [pscustomobject]@{path='C:\refs\scene_safe.png';position=1;duplicate=$false;local_risk_score=0.18;local_safe_score=0.82;center_edge_density=0.08;outer_edge_density=0.10},
+    [pscustomobject]@{path='C:\refs\product_center.png';position=2;duplicate=$false;local_risk_score=0.25;local_safe_score=0.75;center_edge_density=0.18;outer_edge_density=0.07},
+    [pscustomobject]@{path='C:\refs\multi_object.png';position=3;duplicate=$false;local_risk_score=0.45;local_safe_score=0.55;center_edge_density=0.24;outer_edge_density=0.14},
+    [pscustomobject]@{path='C:\refs\package.png';position=4;duplicate=$false;local_risk_score=0.20;local_safe_score=0.80;center_edge_density=0.06;outer_edge_density=0.07}
+)
+$analysisVisual = [pscustomobject]@{product_id='90000030002';high_variant_conflict=$true;reference_safety=[object[]]$visualCandidates;images=[object[]]$visualCandidates}
+$productVisual = $product.PSObject.Copy(); $productVisual.product_id='90000030002'
+$planVisual = New-V4BSourceImagePlan $productVisual $analysisVisual
+$d4Visual = Get-V4BPlanSlot $planVisual 'detail4'
+Assert-V4BConflict (@($d4Visual.source_indices).Count -eq 1) 'detail4 product-focus source must remain one source'
+Assert-V4BConflict ([int]$d4Visual.source_indices[0] -eq 2) ('detail4 should choose center-dominant product source, got position ' + [string]$d4Visual.source_indices[0])
+Assert-V4BConflict ([double]$d4Visual.visual_proxy_center_dominance -gt 0.10) 'detail4 selected source should expose positive center-dominance proxy'
+Assert-V4BConflict ($d4Visual.fill_reason -match '中心商品訊號') 'detail4 plan must explain proxy-based source preference'
 
 $selDir = Get-SelectionWorkspaceV2
 New-Item -ItemType Directory -Path $selDir -Force | Out-Null
@@ -58,4 +77,4 @@ Assert-V4BConflict ($prompt -match '數量／套組數有差異') 'quantity-conf
 Assert-V4BConflict ($prompt -notmatch '各5組') 'variant-specific quantity must not be seeded into prompt'
 Assert-V4BConflict ($prompt -match '2公尺' -and $prompt -match '30磅' -and $prompt -match '腰帶' -and $prompt -match '黑色') 'common verified facts were lost while suppressing quantity conflict'
 
-Write-Host 'V4-B quantity conflict, seller-promise deletion, unit-icon, and text-shield smoke: PASS' -ForegroundColor Green
+Write-Host 'V4-B conflict cleanup, text shield, and proxy-based detail4 source selection smoke: PASS' -ForegroundColor Green
