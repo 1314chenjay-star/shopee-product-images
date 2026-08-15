@@ -2,7 +2,9 @@
 
 $script:V4A3PromptBase = (Get-Command Get-PromptV2 -ErrorAction Stop).ScriptBlock
 $script:V4A3CompactPromptBase = (Get-Command Get-CompactTransportPromptV2 -ErrorAction Stop).ScriptBlock
-$script:V4A3LayoutRetryBase = (Get-Command Get-LayoutRetryPromptV2 -ErrorAction Stop).ScriptBlock
+$layoutRetryCommand = Get-Command Get-LayoutRetryPromptV2 -ErrorAction SilentlyContinue
+$script:V4A3LayoutRetryBase = $null
+if ($null -ne $layoutRetryCommand) { $script:V4A3LayoutRetryBase = $layoutRetryCommand.ScriptBlock }
 
 function Get-V4A3PlannerPromptText([string]$Slot) {
     $plan = Get-V4A3CurrentPlan
@@ -32,16 +34,18 @@ function Get-CompactTransportPromptV2([string]$Slot, $ProductOrName) {
     return ($base + (Get-V4A3PlannerPromptText $Slot))
 }
 
-function Get-LayoutRetryPromptV2([string]$Slot, [int]$LayoutAttempt) {
-    $base = & $script:V4A3LayoutRetryBase $Slot $LayoutAttempt
-    $plan = Get-V4A3CurrentPlan
-    $slotPlan = $null
-    if ($null -ne $plan) { $slotPlan = Get-V4A3PlanSlot $plan $Slot }
-    if ($null -eq $slotPlan) { return $base }
+if ($null -ne $script:V4A3LayoutRetryBase) {
+    function Get-LayoutRetryPromptV2([string]$Slot, [int]$LayoutAttempt) {
+        $base = & $script:V4A3LayoutRetryBase $Slot $LayoutAttempt
+        $plan = Get-V4A3CurrentPlan
+        $slotPlan = $null
+        if ($null -ne $plan) { $slotPlan = Get-V4A3PlanSlot $plan $Slot }
+        if ($null -eq $slotPlan) { return $base }
 
-    $mustDiffer = @($slotPlan.must_differ_from_slots)
-    $fromText = if ($mustDiffer.Count -gt 0) { $mustDiffer -join '、' } else { '前面已完成圖片' }
-    return ($base + ("`nV4-A.3 去重記憶：此 slot 的固定角色仍是「{0}」，不得改成其他 slot 的任務。重生時優先改變與 {1} 相同的商品位置、主視角、人物／手持方式、資訊區位置與版面骨架；至少改兩項。Reference Safety 與 VerifiedFacts 永遠優先於去重。" -f [string]$slotPlan.role,$fromText))
+        $mustDiffer = @($slotPlan.must_differ_from_slots)
+        $fromText = if ($mustDiffer.Count -gt 0) { $mustDiffer -join '、' } else { '前面已完成圖片' }
+        return ($base + ("`nV4-A.3 去重記憶：此 slot 的固定角色仍是「{0}」，不得改成其他 slot 的任務。重生時優先改變與 {1} 相同的商品位置、主視角、人物／手持方式、資訊區位置與版面骨架；至少改兩項。Reference Safety 與 VerifiedFacts 永遠優先於去重。" -f [string]$slotPlan.role,$fromText))
+    }
 }
 
 function Get-V4A3LayoutMemoryFromPlan($Plan) {
