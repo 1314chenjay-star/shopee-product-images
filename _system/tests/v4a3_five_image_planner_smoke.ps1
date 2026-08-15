@@ -12,6 +12,41 @@ function Assert-V4A3([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw ('V4-A.3 smoke failed: ' + $Message) }
 }
 
+# Selection is part of the factual-data chain. Verify that choosing a product does not
+# collapse the enriched catalog object down to only ID/name/images.
+$selectionWorkspace = Get-SelectionWorkspaceV2
+$catalogPath = Join-Path $selectionWorkspace 'catalog.json'
+$selectedPath = Join-Path $selectionWorkspace 'selected_product.json'
+$catalogBackup = $catalogPath + '.v4a3_smoke_backup'
+$selectedBackup = $selectedPath + '.v4a3_smoke_backup'
+if (Test-Path -LiteralPath $catalogPath) { Copy-Item -LiteralPath $catalogPath -Destination $catalogBackup -Force }
+if (Test-Path -LiteralPath $selectedPath) { Copy-Item -LiteralPath $selectedPath -Destination $selectedBackup -Force }
+try {
+    $selectionFixture = [pscustomobject]@{
+        product_id='90000000999'; parent_sku=''; product_name='籃球訓練阻力繩'; product_category='Sports & Outdoors/Basketball/Training';
+        image_urls=[string[]]@('https://example.invalid/cover.jpg'); variation_name='規格';
+        variants=[object[]]@(
+            [pscustomobject]@{index=1;option_name='黑色2米30磅+腰帶一組';option_image=''},
+            [pscustomobject]@{index=2;option_name='黑色2米30磅+腰帶各5組';option_image=''}
+        );
+        verified_facts=[pscustomobject]@{verified_dimensions=[string[]]@('2米');verified_materials=[string[]]@();verified_accessories=[string[]]@('腰帶');verified_colors=[string[]]@('黑色');verified_quantities=[string[]]@();verified_resistance_levels=[string[]]@('30磅')};
+        multi_variant_flags=[pscustomobject]@{has_multiple_variants=$true;has_multiple_quantities=$true}
+    }
+    [pscustomobject]@{products=[object[]]@($selectionFixture)} | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $catalogPath -Encoding UTF8
+    $selectedFixture = Select-ShopeeProductV2 '90000000999'
+    Assert-V4A3 ($selectedFixture.PSObject.Properties.Name -contains 'variants') 'selection must preserve variants'
+    Assert-V4A3 (@($selectedFixture.variants).Count -eq 2) 'selection must preserve all variants'
+    Assert-V4A3 ($selectedFixture.PSObject.Properties.Name -contains 'verified_facts') 'selection must preserve verified facts'
+    Assert-V4A3 ([string]$selectedFixture.product_category -eq 'Sports & Outdoors/Basketball/Training') 'selection must preserve product category'
+    $selectedReloaded = Get-SelectedProductV2
+    Assert-V4A3 (@($selectedReloaded.variants).Count -eq 2) 'selected_product.json must persist variants'
+    Assert-V4A3 ([string]$selectedReloaded.verified_facts.verified_dimensions[0] -eq '2米') 'selected_product.json must persist verified fact values'
+}
+finally {
+    if (Test-Path -LiteralPath $catalogBackup) { Move-Item -LiteralPath $catalogBackup -Destination $catalogPath -Force } else { Remove-Item -LiteralPath $catalogPath -Force -ErrorAction SilentlyContinue }
+    if (Test-Path -LiteralPath $selectedBackup) { Move-Item -LiteralPath $selectedBackup -Destination $selectedPath -Force } else { Remove-Item -LiteralPath $selectedPath -Force -ErrorAction SilentlyContinue }
+}
+
 $synthetic = @()
 for ($i = 0; $i -lt 6; $i++) {
     $risk = 0.16 + 0.035 * $i
