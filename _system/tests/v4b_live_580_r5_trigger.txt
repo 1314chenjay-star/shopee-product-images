@@ -1,0 +1,4 @@
+V4-B 580 R5 live trigger
+Scope: 58015741169 detail4 only
+Expected source: product-focused original position 4
+Do not merge.
