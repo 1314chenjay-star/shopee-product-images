@@ -2,27 +2,42 @@
 
 ## Read this first
 
-This task must start from the exact tested baseline below. Do not switch to an older workspace, older local commit, or another branch.
+This task must start from the exact tested baseline below. Do not switch to an older workspace or older commit.
 
 - Repository: `1314chenjay-star/shopee-product-images`
-- Development branch: `v4a3-five-image-planner`
-- Exact baseline commit: `8dadefecc8041d59c2c9c168b04672dbdc4a1045`
+- GitHub development/target branch: `v4a3-five-image-planner`
+- Exact tested baseline commit: `8dadefecc8041d59c2c9c168b04672dbdc4a1045`
+- Handoff commit already on target branch: `c48bc29e654339907a3e776e068c8ccbda28eaf4`
 - Baseline build: `V4-A.2.1｜圖片文字穩定修正版`
 - Transport: `API-R3-120S`
 - Stable branch `tinysnow-tool-only` must remain unchanged.
 - V4-A source branch `v4a-layout-diversity` must remain unchanged.
 - Do not merge anything.
 
+### Important Codex workspace rule
+
+Codex may create a local temporary working branch named `work` or another internal name. **That local branch name alone is NOT a baseline mismatch.**
+
+Proceed when all of the following are true:
+
+1. `HEAD` is `c48bc29e654339907a3e776e068c8ccbda28eaf4` or a descendant of it created for this task.
+2. `8dadefecc8041d59c2c9c168b04672dbdc4a1045` remains an ancestor of `HEAD`.
+3. `V2_BUILD.txt` still reports `V4-A.2.1｜圖片文字穩定修正版` and `API-R3-120S` before V4-A.3 versioning changes are intentionally made.
+4. `_system/start/api_v2.ps1` SHA-256 is `a27d8107b94c7e5d29aa5e170aea1541f7e95cc6cde6a693556d1d0b0b8bdf0f`.
+5. The worktree is clean before implementation begins.
+6. Final commits are intended for GitHub branch `v4a3-five-image-planner`; do not merge into stable.
+
+STOP only if the commit ancestry/build/transport/fingerprint/worktree checks fail. Do **not** stop merely because `git branch --show-current` returns `work`.
+
 Before editing, verify and report:
 
 1. `git rev-parse HEAD`
-2. current branch
+2. current local branch name (informational only)
 3. `V2_BUILD.txt`
 4. `git status --short --branch`
-5. `api_v2.ps1` fingerprint / identity
-6. confirm HEAD is exactly the baseline above or a descendant created during this task
-
-If any mismatch exists, STOP before modifying files.
+5. `api_v2.ps1` SHA-256
+6. `git merge-base --is-ancestor c48bc29e654339907a3e776e068c8ccbda28eaf4 HEAD`
+7. `git merge-base --is-ancestor 8dadefecc8041d59c2c9c168b04672dbdc4a1045 HEAD`
 
 ---
 
@@ -57,7 +72,7 @@ Do NOT weaken or replace:
 - automatic menu return behavior
 - Windows PowerShell 5.1 compatibility
 
-Do not modify `_system/start/api_v2.ps1` unless the task is explicitly stopped for review first. Expected outcome is that it remains byte-identical / fingerprint-identical.
+Do not modify `_system/start/api_v2.ps1`. It must remain byte-identical / fingerprint-identical.
 
 ---
 
@@ -86,11 +101,9 @@ Each usable source image should receive one or more semantic/use classes, at min
 - `promo_risky`
 - `single_variant_risky`
 
-Important limitation: do not pretend local OCR/vision is perfect if the runtime has no reliable semantic OCR. Use deterministic evidence that actually exists in the current tool plus safe heuristics/proxies. If a class cannot be known confidently, mark it unknown/low confidence instead of inventing certainty.
+Do not pretend local OCR/vision is perfect if runtime evidence is insufficient. Use deterministic evidence and existing safe heuristics/proxies. If a class cannot be known confidently, mark it unknown/low confidence instead of inventing certainty.
 
 All usable originals should participate in analysis/scoring, but do not send all originals to TinySnow. Per slot, continue sending only the safest relevant subset, max 1–2 refs consistent with current transport protections.
-
----
 
 ## 2. Five-Image Planner
 
@@ -146,8 +159,6 @@ Slot roles:
 
 The planner must adapt content to the product; these are roles, not fixed visual templates.
 
----
-
 ## 3. Slot-aware reference assignment
 
 Replace any remaining behavior equivalent to “take the first one/two originals” with planner-driven selection.
@@ -162,8 +173,6 @@ General rules:
 - high multi-variant conflict: do not let a single-variant image define common facts
 - do not reuse the same primary reference for multiple slots when safe alternatives exist
 - safety always outranks diversity
-
----
 
 ## 4. Layout memory / visual dedup memory
 
@@ -189,8 +198,6 @@ Target rule: later slots should differ from prior images in at least 2 meaningfu
 
 Do not optimize diversity by selecting a riskier source image.
 
----
-
 ## 5. Group-level five-image validator
 
 Recommended module:
@@ -209,7 +216,7 @@ Detect at minimum:
 - detail slot provides no new information compared with main
 - repeated spec text across unnecessary slots
 
-The validator should return structured results, e.g.:
+Return structured results with at least:
 
 - `passed`
 - `failed_slots`
@@ -248,7 +255,7 @@ The following product IDs are test fixtures only, never runtime branches:
 - `53215734553`
 - `57565745174`
 
-Do not write logic like `if ProductId == ...` in production runtime modules.
+Do not write runtime logic like `if ProductId == ...`.
 
 ---
 
@@ -262,7 +269,7 @@ Use targeted tests based on what changed.
 
 Purpose: prove five-image visual dedup.
 
-Known current issue used as regression target:
+Known regression target:
 
 - main/detail1/detail4 had too much repeated “hand holding blue rolled tape” composition.
 
@@ -270,13 +277,11 @@ Acceptance target:
 
 - five roles are visibly distinct at planning level
 - main/detail1/detail4 are not assigned the same primary composition when safe alternatives exist
-- detail1/detail4 should provide new visual information compared with main
+- detail1/detail4 provide new visual information compared with main
 
 Do not treat decorative icons as a failure condition; user explicitly said those icons do not matter for this issue.
 
 ## Primary non-regression test: 58015741169
-
-Purpose: ensure the planner does not damage a currently good product set.
 
 Must preserve verified display facts:
 
@@ -362,7 +367,7 @@ When done, report:
 
 1. starting baseline SHA
 2. final HEAD SHA
-3. branch name
+3. local branch name and GitHub target branch
 4. modified/new file list
 5. planner output schema/example
 6. reference-classification schema/example
@@ -377,4 +382,4 @@ When done, report:
 15. Windows CI result
 16. confirmation that no merge occurred
 
-Do not create a final ZIP merely for handoff. Work through GitHub commits on this branch.
+Do not create a final ZIP merely for handoff. Work through GitHub commits targeting `v4a3-five-image-planner`.
