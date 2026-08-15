@@ -29,8 +29,7 @@ function Read-Host {
     return Microsoft.PowerShell.Utility\Read-Host -Prompt $Prompt
 }
 
-# The old menu file still contains one stale V4-A.1 display label. Replace only that exact
-# cosmetic line at render time; all other Write-Host calls are delegated unchanged.
+# Render the current V4-B candidate name without rewriting the legacy menu file.
 function Write-Host {
     [CmdletBinding()]
     param(
@@ -45,8 +44,9 @@ function Write-Host {
     process {
         $items = @($Object)
         for ($i = 0; $i -lt $items.Count; $i++) {
-            if ([string]$items[$i] -eq 'Build: V4-A.1｜真實資料＋視覺數量鎖定版') {
-                $items[$i] = 'Build: V4-A.3｜Five-Image Planner 五圖整體規劃版'
+            $value = [string]$items[$i]
+            if ($value -eq 'Build: V4-A.1｜真實資料＋視覺數量鎖定版' -or $value -eq 'Build: V4-A.3｜Five-Image Planner 五圖整體規劃版') {
+                $items[$i] = 'Build: V4-B｜原圖保真台灣化五圖優化版'
             }
         }
 
@@ -61,7 +61,7 @@ function Write-Host {
 
 try {
     if ($null -ne $host -and $null -ne $host.UI -and $null -ne $host.UI.RawUI) {
-        $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A.3 Five-Image Planner | API-R3-120S'
+        $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-B 原圖保真台灣化五圖優化版 | API-R3-120S'
     }
 }
 catch {}

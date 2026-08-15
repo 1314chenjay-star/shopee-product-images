@@ -6,6 +6,7 @@ on:
       - tinysnow-tool-only
       - v4a1-factual-guard
       - v4a3-five-image-planner
+      - v4b-original-image-localization
   workflow_dispatch:
 
 jobs:
@@ -21,57 +22,78 @@ jobs:
           Set-ExecutionPolicy -Scope Process Bypass -Force
           & .\_system\start\encoding_fix.ps1
 
-      - name: Existing V4-A PowerShell smoke
+      - name: Existing base Windows smoke
         shell: powershell
         run: |
           & .\_system\tests\windows_smoke.ps1
 
       - name: V4-A.1 factual guard smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a1_windows_smoke.ps1
 
       - name: V4-A.1 visual quantity truth smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a1_visual_truth_smoke.ps1
 
       - name: V4-A.2 Reference Safety smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a2_reference_safety_smoke.ps1
 
       - name: V4-A.2 exact text hardening smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a2_text_hardening_smoke.ps1
 
       - name: V4-A.2 Taiwan localization smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a2_taiwan_localization_smoke.ps1
 
       - name: V4-A.2 menu loader regression smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a2_menu_loader_smoke.ps1
 
       - name: V4-A.2.1 image text stability smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a21_text_stability_smoke.ps1
 
       - name: V4-A.3 Five-Image Planner focused smoke
+        if: github.ref != 'refs/heads/v4b-original-image-localization'
         shell: powershell
         run: |
           & .\_system\tests\v4a3_five_image_planner_smoke.ps1
+
+      - name: V4-B original-image preservation smoke
+        if: github.ref == 'refs/heads/v4b-original-image-localization'
+        shell: powershell
+        run: |
+          & .\_system\tests\v4b_planner_smoke.ps1
 
       - name: Build clean Windows package
         shell: powershell
         run: |
           $short = $env:GITHUB_SHA.Substring(0,7)
-          $package = "TinySnow_V4-A.3_FiveImagePlanner_$short.zip"
-          $stage = Join-Path $env:RUNNER_TEMP 'TinySnow_V4-A.3_Distribution'
+          if ($env:GITHUB_REF -eq 'refs/heads/v4b-original-image-localization') {
+            $package = "TinySnow_V4-B_OriginalImageLocalization_$short.zip"
+            $stageName = 'TinySnow_V4-B_Distribution'
+          }
+          else {
+            $package = "TinySnow_V4-A.3_FiveImagePlanner_$short.zip"
+            $stageName = 'TinySnow_V4-A.3_Distribution'
+          }
+          $stage = Join-Path $env:RUNNER_TEMP $stageName
           if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
@@ -107,7 +129,7 @@ jobs:
           $zip = [IO.Compression.ZipFile]::OpenRead((Resolve-Path $package))
           try {
             $names = @($zip.Entries | ForEach-Object { $_.FullName -replace '\\','/' })
-            foreach ($required in @(
+            $required = @(
               'START.bat','V2_BUILD.txt','_system/start/api_v2.ps1','_system/start/menu_beginner.ps1',
               '_system/start/v4a1_guard.ps1','_system/start/v4a1_visual_truth.ps1','_system/start/v4a2_reference_safety.ps1',
               '_system/start/v4a2_reference_hardening.ps1','_system/start/v4a2_reference_hardening_r2.ps1',
@@ -115,8 +137,17 @@ jobs:
               '_system/start/reference_classifier_v3.ps1','_system/start/five_image_planner_v3.ps1',
               '_system/start/layout_memory_v3.ps1','_system/start/group_validation_v3.ps1',
               '_system/start/v4a2_menu_ux.ps1','_system/config/factual_rules_v4a1.json','_system/config/taiwan_terms_v4a2.json'
-            )) {
-              if ($names -notcontains $required) { throw ('Distribution package missing: ' + $required) }
+            )
+            if ($env:GITHUB_REF -eq 'refs/heads/v4b-original-image-localization') {
+              $required += @(
+                '_system/start/v4b_localization.ps1','_system/start/v4b_fill_to_five.ps1',
+                '_system/start/v4b_source_image_planner.ps1','_system/start/v4b_original_image_guard.ps1',
+                '_system/start/v4b_output_validator.ps1','_system/config/taiwan_terms_v4b.json',
+                '_system/config/v4b_safe_generic_copy.json'
+              )
+            }
+            foreach ($entry in $required) {
+              if ($names -notcontains $entry) { throw ('Distribution package missing: ' + $entry) }
             }
             if (@($names | Where-Object { $_ -like 'README_*.txt' }).Count -lt 1) { throw 'Distribution package missing README.' }
             foreach ($forbidden in @('.github/','_system/tests/','_system/live_e2e_output/','_system/workspace/','_system/config/config.json')) {
@@ -132,5 +163,5 @@ jobs:
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: TinySnow-V4-A.3-FiveImagePlanner
+          name: ${{ github.ref == 'refs/heads/v4b-original-image-localization' && 'TinySnow-V4-B-OriginalImageLocalization' || 'TinySnow-V4-A.3-FiveImagePlanner' }}
           path: ${{ env.PACKAGE_NAME }}

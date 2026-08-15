@@ -18,6 +18,11 @@ $runtimeFiles = @(
     'five_image_planner_v3.ps1',
     'layout_memory_v3.ps1',
     'group_validation_v3.ps1',
+    'v4b_localization.ps1',
+    'v4b_fill_to_five.ps1',
+    'v4b_source_image_planner.ps1',
+    'v4b_original_image_guard.ps1',
+    'v4b_output_validator.ps1',
     'v4a2_menu_ux.ps1',
     'menu_beginner.ps1'
 )
@@ -42,7 +47,7 @@ foreach ($name in $runtimeFiles) {
 }
 
 $configRoot = Join-Path (Split-Path $PSScriptRoot -Parent) 'config'
-$configFiles = @('factual_rules_v4a1.json','taiwan_terms_v4a2.json')
+$configFiles = @('factual_rules_v4a1.json','taiwan_terms_v4a2.json','taiwan_terms_v4b.json','v4b_safe_generic_copy.json')
 foreach ($configName in $configFiles) {
     $configPath = Join-Path $configRoot $configName
     if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {

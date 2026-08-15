@@ -1,15 +1,18 @@
 Shopee TinySnow Image Tool V2
-Build: V4-A.3｜Five-Image Planner 五圖整體規劃版
+Build: V4-B｜原圖保真台灣化五圖優化版
 Transport: API-R3-120S
 Date: 2026-08-15
 Runtime: Windows PowerShell 5.1 compatible
-Factual policy: Shopee structured variants -> common verified facts -> strict exact-text allowlist; multi-variant visual quantity neutrality; all usable originals participate in local Reference Safety scoring, then each output slot sends only the safest relevant subset (max 2, high-conflict products default to 1).
-Taiwan localization: source facts remain unchanged; only final output/prompt text is localized with conservative deterministic mappings for Taiwan units, Taiwan common commerce wording, and Taiwan product names. Brand/model/SKU and factual numeric meaning are never rewritten. Ambiguous regional terms are not auto-converted.
-Text stability V4-A.2.1 retained: unstable quantity wording uses 數量規格可選; per-slot allowlists remain deliberately small; local-detail callouts remain text-free unless explicitly verified; unreadable exact text must be omitted rather than approximated.
-Five-Image Planner V4-A.3: all five slots are planned before generation. Reference selection is slot-aware and safety-first, visual-role/layout families are distinct across main/detail1/detail2/detail3/detail4, repeated primary references receive a diversity penalty, and high-conflict products still default to one safest reference. Local classification is explicitly proxy-only/no-OCR and never claims semantic certainty it does not have.
-Group validation V4-A.3: after a complete five-image run, the tool checks pairwise layout similarity, planned layout-family duplication, and unnecessary 3+ reuse of one primary reference when safe alternatives exist. If the set fails, only up to the highest-priority failed slots are automatically retried once; already-passed slots remain done and are not regenerated.
-Reference Safety limitation: local preflight does not use OCR and does not claim semantic understanding of image text; it uses deterministic visual-risk proxies plus strict prompt isolation and exact output text allowlists.
-Runtime loader guard: legacy visual-truth files cannot overwrite the final Reference Safety, exact-text hardening, Taiwan localization, text-stability, or V4-A.3 planner layers.
+Core mode: EDIT / PRESERVE / LOCALIZE. Existing product images are the primary visual and factual source; TinySnow is used to edit, clean, localize, and recompose existing content rather than freely redesign products.
+Five-image policy: output is always main + detail1 + detail2 + detail3 + detail4. With 5+ usable originals, select five truthful sources; with fewer than five, fill by reusing/recomposing only existing originals and, when necessary, safe generic copy.
+Source modes: single_original, recomposed_originals, generic_fill. Every slot records source paths, source indices, fill reason, generic-copy allowlist, and variant-conflict state.
+Taiwan localization: source meaning is preserved while readable source text is converted to natural Taiwan Traditional Chinese and common Taiwan ecommerce wording. Existing V4-A.2 unit conversion remains active (for example 2米 -> 2公尺; detail/spec contexts may use an equivalent 200公分 without changing numeric meaning). Brand/model/SKU/numeric meaning must not be altered.
+Original-content preservation: clearly readable source-image product attributes, functions, dimensions, materials, models, accessories, instructions, and other product-relevant text should be retained and localized where possible. Unclear text is omitted or left visually neutral rather than guessed.
+Hallucination guard: no new people, scenes, parts, materials, dimensions, quantities, functions, accessories, gifts, certifications, medical/safety claims, or performance claims may be invented. Existing people/scenes may be preserved when present in the source.
+Generic fill: safe generic copy is presentation/shopping guidance only. Conditional phrases such as 多色可選／多尺寸可選 are enabled only when structured product data supports the condition.
+Multi-variant safety: a source image may retain information visibly belonging to that source/variant, but variant-specific color/material/quantity/accessory/size/model/function must not be generalized to every option. High-conflict fill never recomposes multiple variant sources.
+No-OCR policy: local preflight does not use OCR and never claims semantic certainty. TinySnow may localize only source text it can clearly perceive; unreadable or conflicting content must not be guessed.
+Validation: V4-B validates fixed five-slot completeness, source provenance, legal source modes, source traceability, and generic-copy whitelist. V4-A.3 layout-similarity novelty retries are disabled because faithful source similarity is not itself an error.
 Transport profile: API-R3-120S unchanged; max 2 compressed JPEG references; adaptive medium -> low -> 1-reference retry on transport timeout.
-Distribution guard: clean package only; no CI workspace/test artifacts or API key; api_v2.ps1 package SHA-256 remains locked to the official API-R3-120S fingerprint a27d8107b94c7e5d29aa5e170aea1541f7e95cc6cde6a693556d1d0b0b8bdf0f.
-START.bat runs UTF-8 BOM normalization and self-check before the menu opens. Beginner menu display is V4-A.3 and the legacy Enter-to-return pause is auto-returned without changing other inputs.
+Distribution guard: clean package only; no CI workspace/test artifacts or API key; api_v2.ps1 package SHA-256 remains locked to a27d8107b94c7e5d29aa5e170aea1541f7e95cc6cde6a693556d1d0b0b8bdf0f.
+START.bat runs UTF-8 BOM normalization and self-check before the menu opens.

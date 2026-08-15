@@ -1,0 +1,109 @@
+$ErrorActionPreference = 'Stop'
+
+function Get-V4BResolvedProduct($ProductOrName) {
+    if ($null -ne $ProductOrName -and -not ($ProductOrName -is [string])) { return $ProductOrName }
+    try { return (Get-V4A2ResolvedProduct $ProductOrName) } catch {}
+    return [pscustomobject]@{ product_id=''; product_name=''; verified_facts=$null; multi_variant_flags=$null; variants=@() }
+}
+
+function Get-V4BSafeProductLabel($Product) {
+    if ($null -eq $Product) { return '商品' }
+    $labelCommand = Get-Command Get-TaiwanProductLabelV4A2 -ErrorAction SilentlyContinue
+    if ($null -ne $labelCommand) {
+        $label = [string](Get-TaiwanProductLabelV4A2 $Product)
+        if (-not [string]::IsNullOrWhiteSpace($label)) { return $label }
+    }
+    return '商品'
+}
+
+function Get-V4BStructuredFactText($Product) {
+    if ($null -eq $Product) { return '無額外結構化共同規格；只依原圖清楚內容編修，不猜測。' }
+    $facts = Get-V4A1Property $Product 'verified_facts' $null
+    if ($null -eq $facts) { return '無額外結構化共同規格；只依原圖清楚內容編修，不猜測。' }
+    $values = @(Get-V4A1AllFactValues $facts | ForEach-Object { Convert-ToTaiwanCommerceTextV4B ([string]$_) } | Where-Object { $_ } | Select-Object -Unique)
+    if ($values.Count -eq 0) { return '無額外結構化共同規格；只依原圖清楚內容編修，不猜測。' }
+    return ($values -join '、')
+}
+
+function Get-V4BSlotRoleText([string]$Slot) {
+    switch ($Slot) {
+        'main' { return '主圖：以原商品主視覺為底做乾淨的台灣電商封面整理；不要改造成另一個商品或新場景。' }
+        'detail1' { return '詳情圖1：保留來源圖既有的商品重點、功能說明或細節資訊，重新整理文字與版面即可。' }
+        'detail2' { return '詳情圖2：保留來源圖既有的結構、局部、配件、包裝或其他可見內容；沒有就不要補新的零件或功能。' }
+        'detail3' { return '詳情圖3：若來源圖已有使用方式或情境就保留並在地化；若沒有，只整理來源圖既有內容，不自行新增人物、手或使用場景。' }
+        'detail4' { return '詳情圖4：優先整理來源圖既有的尺寸、規格、款式或選購資訊；沒有可靠規格時只能使用安全白名單提醒。' }
+        default { return '補充圖：只整理來源圖既有內容。' }
+    }
+}
+
+function Get-V4BSourceModePrompt($SlotPlan) {
+    if ($null -eq $SlotPlan) { return '來源模式：single_original。只編修現有原圖。' }
+    $mode = [string](Get-V4A1Property $SlotPlan 'source_mode' 'single_original')
+    switch ($mode) {
+        'single_original' { return '來源模式：single_original。以這張真實原圖為唯一視覺來源，保留商品、人物、場景、零件與現有資訊；只做翻譯、排版、裁切、清理與畫質優化。' }
+        'recomposed_originals' { return '來源模式：recomposed_originals。只能把提供的真實原圖內容重新裁切、整理、組合；不得在兩張原圖之外創造新商品、新人物、新場景、新零件或新屬性。' }
+        'generic_fill' { return '來源模式：generic_fill。仍以提供的真實原圖商品為視覺基礎；若既有內容不足，只能加入下方安全白名單通用文字，不得新增任何具體商品事實。' }
+        default { return ('來源模式：' + $mode + '。只允許原圖保真編修。') }
+    }
+}
+
+function Get-V4BGenericPromptText($SlotPlan) {
+    if ($null -eq $SlotPlan) { return '（無）' }
+    $copy = @($SlotPlan.allowed_generic_copy | ForEach-Object { Convert-ToTaiwanCommerceTextV4B ([string]$_) } | Where-Object { $_ } | Select-Object -Unique)
+    if ($copy.Count -eq 0) { return '（無）' }
+    return ($copy -join '｜')
+}
+
+function Get-PromptV2([string]$Slot, $ProductOrName) {
+    $product = Get-V4BResolvedProduct $ProductOrName
+    $plan = Get-V4BCurrentSourcePlan
+    $slotPlan = Get-V4BPlanSlot $plan $Slot
+    $label = Get-V4BSafeProductLabel $product
+    $facts = Get-V4BStructuredFactText $product
+    $role = Get-V4BSlotRoleText $Slot
+    $sourceMode = Get-V4BSourceModePrompt $slotPlan
+    $generic = Get-V4BGenericPromptText $slotPlan
+    $multi = Test-IsMultiVariantV4A1 (Get-V4A1Property $product 'multi_variant_flags' $null)
+    $multiText = if ($multi) { '本商品有多規格。可以保留某張來源圖本身清楚可見的該規格資訊，但不得把單一規格的顏色、材質、數量、配件、尺寸、型號或功能改寫成所有規格共同具備。' } else { '仍不得從商品名稱或常識補出原圖沒有的具體規格。' }
+
+    $prompt = @(
+        '[V4-B 原圖保真台灣化模式｜EDIT / PRESERVE / LOCALIZE]',
+        '這是「編修既有商品圖」任務，不是自由生圖，也不是重新設計商品。',
+        $role,
+        $sourceMode,
+        ('安全商品類型標籤僅供辨識，不可當作新增規格事實：' + $label),
+        ('結構化共同已驗證資訊僅供交叉確認：' + $facts),
+        '[原圖內容保留硬規則]',
+        '盡量保留原圖中已存在且清楚可辨識的商品外觀、顏色、結構、功能文字、材質文字、尺寸規格、名稱、型號、配件、使用說明與其他商品屬性。不要因為舊版白名單較少就把原圖清楚存在的有效資訊全部刪掉。',
+        '原圖沒有的人物、手、使用場景、商品零件、配件、贈品、顏色、材質、尺寸、數量、功能、認證、功效或安全承諾，一律不得新增。原圖已有的人物或場景可以保留，但不得自行換成另一個新場景。',
+        '[文字翻譯與台灣在地化硬規則]',
+        '只翻譯你在參考圖中能清楚辨識的文字。簡體中文改成自然台灣繁體中文，規格名稱、尺寸名稱、功能標題與說明盡量改成台灣賣家常用說法，避免中國大陸電商語氣。',
+        '品牌、Logo、型號、SKU、數字、數量與規格數值不得擅自改義。2米這類來源值顯示成台灣常用的2公尺；必要時尺寸圖可使用等值200公分，但不可改變數值意義。',
+        '看不清楚、被遮住、語意不確定或來源彼此衝突的文字不要猜；可保留成不可辨識視覺、減少文字或省略。不要假裝 OCR 已驗證成功，本地流程沒有 OCR 真值保證。',
+        '[禁止虛構]',
+        '禁止自行新增或推測：功能、材質、尺寸、數量、規格、型號、配件、贈品、套組內容、認證、醫療／防護／安全承諾，以及防水、防汗、透氣、親膚、耐磨、減震、支撐、矯正等效果。只有來源原圖清楚存在或結構化共同已驗證資訊支持時才可保留。',
+        ('[多規格規則] ' + $multiText),
+        ('[本 slot 可用安全通用文字] ' + $generic),
+        '安全通用文字只是「可以使用」，不是必須全部塞進圖片；版面資訊足夠就少寫。',
+        '輸出維持1:1電商圖片，可做背景清潔、留白、裁切、對齊、字級與資訊層級整理，但商品本體與來源事實必須忠實。'
+    ) -join "`n"
+    return (Convert-ToTaiwanCommerceTextV4B $prompt)
+}
+
+function Get-CompactTransportPromptV2([string]$Slot, $ProductOrName) {
+    $product = Get-V4BResolvedProduct $ProductOrName
+    $plan = Get-V4BCurrentSourcePlan
+    $slotPlan = Get-V4BPlanSlot $plan $Slot
+    $label = Get-V4BSafeProductLabel $product
+    $generic = Get-V4BGenericPromptText $slotPlan
+    $text = "V4-B EDIT/PRESERVE/LOCALIZE：商品類型僅辨識為「$label」。只編修提供的真實原圖，不重新設計商品。保留原圖清楚存在的商品、結構、功能／材質／尺寸／名稱／規格等內容並翻成自然台灣繁體；看不清就省略，不猜測，不假裝OCR成功。原圖沒有的人物、場景、零件、功能、材質、尺寸、數量、配件、贈品、認證、功效與安全承諾都禁止新增。品牌、型號、SKU與數值不得改義。安全通用文字僅可用：$generic。資訊不足就少寫。"
+    return (Convert-ToTaiwanCommerceTextV4B $text)
+}
+
+# V4-B does not use layout novelty as a reason to redesign a faithful source image.
+function Get-LayoutRetryPromptV2([string]$Slot, [int]$LayoutAttempt) {
+    if ($LayoutAttempt -le 0) {
+        return "`n[V4-B 構圖規則] 以來源原圖構圖為基礎，只做必要的1:1裁切、留白與資訊整理；不要為了和其他五圖不同而創造新商品畫面。"
+    }
+    return "`n[V4-B 重試規則] 若需重試，仍必須使用相同真實來源與相同商品事實；只修正可讀性、排版或技術問題，不得用『換場景／換人物／換商品角度』方式追求新奇。"
+}
