@@ -55,12 +55,17 @@ jobs:
         run: |
           & .\_system\tests\v4a2_menu_loader_smoke.ps1
 
+      - name: V4-A.2.1 image text stability smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4a21_text_stability_smoke.ps1
+
       - name: Build clean Windows package
         shell: powershell
         run: |
           $short = $env:GITHUB_SHA.Substring(0,7)
-          $package = "TinySnow_V4-A.2_TaiwanReferenceSafety_$short.zip"
-          $stage = Join-Path $env:RUNNER_TEMP 'TinySnow_V4-A.2_Distribution'
+          $package = "TinySnow_V4-A.2.1_TextStability_$short.zip"
+          $stage = Join-Path $env:RUNNER_TEMP 'TinySnow_V4-A.2.1_Distribution'
           if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
@@ -100,8 +105,8 @@ jobs:
               'START.bat','V2_BUILD.txt','_system/start/api_v2.ps1','_system/start/menu_beginner.ps1',
               '_system/start/v4a1_guard.ps1','_system/start/v4a1_visual_truth.ps1','_system/start/v4a2_reference_safety.ps1',
               '_system/start/v4a2_reference_hardening.ps1','_system/start/v4a2_reference_hardening_r2.ps1',
-              '_system/start/v4a2_taiwan_localization.ps1',
-              '_system/config/factual_rules_v4a1.json','_system/config/taiwan_terms_v4a2.json'
+              '_system/start/v4a2_taiwan_localization.ps1','_system/start/v4a21_text_stability.ps1',
+              '_system/start/v4a2_menu_ux.ps1','_system/config/factual_rules_v4a1.json','_system/config/taiwan_terms_v4a2.json'
             )) {
               if ($names -notcontains $required) { throw ('Distribution package missing: ' + $required) }
             }
@@ -119,5 +124,5 @@ jobs:
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: TinySnow-V4-A.2-TaiwanReferenceSafety
+          name: TinySnow-V4-A.2.1-TextStability
           path: ${{ env.PACKAGE_NAME }}
