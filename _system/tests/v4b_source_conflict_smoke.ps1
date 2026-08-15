@@ -83,7 +83,7 @@ $script:V4BSourcePlanCache[[string]$product.product_id] = $plan
 $prompt = Get-PromptV2 'detail4' $product
 Assert-V4BConflict ($prompt -match '來源賣家促銷／承諾清理') 'seller-policy cleanup section missing from prompt'
 Assert-V4BConflict ($prompt -match '圖示與單位文字硬限制') 'unit-icon cleanup section missing from prompt'
-Assert-V4BConflict ($prompt -match '衝突文字遮蔽') 'shield directive missing from final prompt'
+Assert-V4BConflict ($prompt -match '來源文字遮蔽|衝突文字遮蔽') 'shield directive missing from final prompt'
 Assert-V4BConflict ($prompt -match '數量／套組數有差異') 'quantity-conflict section missing from prompt'
 Assert-V4BConflict ($prompt -notmatch '各5組') 'variant-specific quantity must not be seeded into prompt'
 Assert-V4BConflict ($prompt -match '2公尺' -and $prompt -match '30磅' -and $prompt -match '腰帶' -and $prompt -match '黑色') 'common verified facts were lost while suppressing quantity conflict'

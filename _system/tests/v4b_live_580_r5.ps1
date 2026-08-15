@@ -52,7 +52,7 @@ Copy-Item -LiteralPath $refs[0] -Destination (Join-Path $outDir '58015741169_det
 $prompt=Get-PromptV2 'detail4' $product
 foreach($required in @('2公尺','30磅','腰帶','黑色')){Assert-R5 ($prompt-match[regex]::Escape($required)) ('missing common fact: '+$required)}
 Assert-R5 ($prompt-notmatch'各5組') 'variant quantity leaked into prompt'
-Assert-R5 ($prompt-match'衝突文字遮蔽') 'text-shield directive missing'
+Assert-R5 ($prompt-match'來源文字遮蔽|衝突文字遮蔽') 'text-shield directive missing'
 $prompt|Set-Content -LiteralPath (Join-Path $outDir '58015741169_detail4_prompt.txt') -Encoding UTF8
 
 $apiRefs=[string[]]@(Get-PreparedApiReferencesV2 '58015741169' $refs)
