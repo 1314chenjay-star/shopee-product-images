@@ -26,8 +26,16 @@ function Get-V4A3PlannerPromptText([string]$Slot) {
     $blockedText = if ($blocked.Count -gt 0) { $blocked -join '；' } else { '避免重複前一張的主要構圖。' }
     $different = @($slotPlan.must_differ_from_slots)
     $differentText = if ($different.Count -gt 0) { $different -join '、' } else { '無' }
+    $handStyle = [string](Get-V4A1Property $slotPlan 'hand_held_style' '')
+    $handDirective = ''
+    if ($handStyle -eq 'blocked_as_primary') {
+        $handDirective = '手持構圖硬限制：本張不得讓手、手指或手掌持拿商品成為主要視覺；即使參考圖出現手持，也請改成商品靜置、局部細節、資訊卡或其他安全的無手持主構圖。不得只裁切手部後仍保留手指壓住商品。'
+    }
+    elseif ($handStyle -eq 'allowed_only_if_natural_use') {
+        $handDirective = '手持／人物只在真實自然的使用情境確實需要時才可出現；不得為了版型變化硬加手部。'
+    }
 
-    return ("`n[V4-A.3 五圖整體規劃] 本張角色：{0}。內容目標：{1}。指定版型家族：{2}。必須與 {3} 在至少兩個視覺維度上明顯不同（商品位置／人物有無／主視角／資訊區位置／場景／版面骨架擇二以上），但不得為了差異度選擇風險更高或與共同已驗證事實衝突的內容。禁止：{4}。同商品五張圖屬於同一商品頁素材，不可只換背景反覆複製同一個手持商品或英雄式主視覺。" -f [string]$slotPlan.role,[string]$slotPlan.content_goal,[string]$slotPlan.preferred_layout_family,$differentText,$blockedText)
+    return ("`n[V4-A.3 五圖整體規劃] 本張角色：{0}。內容目標：{1}。指定版型家族：{2}。必須與 {3} 在至少兩個視覺維度上明顯不同（商品位置／人物有無／主視角／資訊區位置／場景／版面骨架擇二以上），但不得為了差異度選擇風險更高或與共同已驗證事實衝突的內容。禁止：{4}。{5} 同商品五張圖屬於同一商品頁素材，不可只換背景反覆複製同一個手持商品或英雄式主視覺。" -f [string]$slotPlan.role,[string]$slotPlan.content_goal,[string]$slotPlan.preferred_layout_family,$differentText,$blockedText,$handDirective)
 }
 
 function Get-PromptV2([string]$Slot, $ProductOrName) {
@@ -50,7 +58,10 @@ if ($null -ne $script:V4A3LayoutRetryBase) {
 
         $mustDiffer = @($slotPlan.must_differ_from_slots)
         $fromText = if ($mustDiffer.Count -gt 0) { $mustDiffer -join '、' } else { '前面已完成圖片' }
-        return ($base + ("`nV4-A.3 去重記憶：此 slot 的固定角色仍是「{0}」，不得改成其他 slot 的任務。重生時優先改變與 {1} 相同的商品位置、主視角、人物／手持方式、資訊區位置與版面骨架；至少改兩項。Reference Safety 與 VerifiedFacts 永遠優先於去重。" -f [string]$slotPlan.role,$fromText))
+        $handStyle = [string](Get-V4A1Property $slotPlan 'hand_held_style' '')
+        $handRetry = ''
+        if ($handStyle -eq 'blocked_as_primary') { $handRetry = '重生仍不得用手、手指或手掌持拿商品作主視覺。' }
+        return ($base + ("`nV4-A.3 去重記憶：此 slot 的固定角色仍是「{0}」，不得改成其他 slot 的任務。重生時優先改變與 {1} 相同的商品位置、主視角、人物／手持方式、資訊區位置與版面骨架；至少改兩項。{2} Reference Safety 與 VerifiedFacts 永遠優先於去重。" -f [string]$slotPlan.role,$fromText,$handRetry))
     }
 }
 
