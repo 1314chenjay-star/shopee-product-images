@@ -15,6 +15,24 @@ function Get-CatalogV2 {
     return (Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
 
+function New-SelectedProductSnapshotV2($Source) {
+    if ($null -eq $Source) { throw '商品資料為空，無法建立選擇快照。' }
+
+    # Preserve every catalog field so downstream factual/variant guards receive the same
+    # structured product that was imported from Shopee. This is intentionally generic:
+    # future catalog fields survive selection without needing product-specific patches.
+    $values = [ordered]@{}
+    foreach ($property in @($Source.PSObject.Properties)) {
+        $values[[string]$property.Name] = $property.Value
+    }
+
+    $values['product_id'] = [string]$Source.product_id
+    $values['product_name'] = [string]$Source.product_name
+    $values['image_urls'] = [string[]]@($Source.image_urls | ForEach-Object { [string]$_ })
+    $values['selected_at'] = (Get-Date).ToString('o')
+    return [pscustomobject]$values
+}
+
 function Select-ShopeeProductV2([string]$ProductId) {
     if ([string]::IsNullOrWhiteSpace($ProductId) -or $ProductId -notmatch '^\d{5,30}$') {
         throw '商品ID格式錯誤。'
@@ -26,15 +44,9 @@ function Select-ShopeeProductV2([string]$ProductId) {
         throw '找不到該商品，或 Excel 中有重複商品ID。'
     }
 
-    $selection = [pscustomobject]@{
-        product_id = [string]$matches[0].product_id
-        product_name = [string]$matches[0].product_name
-        image_urls = @($matches[0].image_urls | ForEach-Object { [string]$_ })
-        selected_at = (Get-Date).ToString('o')
-    }
-
+    $selection = New-SelectedProductSnapshotV2 $matches[0]
     $path = Join-Path (Get-SelectionWorkspaceV2) 'selected_product.json'
-    $selection | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $path -Encoding UTF8
+    $selection | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $path -Encoding UTF8
     return $selection
 }
 
