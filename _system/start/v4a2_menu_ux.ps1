@@ -46,7 +46,7 @@ function Write-Host {
         $items = @($Object)
         for ($i = 0; $i -lt $items.Count; $i++) {
             if ([string]$items[$i] -eq 'Build: V4-A.1｜真實資料＋視覺數量鎖定版') {
-                $items[$i] = 'Build: V4-A.2.1｜圖片文字穩定修正版'
+                $items[$i] = 'Build: V4-A.3｜Five-Image Planner 五圖整體規劃版'
             }
         }
 
@@ -61,7 +61,7 @@ function Write-Host {
 
 try {
     if ($null -ne $host -and $null -ne $host.UI -and $null -ne $host.UI.RawUI) {
-        $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A.2.1 Text Stability | API-R3-120S'
+        $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A.3 Five-Image Planner | API-R3-120S'
     }
 }
 catch {}
