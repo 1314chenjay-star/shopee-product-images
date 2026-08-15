@@ -8,6 +8,19 @@ function Get-V4BSlotNames {
     return [string[]]@('main','detail1','detail2','detail3','detail4')
 }
 
+function Test-V4BQuantityConflict($Product) {
+    if ($null -eq $Product) { return $false }
+    $flags = Get-V4A1Property $Product 'multi_variant_flags' $null
+    return ([bool](Get-V4A1Property $flags 'has_multiple_quantities' $false) -or [bool](Get-V4A1Property $flags 'has_multiple_bundle_counts' $false))
+}
+
+function Test-V4BNeedsConflictTextShield($Product, $Analysis, [string]$Slot) {
+    if ($Slot -ne 'main' -and $Slot -ne 'detail4') { return $false }
+    $highConflict = [bool](Get-V4A1Property $Analysis 'high_variant_conflict' $false)
+    if (-not $highConflict) { return $false }
+    return (Test-V4BQuantityConflict $Product)
+}
+
 function Get-V4BAnalysisCandidates($Analysis) {
     $raw = @()
     if ($null -ne $Analysis -and $Analysis.PSObject.Properties.Name -contains 'reference_safety') {
@@ -43,12 +56,10 @@ function Get-V4BSafestCandidate($Candidates) {
 function Get-V4BDirectFiveCandidates($Candidates) {
     $items = @($Candidates)
     if ($items.Count -le 5) { return [object[]]@($items | Select-Object -First 5) }
-
     $picked = @()
     $main = @($items | Where-Object { [int]$_.position -eq 0 } | Select-Object -First 1)
     if ($main.Count -eq 0) { $main = @($items | Select-Object -First 1) }
     if ($main.Count -gt 0) { $picked += $main[0] }
-
     $rest = @($items | Where-Object { [string]$_.path -ne [string]$picked[0].path } | Sort-Object @{Expression='local_risk_score';Ascending=$true}, @{Expression='position';Ascending=$true})
     foreach ($candidate in $rest) {
         if ($picked.Count -ge 5) { break }
@@ -109,9 +120,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
                 $firstIndex = ($i - $direct.Count) % $candidates.Count
                 $secondIndex = ($firstIndex + 1) % $candidates.Count
                 $sourceItems = @($candidates[$firstIndex])
-                if ([string]$candidates[$secondIndex].path -ne [string]$candidates[$firstIndex].path) {
-                    $sourceItems += $candidates[$secondIndex]
-                }
+                if ([string]$candidates[$secondIndex].path -ne [string]$candidates[$firstIndex].path) { $sourceItems += $candidates[$secondIndex] }
                 $reason = '原圖不足五張；只從既有原圖內容重新裁切／整理／組合，不新增商品事實。'
             }
             else {
@@ -122,6 +131,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             }
         }
 
+        $shield = Test-V4BNeedsConflictTextShield $Product $Analysis $slot
         $slotPlans += [pscustomobject]@{
             slot = $slot
             source_mode = $mode
@@ -133,6 +143,8 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
             preserve_existing_content = $true
             localization_mode = 'taiwan_traditional_commerce'
             semantic_check = 'no_local_ocr_no_fake_semantic_certainty'
+            text_shield_required = $shield
+            runtime_reference_strategy = $(if ($shield) { 'conflict_text_shield_proxy' } else { 'original_source' })
         }
     }
 
@@ -143,6 +155,7 @@ function New-V4BSourceImagePlan($Product, $Analysis) {
         original_count = $candidates.Count
         output_count = 5
         high_variant_conflict = $highConflict
+        quantity_conflict = (Test-V4BQuantityConflict $Product)
         strategy = 'edit_preserve_localize_fill_to_five'
         no_ocr_claim = $true
         slots = [object[]]$slotPlans
@@ -185,23 +198,34 @@ function Analyze-ProductImagesV2([string]$ProductId, [string[]]$Paths) {
     return $analysis
 }
 
+function Get-V4BReferenceRisk($Analysis, [string]$Path) {
+    foreach ($item in @(Get-V4A1Property $Analysis 'reference_safety' @())) {
+        if ([string](Get-V4A1Property $item 'path' '') -eq $Path) { return [double](Get-V4A1Property $item 'local_risk_score' 0.50) }
+    }
+    return 0.50
+}
+
 function Get-ReferencesForSlotV2($Analysis, [string]$Slot, [int]$Maximum) {
     try {
         $productId = [string](Get-V4A1Property $Analysis 'product_id' '')
+        $product = Get-V4A2ResolvedProduct $null
         $plan = $null
         if ($productId -and $script:V4BSourcePlanCache.ContainsKey($productId)) { $plan = $script:V4BSourcePlanCache[$productId] }
-        if ($null -eq $plan) {
-            $product = Get-V4A2ResolvedProduct $null
-            $plan = New-V4BSourceImagePlan $product $Analysis
-        }
+        if ($null -eq $plan) { $plan = New-V4BSourceImagePlan $product $Analysis }
         $slotPlan = Get-V4BPlanSlot $plan $Slot
         if ($null -eq $slotPlan) { throw 'V4-B：找不到 slot source plan。' }
         $limit = [Math]::Min(2, [Math]::Max(1,$Maximum))
         $paths = @($slotPlan.source_paths | ForEach-Object { [string]$_ } | Where-Object { $_ } | Select-Object -Unique | Select-Object -First $limit)
         if ($paths.Count -gt 0) {
-            # V4-B intentionally returns the real source paths here. API-R3 later performs its normal
-            # JPEG size compression, but we do not create low-resolution safety proxies that would
-            # destroy source text needed for faithful Taiwan localization.
+            if ([bool](Get-V4A1Property $slotPlan 'text_shield_required' $false)) {
+                $shielded = @()
+                foreach ($path in $paths) {
+                    $risk = Get-V4BReferenceRisk $Analysis $path
+                    $proxy = New-V4A2ReferenceProxy $productId $path $risk $true
+                    if ($shielded -notcontains $proxy) { $shielded += $proxy }
+                }
+                if ($shielded.Count -gt 0) { return [string[]]$shielded }
+            }
             return [string[]]$paths
         }
     }

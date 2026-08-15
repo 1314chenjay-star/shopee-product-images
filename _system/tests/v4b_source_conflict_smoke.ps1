@@ -33,14 +33,29 @@ foreach ($term in @('KG','LB','CM','MM','IN','30磅')) {
     Assert-V4BConflict ($iconGuard -match [regex]::Escape($term)) ('unit-icon guard missing: ' + $term)
 }
 
+$analysis = [pscustomobject]@{
+    product_id='90000030001'
+    high_variant_conflict=$true
+    reference_safety=[object[]]@([pscustomobject]@{path='C:\refs\conflicted.png';position=0;duplicate=$false;local_risk_score=0.2;local_safe_score=0.8})
+    images=[object[]]@([pscustomobject]@{path='C:\refs\conflicted.png';position=0;duplicate=$false;local_risk_score=0.2;local_safe_score=0.8})
+}
+$plan = New-V4BSourceImagePlan $product $analysis
+Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'main').text_shield_required) 'quantity-conflict main must request text shield'
+Assert-V4BConflict ([bool](Get-V4BPlanSlot $plan 'detail4').text_shield_required) 'quantity-conflict detail4 must request text shield'
+Assert-V4BConflict (-not [bool](Get-V4BPlanSlot $plan 'detail1').text_shield_required) 'detail1 should retain source-text localization ability'
+Assert-V4BConflict ([string](Get-V4BPlanSlot $plan 'detail4').runtime_reference_strategy -eq 'conflict_text_shield_proxy') 'detail4 runtime strategy must be conflict_text_shield_proxy'
+Assert-V4BConflict ((Get-V4BSourceModePrompt (Get-V4BPlanSlot $plan 'detail4')) -match '不要猜測、還原、補全') 'shielded slot prompt must prohibit reconstruction of blurred source text'
+
 $selDir = Get-SelectionWorkspaceV2
 New-Item -ItemType Directory -Path $selDir -Force | Out-Null
 $product | ConvertTo-Json -Depth 14 | Set-Content -LiteralPath (Join-Path $selDir 'selected_product.json') -Encoding UTF8
+$script:V4BSourcePlanCache[[string]$product.product_id] = $plan
 $prompt = Get-PromptV2 'detail4' $product
 Assert-V4BConflict ($prompt -match '來源賣家促銷／承諾清理') 'seller-policy cleanup section missing from prompt'
 Assert-V4BConflict ($prompt -match '圖示與單位文字硬限制') 'unit-icon cleanup section missing from prompt'
+Assert-V4BConflict ($prompt -match '衝突文字遮蔽') 'shield directive missing from final prompt'
 Assert-V4BConflict ($prompt -match '數量／套組數有差異') 'quantity-conflict section missing from prompt'
 Assert-V4BConflict ($prompt -notmatch '各5組') 'variant-specific quantity must not be seeded into prompt'
 Assert-V4BConflict ($prompt -match '2公尺' -and $prompt -match '30磅' -and $prompt -match '腰帶' -and $prompt -match '黑色') 'common verified facts were lost while suppressing quantity conflict'
 
-Write-Host 'V4-B quantity conflict, seller-promise deletion, and unit-icon smoke: PASS' -ForegroundColor Green
+Write-Host 'V4-B quantity conflict, seller-promise deletion, unit-icon, and text-shield smoke: PASS' -ForegroundColor Green

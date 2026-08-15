@@ -60,12 +60,16 @@ function Get-V4BSlotRoleText([string]$Slot) {
 function Get-V4BSourceModePrompt($SlotPlan) {
     if ($null -eq $SlotPlan) { return '來源模式：single_original。只編修現有原圖。' }
     $mode = [string](Get-V4A1Property $SlotPlan 'source_mode' 'single_original')
-    switch ($mode) {
-        'single_original' { return '來源模式：single_original。以這張真實原圖為唯一視覺來源，保留商品、人物、場景、零件與現有商品資訊；只做翻譯、排版、裁切、清理與畫質優化。' }
-        'recomposed_originals' { return '來源模式：recomposed_originals。只能把提供的真實原圖內容重新裁切、整理、組合；不得在兩張原圖之外創造新商品、新人物、新場景、新零件或新屬性。' }
-        'generic_fill' { return '來源模式：generic_fill。仍以提供的真實原圖商品為視覺基礎；若既有內容不足，只能加入下方安全白名單通用文字，不得新增任何具體商品事實。' }
-        default { return ('來源模式：' + $mode + '。只允許原圖保真編修。') }
+    $base = switch ($mode) {
+        'single_original' { '來源模式：single_original。以這張真實原圖為唯一視覺來源，保留商品、人物、場景、零件與現有商品資訊；只做翻譯、排版、裁切、清理與畫質優化。' }
+        'recomposed_originals' { '來源模式：recomposed_originals。只能把提供的真實原圖內容重新裁切、整理、組合；不得在兩張原圖之外創造新商品、新人物、新場景、新零件或新屬性。' }
+        'generic_fill' { '來源模式：generic_fill。仍以提供的真實原圖商品為視覺基礎；若既有內容不足，只能加入下方安全白名單通用文字，不得新增任何具體商品事實。' }
+        default { '來源模式：' + $mode + '。只允許原圖保真編修。' }
     }
+    if ([bool](Get-V4A1Property $SlotPlan 'text_shield_required' $false)) {
+        $base += ' [衝突文字遮蔽] 本 slot 因多規格數量衝突，參考圖已被低解析處理以保留商品／人物／場景輪廓但阻止直接抄來源文字。不要猜測、還原、補全或模仿模糊的來源字樣；本張所有新可讀文字只能使用「結構化共同已驗證資訊」或「本 slot 安全通用文字」。來源圖中原本的功能句、件數、促銷字、售後字在此 slot 都不要重建。'
+    }
+    return $base
 }
 
 function Get-V4BGenericPromptText($SlotPlan) {
@@ -121,7 +125,8 @@ function Get-CompactTransportPromptV2([string]$Slot, $ProductOrName) {
     $label = Get-V4BSafeProductLabel $product
     $generic = Get-V4BGenericPromptText $slotPlan
     $variantGuard = Get-V4BVariantConflictPrompt $product
-    $text = "V4-B EDIT/PRESERVE/LOCALIZE：商品類型僅辨識為「$label」。只編修提供的真實原圖，不重新設計商品。保留原圖清楚存在的商品與商品屬性並翻成自然台灣繁體；看不清就省略，不猜測，不假裝OCR成功。原圖沒有的人物、場景、零件、功能、材質、尺寸、數量、配件、贈品、認證、功效與安全承諾都禁止新增。品牌、型號、SKU與數值不得改義。來源圖的價格、折扣、包郵、包退、售後承諾、限時與原賣家促銷文字必須整個刪除，禁止改寫成低敏、親膚、安全、安心等替代賣點。規格圖示不要自行放 KG、LB、CM、MM、IN 或其他單位字母。$variantGuard 安全通用文字僅可用：$generic。資訊不足就少寫。"
+    $shield = if ([bool](Get-V4A1Property $slotPlan 'text_shield_required' $false)) { ' 本張使用衝突文字遮蔽參考；禁止還原或猜測模糊來源文字，新可讀文字只准共同已驗證資訊或安全通用文字。' } else { '' }
+    $text = "V4-B EDIT/PRESERVE/LOCALIZE：商品類型僅辨識為「$label」。只編修提供的真實原圖，不重新設計商品。保留原圖清楚存在的商品與商品屬性並翻成自然台灣繁體；看不清就省略，不猜測，不假裝OCR成功。原圖沒有的人物、場景、零件、功能、材質、尺寸、數量、配件、贈品、認證、功效與安全承諾都禁止新增。品牌、型號、SKU與數值不得改義。來源圖的價格、折扣、包郵、包退、售後承諾、限時與原賣家促銷文字必須整個刪除，禁止改寫成低敏、親膚、安全、安心等替代賣點。規格圖示不要自行放 KG、LB、CM、MM、IN 或其他單位字母。$shield $variantGuard 安全通用文字僅可用：$generic。資訊不足就少寫。"
     return (Convert-ToTaiwanCommerceTextV4B $text)
 }
 
