@@ -59,8 +59,28 @@ foreach ($required in @('2公尺','200公分','30磅','腰帶','黑色','數量�
 if ($allowed580 -contains '2米') { throw '580 source unit leaked into rendered allowlist.' }
 if ($allowed580 -contains '多入數可選') { throw '580 legacy quantity wording leaked.' }
 
+$detail1Allowed580 = @(Get-V4A2AllowedOutputText $product580 'detail1')
+foreach ($forbidden in @('多規格可選','數量規格可選','請依實際選項為準','實際內容請依選項為準','不同規格內容可能不同','款式可選')) {
+    if ($detail1Allowed580 -contains $forbidden) { throw ('detail1 redundant microcopy still allowed: ' + $forbidden) }
+}
+foreach ($required in @('籃球訓練阻力繩','2公尺','30磅','腰帶','黑色')) {
+    if ($detail1Allowed580 -notcontains $required) { throw ('detail1 essential text missing: ' + $required) }
+}
+
+$detail2Allowed580 = @(Get-V4A2AllowedOutputText $product580 'detail2')
+foreach ($required in @('商品結構與細節展示','2公尺','30磅','腰帶','黑色')) {
+    if ($detail2Allowed580 -notcontains $required) { throw ('detail2 essential text missing: ' + $required) }
+}
+foreach ($forbidden in @('籃球訓練阻力繩','多規格可選','數量規格可選','彈力繩','連接扣')) {
+    if ($detail2Allowed580 -contains $forbidden) { throw ('detail2 extra/structural label still allowed: ' + $forbidden) }
+}
+
+$detail2Prompt580 = Get-PromptV2 'detail2' $product580
+if ($detail2Prompt580 -notmatch '局部放大圖與圈選細節全部禁止加文字標籤') { throw 'detail2 no-caption hard rule missing.' }
+if ($detail2Prompt580 -notmatch '禁止自行為商品局部結構') { throw 'global structural naming ban missing.' }
+
 $prompt580 = Get-PromptV2 'detail4' $product580
 if ($prompt580 -notmatch '2公尺' -or $prompt580 -notmatch '200公分') { throw '580 Taiwan units lost after text-stability layer.' }
 if ($prompt580 -match '(?<!公)2米') { throw '580 mainland unit wording reappeared.' }
 
-Write-Host '[PASS] V4-A.2.1 image text stability: unstable quantity wording removed, detail4 text density reduced, Taiwan units preserved, and omission-on-error rules applied.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.2.1 image text stability: unstable quantity wording removed, slot allowlists reduced, detail captions banned, Taiwan units preserved, and omission-on-error rules applied.' -ForegroundColor Green
