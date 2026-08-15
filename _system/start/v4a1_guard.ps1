@@ -19,5 +19,8 @@ if (Test-Path -LiteralPath $referenceHardeningR2Path -PathType Leaf) { . $refere
 $taiwanLocalizationPath = Join-Path $PSScriptRoot 'v4a2_taiwan_localization.ps1'
 if (Test-Path -LiteralPath $taiwanLocalizationPath -PathType Leaf) { . $taiwanLocalizationPath }
 
+$textStabilityPath = Join-Path $PSScriptRoot 'v4a21_text_stability.ps1'
+if (Test-Path -LiteralPath $textStabilityPath -PathType Leaf) { . $textStabilityPath }
+
 $menuUxPath = Join-Path $PSScriptRoot 'v4a2_menu_ux.ps1'
 if (Test-Path -LiteralPath $menuUxPath -PathType Leaf) { . $menuUxPath }
