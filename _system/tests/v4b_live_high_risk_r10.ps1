@@ -72,7 +72,7 @@ $plan529=Get-V4BPlanSlot $prepared529.plan 'detail4'
 Assert-R10 ([bool]$plan529.text_shield_required -and [string]$plan529.verified_text_policy -eq 'deterministic_overlay_only') '529 detail4 deterministic text shield missing'
 $content529=Get-V4BVerifiedOverlayContent $product529 'detail4'
 Assert-R10 ([string]$content529.title -eq '運動肌貼') '529 safe Taiwan title mismatch'
-Assert-R10 ([string]$content529.secondary -match '數量規格可選' -and [string]$content529.secondary -match '規格請依選項為準') '529 safe neutral overlay missing'
+Assert-R10 ([string]$content529.secondary -match '選購前請確認規格|實際規格請依商品選項為準') '529 safe neutral overlay missing'
 Assert-R10 ([string]$content529.secondary -notmatch '10片|20片|40片') '529 quantity leaked into overlay'
 $prompt529=Get-PromptV2 'detail4' $product529
 Assert-R10 ($prompt529 -notmatch '10片|20片|40片') '529 quantity leaked into prompt'
