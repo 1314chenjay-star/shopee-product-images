@@ -12,6 +12,7 @@ $runtimeFiles = @(
     'v4a2_reference_safety.ps1',
     'v4a2_reference_hardening.ps1',
     'v4a2_reference_hardening_r2.ps1',
+    'v4a2_taiwan_localization.ps1',
     'menu_beginner.ps1'
 )
 
@@ -34,18 +35,21 @@ foreach ($name in $runtimeFiles) {
     }
 }
 
-$configPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'config\factual_rules_v4a1.json'
-if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
-    Write-Host '[FAIL] 缺少 factual_rules_v4a1.json' -ForegroundColor Red
-    $failed = $true
-}
-else {
+$configRoot = Join-Path (Split-Path $PSScriptRoot -Parent) 'config'
+$configFiles = @('factual_rules_v4a1.json','taiwan_terms_v4a2.json')
+foreach ($configName in $configFiles) {
+    $configPath = Join-Path $configRoot $configName
+    if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
+        Write-Host ('[FAIL] 缺少 ' + $configName) -ForegroundColor Red
+        $failed = $true
+        continue
+    }
     try {
         $configText = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
         $configText | ConvertFrom-Json | Out-Null
         if ($configText.Contains([char]0xFFFD)) { throw '包含 U+FFFD replacement character' }
     }
-    catch { Write-Host ('[FAIL] factual_rules_v4a1.json：' + $_.Exception.Message) -ForegroundColor Red; $failed = $true }
+    catch { Write-Host ('[FAIL] ' + $configName + '：' + $_.Exception.Message) -ForegroundColor Red; $failed = $true }
 }
 
 $forbiddenChecks = @(
