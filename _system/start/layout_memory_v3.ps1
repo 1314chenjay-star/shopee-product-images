@@ -5,8 +5,12 @@ $script:V4A3CompactPromptBase = (Get-Command Get-CompactTransportPromptV2 -Error
 $layoutRetryCommand = Get-Command Get-LayoutRetryPromptV2 -ErrorAction SilentlyContinue
 $script:V4A3LayoutRetryBase = $null
 if ($null -ne $layoutRetryCommand) { $script:V4A3LayoutRetryBase = $layoutRetryCommand.ScriptBlock }
-$script:V4A3MainFitnessBase = (Get-Command Test-MainImageFitnessV2 -ErrorAction Stop).ScriptBlock
-$script:V4A3DiversityBase = (Get-Command Test-LayoutDiversityV2 -ErrorAction Stop).ScriptBlock
+$mainFitnessCommand = Get-Command Test-MainImageFitnessV2 -ErrorAction SilentlyContinue
+$diversityCommand = Get-Command Test-LayoutDiversityV2 -ErrorAction SilentlyContinue
+$script:V4A3MainFitnessBase = $null
+$script:V4A3DiversityBase = $null
+if ($null -ne $mainFitnessCommand) { $script:V4A3MainFitnessBase = $mainFitnessCommand.ScriptBlock }
+if ($null -ne $diversityCommand) { $script:V4A3DiversityBase = $diversityCommand.ScriptBlock }
 
 function Get-V4A3PlannerPromptText([string]$Slot) {
     $plan = Get-V4A3CurrentPlan
@@ -147,16 +151,20 @@ function Get-V4A3SlotFromCandidatePath([string]$Path) {
     return ''
 }
 
-function Test-MainImageFitnessV2([string]$Path) {
-    & $script:V4A3MainFitnessBase $Path
-    Register-V4A3AcceptedSlotMemory 'main' $Path
+if ($null -ne $script:V4A3MainFitnessBase) {
+    function Test-MainImageFitnessV2([string]$Path) {
+        & $script:V4A3MainFitnessBase $Path
+        Register-V4A3AcceptedSlotMemory 'main' $Path
+    }
 }
 
-function Test-LayoutDiversityV2([string]$CandidatePath, [string[]]$ExistingPaths) {
-    $result = & $script:V4A3DiversityBase $CandidatePath $ExistingPaths
-    if (-not [bool]$result.high_similarity) {
-        $slot = Get-V4A3SlotFromCandidatePath $CandidatePath
-        if (-not [string]::IsNullOrWhiteSpace($slot)) { Register-V4A3AcceptedSlotMemory $slot $CandidatePath }
+if ($null -ne $script:V4A3DiversityBase) {
+    function Test-LayoutDiversityV2([string]$CandidatePath, [string[]]$ExistingPaths) {
+        $result = & $script:V4A3DiversityBase $CandidatePath $ExistingPaths
+        if (-not [bool]$result.high_similarity) {
+            $slot = Get-V4A3SlotFromCandidatePath $CandidatePath
+            if (-not [string]::IsNullOrWhiteSpace($slot)) { Register-V4A3AcceptedSlotMemory $slot $CandidatePath }
+        }
+        return $result
     }
-    return $result
 }
