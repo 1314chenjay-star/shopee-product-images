@@ -31,4 +31,11 @@ if ($after -notmatch '2公尺' -or $after -match '(?<!公)2米' -or $after -notm
 if ($after -notmatch '成品允許文字逐字白名單') { throw 'Legacy visual guard reload overwrote exact-text hardening.' }
 if ($after -notmatch 'Reference Safety') { throw 'Legacy visual guard reload overwrote Reference Safety.' }
 
-Write-Host '[PASS] V4-A.2 menu loader regression: duplicate legacy visual-guard load cannot overwrite Reference Safety, exact-text hardening, or Taiwan localization.' -ForegroundColor Green
+# The old menu may still call Pause-Menu, but its exact Read-Host prompt must now auto-return.
+$watch = [Diagnostics.Stopwatch]::StartNew()
+$returnValue = Read-Host '按 Enter 回主選單'
+$watch.Stop()
+if ([string]$returnValue -ne '') { throw 'Legacy menu pause was not auto-answered.' }
+if ($watch.ElapsedMilliseconds -gt 2500) { throw ('Legacy menu pause took too long: ' + $watch.ElapsedMilliseconds + 'ms') }
+
+Write-Host '[PASS] V4-A.2 menu loader regression: legacy visual reload cannot override final guards, and the old Enter-to-return prompt now returns automatically.' -ForegroundColor Green
