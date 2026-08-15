@@ -1,5 +1,13 @@
 $ErrorActionPreference = 'Stop'
 
+# menu_beginner.ps1 in older builds sourced this legacy layer once more after v4a1_guard.ps1.
+# If the final V4-A.2 hardening + Taiwan localization layers already exist, return immediately
+# so older function definitions cannot overwrite the tested runtime.
+if (($null -ne (Get-Command Get-V4A2AllowedOutputText -ErrorAction SilentlyContinue)) -and
+    ($null -ne (Get-Command Convert-ToTaiwanCommerceTextV4A2 -ErrorAction SilentlyContinue))) {
+    return
+}
+
 function Get-V4A1VisualVariantGuardText($Product) {
     $flags = Get-V4A1Property $Product 'multi_variant_flags' $null
     if ($null -eq $flags) { return '' }
