@@ -1,0 +1,4 @@
+V4-B safety R4 live trigger
+Scope: 580 detail4 + 529 detail4
+Strategy: conflict text shield proxy for high-risk main/detail4 only
+Do not merge.
