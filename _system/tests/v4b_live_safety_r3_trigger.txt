@@ -1,0 +1,4 @@
+V4-B safety R3 live trigger
+Scope: 580 detail4 + 529 detail4 only
+Checks: delete source seller promises without replacement claims; no unit-letter icons
+Do not merge.
