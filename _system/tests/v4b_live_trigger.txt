@@ -1,0 +1,4 @@
+V4-B focused live trigger
+Scope: 580 detail4, 529 detail4, synthetic 3-source detail3/detail4
+API budget: 4 intended generations
+Do not merge.
