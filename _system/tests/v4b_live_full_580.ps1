@@ -11,6 +11,9 @@ $startRoot = Join-Path $systemRoot 'start'
 
 $key=[string]$env:TINYSNOW_API_KEY
 if([string]::IsNullOrWhiteSpace($key)){throw'TINYSNOW_API_KEY repository secret is missing.'}
+$round='R9'
+$artifactName=if([string]::IsNullOrWhiteSpace([string]$env:V4B_ARTIFACT_NAME)){'TinySnow-V4-B-Full-580-R9'}else{([string]$env:V4B_ARTIFACT_NAME).Trim()}
+$outDirName='live_e2e_output_v4b_full_580_r9'
 $config=[pscustomobject]@{api_key=$key;base_url='https://tinysnow.one/v1';model='gpt-image-2';quality='medium';size='1024x1024';safe_test_mode=$true;max_reference_images=2;transport_profile='r3_120s_safe'}
 function Assert-Full580([bool]$Condition,[string]$Message){if(-not$Condition){throw('V4-B full 580 failed: '+$Message)}}
 
@@ -53,7 +56,7 @@ Assert-Full580 ([bool]$checkpoint.finalization_complete) 'finalization checkpoin
 $progress=Get-ProgressSummaryV2 $product
 Assert-Full580 ([int]$progress.generated-eq5) ('expected 5 generated slots, got '+[string]$progress.generated)
 
-$outDir=Join-Path $systemRoot 'live_e2e_output_v4b_full_580'
+$outDir=Join-Path $systemRoot $outDirName
 if(Test-Path -LiteralPath $outDir){Remove-Item -LiteralPath $outDir -Recurse -Force}
 New-Item -ItemType Directory -Path $outDir -Force|Out-Null
 foreach($slot in @('main','detail1','detail2','detail3','detail4')){Copy-Item -LiteralPath (Join-Path $finalDir ('58015741169_'+$slot+'.jpg')) -Destination (Join-Path $outDir ('58015741169_'+$slot+'.jpg')) -Force}
@@ -62,7 +65,14 @@ foreach($name in @('analysis.json','source_plan_v4b.json')){$p=Join-Path $rawDir
 $validationPath=Join-Path $workspace 'checkpoints\58015741169\source_validation_v4b.json';if(Test-Path -LiteralPath $validationPath){Copy-Item -LiteralPath $validationPath -Destination (Join-Path $outDir 'source_validation_v4b.json') -Force}
 $checkpoint|ConvertTo-Json -Depth 12|Set-Content -LiteralPath (Join-Path $outDir 'checkpoint_v2.json') -Encoding UTF8
 
-$hashes=@();foreach($slot in @('main','detail1','detail2','detail3','detail4')){$hashes+=(Get-FileHash -LiteralPath (Join-Path $outDir ('58015741169_'+$slot+'.jpg')) -Algorithm SHA256).Hash.ToLowerInvariant()}
+$hashes=@();$tests=@();foreach($slot in @('main','detail1','detail2','detail3','detail4')){$output=Join-Path $outDir ('58015741169_'+$slot+'.jpg');$hash=(Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant();$hashes+=$hash;$tests+=[pscustomobject]@{product_id='58015741169';slot=$slot;output_file=(Split-Path $output -Leaf);bytes=(Get-Item -LiteralPath $output).Length;sha256=$hash}}
 Assert-Full580 (@($hashes|Select-Object -Unique).Count-eq5) 'full five-image output contains exact duplicate files'
-[pscustomobject]@{version='V4-B';product_id='58015741169';full_pipeline=$true;generated_count=5;elapsed_seconds=$elapsed;checkpoint_complete=[bool]$checkpoint.finalization_complete;unique_hashes=@($hashes|Select-Object -Unique).Count;api_transport='API-R3-120S';visual_review_required=$true}|ConvertTo-Json -Depth 8|Set-Content -LiteralPath (Join-Path $outDir 'v4b_full_580_summary.json') -Encoding UTF8
-Write-Host ('[PASS] V4-B full 580 end-to-end pipeline completed with 5 outputs in '+$elapsed+' seconds. Visual review required.') -ForegroundColor Green
+[pscustomobject]@{
+    schema_version=2;version='V4-B Full 580 R9';round=$round;head_sha=[string]$env:GITHUB_SHA;run_id=[string]$env:GITHUB_RUN_ID;
+    run_attempt=[string]$env:GITHUB_RUN_ATTEMPT;workflow_name=[string]$env:GITHUB_WORKFLOW;repository=[string]$env:GITHUB_REPOSITORY;
+    artifact_name=$artifactName;artifact_id=$null;artifact_id_status='assigned after payload upload; see v4b_full_580_r9_artifact_receipt.json and GitHub job summary';
+    output_directory=$outDirName;product_id='58015741169';full_pipeline=$true;generated_image_count=5;elapsed_seconds=$elapsed;
+    checkpoint_complete=[bool]$checkpoint.finalization_complete;unique_hashes=@($hashes|Select-Object -Unique).Count;api_transport='API-R3-120S';
+    tests=[object[]]$tests;visual_review_required=$true
+}|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $outDir 'v4b_full_580_r9_summary.json') -Encoding UTF8
+Write-Host ('[PASS] V4-B Full 580 '+$round+' end-to-end pipeline completed with 5 outputs in '+$elapsed+' seconds. Visual review required.') -ForegroundColor Green

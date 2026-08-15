@@ -39,4 +39,14 @@ foreach ($required in @('RUN-V4B-DETAIL3-R8','id: payload','steps.payload.output
     Assert-V4BMetadata ($detail3Workflow -match [regex]::Escape($required)) ('R8 artifact receipt missing: ' + $required)
 }
 
+$fullWorkflow = Get-Content -LiteralPath (Join-Path $root '.github\workflows\v4b-full-580.yml') -Raw -Encoding UTF8
+foreach ($required in @('RUN-V4B-FULL-580','V4B_ARTIFACT_NAME: TinySnow-V4-B-Full-580-R9','id: payload','steps.payload.outputs.artifact-id','v4b_full_580_r9_artifact_receipt.json','artifact_id = $env:PAYLOAD_ARTIFACT_ID','head_sha = $env:GITHUB_SHA','run_id = $env:GITHUB_RUN_ID')) {
+    Assert-V4BMetadata ($fullWorkflow -match [regex]::Escape($required)) ('R9 artifact receipt missing: ' + $required)
+}
+
+$fullRunner = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'v4b_live_full_580.ps1') -Raw -Encoding UTF8
+foreach ($required in @("round='R9'",'schema_version=2','head_sha','run_id','run_attempt','workflow_name','artifact_name=$artifactName','artifact_id_status','generated_image_count=5','tests=[object[]]$tests')) {
+    Assert-V4BMetadata ($fullRunner -match [regex]::Escape($required)) ('R9 summary metadata missing: ' + $required)
+}
+
 Write-Host 'V4-B round/head/run/artifact metadata smoke: PASS' -ForegroundColor Green

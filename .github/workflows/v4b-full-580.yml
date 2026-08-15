@@ -26,18 +26,55 @@ jobs:
           & .\_system\tests\v4b_planner_smoke.ps1
           & .\_system\tests\v4b_source_conflict_smoke.ps1
           & .\_system\tests\v4b_verified_overlay_smoke.ps1
+          & .\_system\tests\v4b_report_metadata_smoke.ps1
 
       - name: Full 580 V4-B optimization
         shell: powershell
         env:
           TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+          V4B_ARTIFACT_NAME: TinySnow-V4-B-Full-580-R9
         run: |
           & .\_system\tests\v4b_live_full_580.ps1
 
-      - name: Upload full 580 result
+      - name: Upload full 580 R9 payload
+        id: payload
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: TinySnow-V4-B-Full-580
-          path: _system/live_e2e_output_v4b_full_580/
+          name: TinySnow-V4-B-Full-580-R9
+          path: _system/live_e2e_output_v4b_full_580_r9/
           if-no-files-found: ignore
+
+      - name: Record full 580 R9 payload artifact receipt
+        if: always() && steps.payload.outputs.artifact-id != ''
+        shell: powershell
+        env:
+          PAYLOAD_ARTIFACT_ID: ${{ steps.payload.outputs.artifact-id }}
+          PAYLOAD_ARTIFACT_URL: ${{ steps.payload.outputs.artifact-url }}
+        run: |
+          $receiptDir = '.\_system\live_e2e_output_v4b_full_580_r9_receipt'
+          New-Item -ItemType Directory -Path $receiptDir -Force | Out-Null
+          [pscustomobject]@{
+            schema_version = 1
+            version = 'V4-B Full 580 R9'
+            round = 'R9'
+            head_sha = $env:GITHUB_SHA
+            run_id = $env:GITHUB_RUN_ID
+            run_attempt = $env:GITHUB_RUN_ATTEMPT
+            workflow_name = $env:GITHUB_WORKFLOW
+            repository = $env:GITHUB_REPOSITORY
+            artifact_name = 'TinySnow-V4-B-Full-580-R9'
+            artifact_id = $env:PAYLOAD_ARTIFACT_ID
+            artifact_role = 'payload'
+            artifact_url = $env:PAYLOAD_ARTIFACT_URL
+          } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $receiptDir 'v4b_full_580_r9_artifact_receipt.json') -Encoding UTF8
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ('V4-B Full 580 R9 payload artifact ID: ' + $env:PAYLOAD_ARTIFACT_ID)
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ('Head SHA: ' + $env:GITHUB_SHA + ' | Run ID: ' + $env:GITHUB_RUN_ID)
+
+      - name: Upload full 580 R9 artifact receipt
+        if: always() && steps.payload.outputs.artifact-id != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-V4-B-Full-580-R9-Receipt
+          path: _system/live_e2e_output_v4b_full_580_r9_receipt/
+          if-no-files-found: error
