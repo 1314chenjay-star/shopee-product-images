@@ -23,6 +23,7 @@ env:
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
   GAP_INDEX: _system/v4c/evidence_hydration/evidence_gap_index.jsonl
   HYDRATED_EVIDENCE: _system/v4c/evidence_hydration/evidence.jsonl
+  SOURCE_PROGRESS: _system/v4c/progress/v4c_source_progress.jsonl
   PRODUCT_CONTEXT: _system/v4c/semantic/bootstrap/product_context.jsonl.gz.b64
   REQUIREMENTS: _system/v4c/preservation/requirements.txt
   DURABLE_PATH: _system/v4c/evidence_hydration/bartifact_recovery/materialized_evidence.jsonl
@@ -106,12 +107,13 @@ jobs:
           python -m py_compile _system\tests\v4c_bartifact_recovery.py _system\tests\v4c_bartifact_recovery_validate.py
           python _system\tests\v4c_bartifact_recovery.py self-test
 
-      - name: Build exact 221 target and 40-record canary
+      - name: Build exact 221 target from frozen V4-C1 legacy coordinates and 40-record canary
         shell: powershell
         run: |
           python _system\tests\v4c_bartifact_recovery.py plan `
             --gap-index $env:GAP_INDEX `
             --hydrated-evidence $env:HYDRATED_EVIDENCE `
+            --source-progress $env:SOURCE_PROGRESS `
             --artifact-inventory artifacts\plan\artifact_inventory.json `
             --target-out artifacts\plan\target_221.jsonl `
             --canary-out artifacts\plan\canary_40.jsonl `
@@ -315,7 +317,7 @@ jobs:
           Copy-Item artifacts\final\validation.json "$dst\validation.json" -Force
           $s = Get-Content artifacts\final\summary.json -Raw | ConvertFrom-Json
           $lock = [ordered]@{
-            schema_version = 'v4c2.4.bartifact-recovery-lock.1'
+            schema_version = 'v4c2.4.bartifact-recovery-lock.2'
             passed = $true
             workflow_run = "$env:GITHUB_RUN_ID"
             base_head = $env:BASE_HEAD
@@ -330,6 +332,7 @@ jobs:
             partial_safe = [int]$s.partial_safe
             hold_remaining = [int]$s.hold_remaining
             block = [int]$s.block
+            legacy_coordinate_mapping = $true
             source_fetch_called = $false
             semantic_inference_executed = $false
             image_generation_called = $false
