@@ -15,8 +15,15 @@ function Get-V4CReviewTierRank([string]$Tier) {
 function Get-V4CCheckpointState($CheckpointStates, [string]$ProductId) {
     if ($null -eq $CheckpointStates) { return '' }
     if ($CheckpointStates -is [hashtable] -and $CheckpointStates.ContainsKey($ProductId)) { return [string]$CheckpointStates[$ProductId] }
-    if ($CheckpointStates.PSObject.Properties.Name -contains $ProductId) { return [string]$CheckpointStates.$ProductId }
+    if ($CheckpointStates.PSObject.Properties.Name -contains $ProductId) { return [string]$CheckpointStates.PSObject.Properties[$ProductId].Value }
     return ''
+}
+
+function Get-V4CManifestProductRank($Product, $CheckpointStates) {
+    $productId = [string]$Product.product_id
+    $checkpoint = Get-V4CCheckpointState $CheckpointStates $productId
+    if (-not [string]::IsNullOrWhiteSpace($checkpoint)) { return 9 }
+    return Get-V4CReviewTierRank ([string]$Product.review_gate.risk_tier)
 }
 
 function New-V4CSemanticReviewManifest($CatalogAnalysis, $CheckpointStates = $null, [int]$BatchSize = 50) {
@@ -24,10 +31,7 @@ function New-V4CSemanticReviewManifest($CatalogAnalysis, $CheckpointStates = $nu
     if ($BatchSize -lt 1) { throw 'V4-C0 semantic manifest：BatchSize 必須大於 0。' }
 
     $products = @($CatalogAnalysis.products)
-    $ordered = @($products | Sort-Object \
-        @{Expression={ Get-V4CReviewTierRank ([string]$_.review_gate.risk_tier) };Ascending=$true}, \
-        @{Expression={ -[int]$_.review_gate.risk_score };Ascending=$true}, \
-        @{Expression={ [string]$_.product_id };Ascending=$true})
+    $ordered = @($products | Sort-Object @{Expression={ Get-V4CManifestProductRank $_ $CheckpointStates };Ascending=$true}, @{Expression={ -[int]$_.review_gate.risk_score };Ascending=$true}, @{Expression={ [string]$_.product_id };Ascending=$true})
 
     $rows = @()
     $sequence = 0
