@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "product_id": "42833435408",
+  "round": "R14",
+  "scope": "main only",
+  "run_id": "31917729737",
+  "head_sha": "2459132183a7e8b52520134178c23c6570d0e270",
+  "payload_artifact_id": "9255422585",
+  "receipt_artifact_id": "9255422817",
+  "source_review_run_id": "31917384949",
+  "source_review_artifact_id": "9255311958",
+  "selected_source_index": 0,
+  "technical_result": "pass",
+  "human_visual_result": "pass",
+  "comparison": {
+    "same_product_identity": true,
+    "white_black_double_layer_main_products_preserved": true,
+    "bottom_variant_thumbnail_relationship_preserved": true,
+    "variant_display_not_changed_to_fixed_bundle": true,
+    "existing_traditional_chinese_marketing_copy_preserved_without_new_claim": true,
+    "existing_product_surface_prints_preserved_without_new_brand_like_text": true,
+    "new_visible_pocket_added": false,
+    "new_dimension_added": false,
+    "new_material_claim_added": false,
+    "new_brand_logo_accessory_or_gift_added": false,
+    "new_performance_claim_added": false
+  },
+  "boundary": "This closes only 428/main R14. R13 detail1 remains separately locked. detail2/detail3/detail4 and complete-five validation remain open.",
+  "next_gate": "Generate only detail2, detail3 and detail4 as independent slots. Never regenerate main or detail1."
+}
