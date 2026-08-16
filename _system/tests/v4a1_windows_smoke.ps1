@@ -58,7 +58,12 @@ if (-not [bool]$p544.multi_variant_flags.has_multiple_colors -or @($p544.verifie
 $prompt580 = Get-PromptV2 'main' $p580
 foreach ($value in @('2公尺','30磅','腰帶','黑色')) { if ($prompt580 -notmatch [regex]::Escape($value)) { throw ('Prompt missing localized/common verified fact: ' + $value) } }
 if ($prompt580 -match '(?<!公)2米') { throw 'Prompt leaked Mainland length unit 2米.' }
-if ($prompt580 -notmatch '所有文字型具體事實只能取自上方已驗證事實') { throw 'Prompt allowlist hard rule missing.' }
+$legacyAllowlist = $prompt580 -match '所有文字型具體事實只能取自上方已驗證事實'
+$v4bSourceGuard = ($prompt580 -match '結構化共同已驗證資訊僅供交叉確認') -and
+    ($prompt580 -match '只翻譯你在參考圖中能清楚辨識的文字') -and
+    ($prompt580 -match '原圖沒有的人物、手、使用場景、商品零件、配件、贈品、顏色、材質、尺寸、數量、功能、認證、功效或安全承諾，一律不得新增') -and
+    ($prompt580 -match '看不清楚、被遮住、語意不確定或來源彼此衝突的文字不要猜')
+if (-not ($legacyAllowlist -or $v4bSourceGuard)) { throw 'Prompt factual source guard missing.' }
 $compact580 = Get-CompactTransportPromptV2 'detail4' $p580
 if (($compact580 -notmatch '未列入已驗證事實就禁止生成') -and ($compact580 -notmatch '成品唯一允許的可辨識文字')) { throw 'Compact prompt allowlist rule missing.' }
 if ($compact580 -notmatch '200公分') { throw 'detail4 compact prompt should expose exact Taiwan equivalent 200公分.' }
@@ -73,4 +78,4 @@ $guardText = Get-Content -LiteralPath (Join-Path $startRoot 'v4a1_guard.ps1') -R
 $rulesText = Get-Content -LiteralPath (Join-Path $systemRoot 'config\factual_rules_v4a1.json') -Raw -Encoding UTF8
 if ($guardText.Contains([char]0xFFFD) -or $rulesText.Contains([char]0xFFFD)) { throw 'U+FFFD replacement character found.' }
 
-Write-Host '[PASS] V4-A.1 direct factual guard: source facts preserved, Taiwan display localization, real Shopee headers, ordered images, variant facts, parser edge cases, prompt allowlist, and R3 identity all passed.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.1 direct factual guard: source facts preserved, Taiwan display localization, real Shopee headers, ordered images, variant facts, parser edge cases, prompt allowlist/source guard, and R3 identity all passed.' -ForegroundColor Green
