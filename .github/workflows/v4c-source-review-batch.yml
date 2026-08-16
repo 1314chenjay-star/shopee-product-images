@@ -1,0 +1,38 @@
+name: V4-C0 Source Review Batch
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - '_system/tests/fixtures/v4c_source_batch_manifest.json'
+
+jobs:
+  source-review:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Read active batch ID
+        shell: powershell
+        run: |
+          $manifest = Get-Content -LiteralPath '.\_system\tests\fixtures\v4c_source_batch_manifest.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ([string]::IsNullOrWhiteSpace([string]$manifest.batch_id)) { throw 'Missing batch_id.' }
+          ('V4C_BATCH_ID=' + [string]$manifest.batch_id) | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Fetch Shopee source images only
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & '.\_system\tests\v4c_source_batch_fetch.ps1' -ManifestPath '.\_system\tests\fixtures\v4c_source_batch_manifest.json' -OutRoot '.\_system\source_review_v4c'
+
+      - name: Upload source review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: V4-C0-SourceReview-${{ env.V4C_BATCH_ID }}
+          path: _system/source_review_v4c/${{ env.V4C_BATCH_ID }}
+          if-no-files-found: warn
+          retention-days: 14
