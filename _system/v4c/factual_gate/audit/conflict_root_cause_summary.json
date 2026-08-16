@@ -1,0 +1,40 @@
+{
+  "schema_version": "v4c3.1.conflict-root-cause-summary.1",
+  "passed": true,
+  "current_image_fact_conflicts_total": 7125,
+  "current_image_root_cause_counts": {
+    "SAME_IMAGE_COMPLEMENTARY_TEXT_FALSE_CONFLICT": 6519,
+    "TRUE_SAME_SCOPE_VERIFIED_VALUE_CONFLICT": 606
+  },
+  "current_image_true_conflicts": 606,
+  "current_image_false_conflicts": 6519,
+  "product_aggregation_induced_conflicts": 252,
+  "product_aggregation_root_cause_counts": {
+    "CROSS_IMAGE_COMPLEMENTARY_TEXT_FALSE_CONFLICT": 42,
+    "CROSS_IMAGE_FORMATTING_DUPLICATE_FALSE_CONFLICT": 8,
+    "TRUE_CROSS_IMAGE_SAME_SCOPE_VERIFIED_CONFLICT": 202
+  },
+  "product_aggregation_true_conflicts": 202,
+  "product_aggregation_false_conflicts": 50,
+  "cross_image_false_conflicts": 50,
+  "variant_scope_conflicts": 0,
+  "malformed_or_duplicate_evidence_conflicts": 8,
+  "safely_fixable_by_aggregation_or_comparison_only": 6569,
+  "conflicts_requiring_block_or_new_explicit_evidence": 808,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "generation_queue_started": false,
+    "gate_logic_modified": false
+  }
+}

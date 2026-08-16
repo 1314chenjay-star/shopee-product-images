@@ -1,0 +1,25 @@
+{
+  "schema_version": "v4c3.1.audit-validation.1",
+  "passed": true,
+  "image_conflicts_reconciled": 7125,
+  "expected_image_conflicts": 7125,
+  "eligible_partial_reconciled": 79,
+  "expected_eligible_partial": 79,
+  "audit_did_not_modify_gate": true,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "generation_queue_started": false,
+    "gate_logic_modified": false
+  }
+}

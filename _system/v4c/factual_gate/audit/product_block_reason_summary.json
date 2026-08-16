@@ -1,0 +1,2497 @@
+{
+  "schema_version": "v4c3.1.product-block-reason-summary.1",
+  "product_count": 178,
+  "product_eligibility_counts": {
+    "BLOCK_FACTUAL": 178
+  },
+  "block_reason_product_counts": {
+    "PRODUCT_AGGREGATION_INDUCED_CONFLICT": 69,
+    "PRODUCT_HAS_CONFLICT_FACTS": 178,
+    "PRODUCT_NO_VERIFIED_FACTS": 29,
+    "SIBLING_IMAGE_BLOCK_PROPAGATION": 178
+  },
+  "any_single_block_image_propagates_product_block": true,
+  "products_with_at_least_one_block_image": 178,
+  "products_with_aggregation_induced_conflict": 69,
+  "products": [
+    {
+      "product_id": "25348397564",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "25348397567",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 5,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "25798402488",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "25898402928",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "26295525471",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 6,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "26695530380",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "26795530384",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "26995530374",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "27095531778",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "27345525381",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "27695531773",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "27695531784",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "27695531788",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "28195525458",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "28595530375",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 5,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "28645515578",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "28695531781",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "28845515577",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "29945515820",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "40033413016",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "40683399907",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "41233382286",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "41233403071",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "41283411930",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "41433435433",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42283399917",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42383399922",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42383412874",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42483412871",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42633382336",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42733407743",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6,
+        "ELIGIBLE_PARTIAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42733407760",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42783412875",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42783432157",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42833435408",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "42883412858",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43033407737",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43183412855",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43283412840",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 7,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43383412868",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43533406833",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43533406884",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43683432169",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43733406830",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43933382282",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "43933411549",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "44033406872",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "44333387037",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "44333399407",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "44433398482",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "44815713860",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "44965727479",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 7,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "45215730818",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 6,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "45215886826",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "45365723110",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "45365727379",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "45565723042",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "45565723157",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "46165714394",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "46165723132",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 5,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "46515673790",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5,
+        "ELIGIBLE_PARTIAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "46615669138",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "46665714399",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "46865714400",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "46915720095",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47065731284",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47065731293",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47065731355",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47065731416",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47165731308",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47215735287",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47215735305",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47215735317",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 7,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47265731294",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47315718406",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47315735264",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 5,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47515718363",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47615882928",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47715720058",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47815731216",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "47865731337",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 9,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48215718386",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 6,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48365674438",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "ELIGIBLE_PARTIAL": 1,
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48365674443",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48365764134",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48365764149",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48515735279",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48565764183",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "48565764187",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 5,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49215708682",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49265764165",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49315708680",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49465714448",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49665731376",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49765735759",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 5,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49765735763",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "49865735708",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50165694474",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50265698924",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50365698906",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50415745059",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50565698930",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50615875700",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50665715827",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50765689742",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1,
+        "ELIGIBLE_PARTIAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50765689777",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "ELIGIBLE_PARTIAL": 2,
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50765689804",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50915745061",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "50965665410",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51115745094",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51165654428",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 5,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51365698925",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51415693173",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51415693185",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "ELIGIBLE_PARTIAL": 1,
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51615693202",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 6,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51665710793",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4,
+        "ELIGIBLE_PARTIAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51715689080",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1,
+        "ELIGIBLE_PARTIAL": 4
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51765547764",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51815689014",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "51915651821",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52065548368",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52365552781",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52365552855",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52365599928",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52515596269",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52515734591",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52565652509",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52615596165",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52615657000",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52715734502",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 11,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52815734458",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52815734509",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52865591720",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52865700493",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52915734456",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52915734545",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "52915734564",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "53015688956",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "53215734553",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "53415689067",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "53515745081",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "53515745149",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "53615734484",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "53815734523",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54165700080",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "ELIGIBLE_PARTIAL": 1,
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54165715335",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 6,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54265715231",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54265715241",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54265715325",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54365698365",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54365715350",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54465715327",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54565715302",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54665698449",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54665698453",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54765698358",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54815688984",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54865689425",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54865715317",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "54965700106",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 3,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "55765689436",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "56115693485",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "56515693360",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "56615693412",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 6,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "56765688791",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 2,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "56915693446",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57215741152",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57315734546",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 9
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57415697664",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57465745074",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 6
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57465745078",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 3,
+        "ELIGIBLE_PARTIAL": 2
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 4,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57465745140",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS",
+        "PRODUCT_NO_VERIFIED_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57515698414",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 5
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57565745174",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 2,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "57765745060",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_AGGREGATION_INDUCED_CONFLICT",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 7,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "58015741169",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 8
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "58115693467",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 7,
+        "ELIGIBLE_PARTIAL": 1
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    },
+    {
+      "product_id": "58165657009",
+      "generation_eligibility": "BLOCK_FACTUAL",
+      "image_eligibility_counts": {
+        "BLOCK_FACTUAL": 4
+      },
+      "block_reasons": [
+        "SIBLING_IMAGE_BLOCK_PROPAGATION",
+        "PRODUCT_HAS_CONFLICT_FACTS"
+      ],
+      "aggregation_induced_conflicts": 0,
+      "downstream_generation_allowed": false
+    }
+  ],
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "generation_queue_started": false,
+    "gate_logic_modified": false
+  }
+}
