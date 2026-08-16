@@ -8,8 +8,10 @@ TERMINAL={'PRESERVE','SEMANTIC_REQUIRED','BLOCK'}
 CHINESE_RE=re.compile(r'[\u3400-\u9fff]')
 
 def read_jsonl(path):
-    p=Path(path); out=[]
-    if not p.exists(): return out
+    out=[]
+    if not path: return out
+    p=Path(path)
+    if not p.exists() or p.is_dir(): return out
     for i,line in enumerate(p.open(encoding='utf-8-sig'),1):
         if line.strip(): out.append(json.loads(line))
     return out
