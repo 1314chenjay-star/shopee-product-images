@@ -1,0 +1,241 @@
+name: V4-C4.1 Legacy SHA Gap Recovery and HOLD-Only Delta Replan
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/tests/v4c_sha_gap_recovery.py'
+      - '.github/workflows/v4c-sha-gap-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  BASE_HEAD: d0eef69eb1b8986e84506608f4eb42905aa6da92
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  OUT: _system/v4c/generation_plan/sha_gap_recovery
+  CACHE_DIR: ${{ runner.temp }}/v4c41_artifacts
+  CHECKPOINT: ${{ runner.temp }}/v4c41_sha_checkpoint.jsonl
+  CANDIDATE_INDEX: ${{ runner.temp }}/v4c41_candidate_index.jsonl
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  sha-gap-recovery:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify sealed V4-C4.0 baseline and stable HEAD
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Current HEAD is not descended from sealed V4-C4.0 HEAD.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable HEAD changed: $stable" }
+          $changed=@(git diff --name-only "$env:BASE_HEAD..HEAD")
+          $allowed=@('_system/tests/v4c_sha_gap_recovery.py','.github/workflows/v4c-sha-gap-recovery.yml')
+          foreach($p in $changed){ if($allowed -notcontains $p){ throw "Unexpected change since sealed V4-C4.0: $p" } }
+          git diff --quiet $env:BASE_HEAD -- _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw '_system/start/api_v2.ps1 changed.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/generation_plan/canonical_image_state.jsonl _system/v4c/generation_plan/product_5slot_plan.jsonl _system/v4c/generation_plan/generation_plan_queue.jsonl _system/v4c/generation_plan/coverage_summary.json _system/v4c/generation_plan/validation.json _system/v4c/generation_plan/V4_C4_0_GENERATION_PLAN_LOCK.json
+          if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C4.0 plan inputs changed.' }
+          Write-Host "BASE_HEAD=$env:BASE_HEAD"
+          Write-Host "STABLE_HEAD=$stable"
+
+      - name: Compile V4-C4.1 recovery engine only
+        shell: pwsh
+        run: |
+          python -m py_compile _system/tests/v4c_sha_gap_recovery.py
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Build exact 859 SHA-gap target and frozen-plan fingerprints
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path $env:OUT | Out-Null
+          python _system/tests/v4c_sha_gap_recovery.py prepare `
+            --canonical _system/v4c/generation_plan/canonical_image_state.jsonl `
+            --product-plan _system/v4c/generation_plan/product_5slot_plan.jsonl `
+            --queue _system/v4c/generation_plan/generation_plan_queue.jsonl `
+            --lock _system/v4c/generation_plan/V4_C4_0_GENERATION_PLAN_LOCK.json `
+            --inventory _system/v4c/inventory/source_inventory.jsonl `
+            --progress _system/v4c/progress/v4c_source_progress.jsonl `
+            --target "$env:OUT/sha_gap_859.jsonl" `
+            --canary-target "$env:OUT/canary_sha_gap_75.jsonl" `
+            --prepare-summary "$env:OUT/prepare_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Read frozen B001-B018 historical workflow artifacts metadata only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py artifact-cache `
+            --repo "$env:GITHUB_REPOSITORY" `
+            --cache-dir "$env:CACHE_DIR" `
+            --summary "$env:OUT/artifact_recovery_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Canary 75 - zero-source-download SHA recovery first
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py recover-existing `
+            --target "$env:OUT/sha_gap_859.jsonl" `
+            --canary-target "$env:OUT/canary_sha_gap_75.jsonl" `
+            --scope canary `
+            --cache-dir "$env:CACHE_DIR" `
+            --candidate-index "$env:CANDIDATE_INDEX" `
+            --checkpoint "$env:CHECKPOINT" `
+            --summary "$env:OUT/canary_existing_recovery_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Canary 75 - targeted source fetch checkpoint seed up to 25 unresolved
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py fetch `
+            --target "$env:OUT/sha_gap_859.jsonl" `
+            --canary-target "$env:OUT/canary_sha_gap_75.jsonl" `
+            --scope canary `
+            --canonical _system/v4c/generation_plan/canonical_image_state.jsonl `
+            --checkpoint "$env:CHECKPOINT" `
+            --max-new 25 `
+            --workers 6 `
+            --summary "$env:OUT/canary_fetch_seed_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Canary 75 - resume remaining unresolved from checkpoint
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py fetch `
+            --target "$env:OUT/sha_gap_859.jsonl" `
+            --canary-target "$env:OUT/canary_sha_gap_75.jsonl" `
+            --scope canary `
+            --canonical _system/v4c/generation_plan/canonical_image_state.jsonl `
+            --checkpoint "$env:CHECKPOINT" `
+            --workers 6 `
+            --summary "$env:OUT/canary_fetch_resume_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Validate Canary before full recovery
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py canary-validate `
+            --canary-target "$env:OUT/canary_sha_gap_75.jsonl" `
+            --checkpoint "$env:CHECKPOINT" `
+            --seed-summary "$env:OUT/canary_fetch_seed_summary.json" `
+            --resume-summary "$env:OUT/canary_fetch_resume_summary.json" `
+            --prepare-summary "$env:OUT/prepare_summary.json" `
+            --product-plan _system/v4c/generation_plan/product_5slot_plan.jsonl `
+            --queue _system/v4c/generation_plan/generation_plan_queue.jsonl `
+            --validation "$env:OUT/canary_validation.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          $v=Get-Content "$env:OUT/canary_validation.json" -Raw | ConvertFrom-Json
+          if(-not [bool]$v.passed){ throw 'V4-C4.1 Canary is not PASS.' }
+          if([int]$v.existing_sha_source_refetch -ne 0){ throw 'Existing SHA source was refetched in Canary.' }
+          if([int]$v.original_ready_plan_mutations -ne 0 -or [int]$v.original_660_queue_mutations -ne 0){ throw 'Frozen V4-C4.0 plan mutated in Canary.' }
+          if([bool]$v.generation_executed){ throw 'Generation executed unexpectedly.' }
+
+      - name: Full - zero-source-download recovery for remaining SHA-gap target
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py recover-existing `
+            --target "$env:OUT/sha_gap_859.jsonl" `
+            --canary-target "$env:OUT/canary_sha_gap_75.jsonl" `
+            --scope full `
+            --cache-dir "$env:CACHE_DIR" `
+            --candidate-index "$env:CANDIDATE_INDEX" `
+            --checkpoint "$env:CHECKPOINT" `
+            --summary "$env:OUT/full_existing_recovery_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Full - targeted fetch only still-unresolved SHA-gap sources
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py fetch `
+            --target "$env:OUT/sha_gap_859.jsonl" `
+            --canary-target "$env:OUT/canary_sha_gap_75.jsonl" `
+            --scope full `
+            --canonical _system/v4c/generation_plan/canonical_image_state.jsonl `
+            --checkpoint "$env:CHECKPOINT" `
+            --workers 8 `
+            --summary "$env:OUT/full_targeted_fetch_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Finalize all 859 SHA recovery results
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py finalize-recovery `
+            --target "$env:OUT/sha_gap_859.jsonl" `
+            --checkpoint "$env:CHECKPOINT" `
+            --results "$env:OUT/sha_recovery_results.jsonl" `
+            --failed "$env:OUT/failed_sha_recovery.jsonl" `
+            --summary "$env:OUT/sha_recovery_summary.json"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Replan only frozen 184 HOLD products and merge delta queue
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_sha_gap_recovery.py delta-replan `
+            --canonical _system/v4c/generation_plan/canonical_image_state.jsonl `
+            --product-plan _system/v4c/generation_plan/product_5slot_plan.jsonl `
+            --queue _system/v4c/generation_plan/generation_plan_queue.jsonl `
+            --recovery-results "$env:OUT/sha_recovery_results.jsonl" `
+            --recovery-summary "$env:OUT/sha_recovery_summary.json" `
+            --artifact-summary "$env:OUT/artifact_recovery_summary.json" `
+            --prepare-summary "$env:OUT/prepare_summary.json" `
+            --delta-plan "$env:OUT/hold_delta_plan.jsonl" `
+            --delta-queue "$env:OUT/delta_generation_queue.jsonl" `
+            --merged-queue "$env:OUT/merged_generation_queue.jsonl" `
+            --merged-summary "$env:OUT/merged_coverage_summary.json" `
+            --validation "$env:OUT/validation.json" `
+            --lock-out "$env:OUT/V4_C4_1_SHA_GAP_RECOVERY_LOCK.json" `
+            --workflow-run "$env:GITHUB_RUN_ID" `
+            --stable-head "$env:STABLE_HEAD"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Final safety, frozen-plan, and stable reconciliation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $v=Get-Content "$env:OUT/validation.json" -Raw | ConvertFrom-Json
+          if(-not [bool]$v.passed){ throw 'V4-C4.1 validation not PASS.' }
+          foreach($k in @('original_ready_plan_mutations','original_frozen_queue_mutations','duplicate_queue_entries','unknown_leak','conflict_leak','forbidden_leak','block_factual_selected','locked_regeneration')){
+            if([int]$v.$k -ne 0){ throw "Safety metric nonzero: $k=$($v.$k)" }
+          }
+          if([int]$v.hold_only_replan_count -ne 184){ throw "Expected HOLD-only replan count 184, got $($v.hold_only_replan_count)" }
+          if([bool]$v.generation_executed){ throw 'Generation executed unexpectedly.' }
+          foreach($name in @('ocr_executed','semantic_inference_executed','preservation_reexecuted','factual_gate_reexecuted','v4c2_retested','v4c3_retested','v4c3_1_retested','v4c3_2_retested','v4c4_0_retested','image_generation_called','tiny_snow_api_called','vision_api_called','paid_api_called','generation_executed')){
+            if([bool]$v.api_flags.$name){ throw "Forbidden stage/API flag true: $name" }
+          }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw 'Stable changed during V4-C4.1.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/generation_plan/canonical_image_state.jsonl _system/v4c/generation_plan/product_5slot_plan.jsonl _system/v4c/generation_plan/generation_plan_queue.jsonl _system/v4c/generation_plan/coverage_summary.json _system/v4c/generation_plan/validation.json _system/v4c/generation_plan/V4_C4_0_GENERATION_PLAN_LOCK.json
+          if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C4.0 files changed during V4-C4.1.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/closeout _system/v4c/factual_gate _system/v4c/preservation _system/v4c/evidence_hydration _system/v4c/inventory _system/v4c/progress _system/v4c/results
+          if($LASTEXITCODE -ne 0){ throw 'A frozen V4-C input path changed during V4-C4.1.' }
+
+      - name: Persist V4-C4.1 recovery delta only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add _system/v4c/generation_plan/sha_gap_recovery
+          git diff --cached --quiet
+          if($LASTEXITCODE -eq 0){ throw 'No V4-C4.1 outputs staged.' }
+          $staged=@(git diff --cached --name-only)
+          foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/generation_plan/sha_gap_recovery/')){ throw "Unexpected staged file: $p" } }
+          git commit -m 'V4-C4.1 persist SHA recovery and HOLD delta plan [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
