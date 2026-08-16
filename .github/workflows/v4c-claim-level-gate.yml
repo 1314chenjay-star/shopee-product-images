@@ -1,0 +1,128 @@
+name: V4-C2.1 HOLD Resolution Claim-Level Gate
+
+on:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-claim-level-gate.yml"
+      - "_system/tests/v4c_claim_*.py"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: v4c2-1-claim-level-gate
+  cancel-in-progress: true
+
+env:
+  V4C2_INTEGRATION_HEAD: 974a6866c04122b2757bb98c2849c29b202068d4
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  SEMANTIC_140: _system/v4c/semantic/preservation/semantic_evidence.jsonl
+  SEMANTIC_QUEUE: _system/v4c/results/semantic_evidence_queue.jsonl
+  PRESERVATION_RESULTS: _system/v4c/preservation/results/image_preservation.jsonl
+
+jobs:
+  calibrate_claim_gate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify frozen completed stages remain untouched
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git merge-base --is-ancestor $env:V4C2_INTEGRATION_HEAD HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'HEAD is not descended from completed V4-C2 integration HEAD' }
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          $completed = @(
+            '_system/v4c/inventory/source_inventory.jsonl',
+            '_system/v4c/progress/v4c_source_progress.jsonl',
+            '_system/v4c/results/source_evidence.jsonl',
+            '_system/v4c/results/duplicate_map.json',
+            '_system/v4c/results/failed_sources.json',
+            '_system/v4c/results/semantic_evidence_queue.jsonl',
+            '_system/v4c/preservation/results/image_preservation.jsonl',
+            '_system/v4c/preservation/results/preservation_semantic_queue.jsonl',
+            '_system/v4c/preservation/PRESERVATION_GATE_LOCK.json',
+            '_system/v4c/semantic/preservation/semantic_evidence.jsonl',
+            '_system/v4c/semantic/preservation/semantic_progress.jsonl',
+            '_system/v4c/semantic/preservation/semantic_hold.jsonl',
+            '_system/v4c/semantic/preservation/semantic_summary.json',
+            '_system/v4c/semantic/preservation/validation.json',
+            '_system/start/api_v2.ps1'
+          )
+          git diff --quiet $env:V4C2_INTEGRATION_HEAD -- $completed
+          if ($LASTEXITCODE -ne 0) { throw 'A completed/frozen stage changed after V4-C2 integration' }
+          Write-Host 'V4C1_RETESTED=false'
+          Write-Host 'PRESERVATION_SMOKE_RETESTED=false'
+          Write-Host 'SEMANTIC_140_RETESTED=false'
+          Write-Host 'V4B_RETESTED=false'
+          Write-Host 'SOURCE_PIPELINE_REDOWNLOAD=false'
+
+      - name: Prove resolver has no fetch OCR inference dependencies
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = Get-ChildItem _system\tests\v4c_claim_*.py
+          foreach ($f in $files) {
+            $text = Get-Content $f.FullName -Raw -Encoding UTF8
+            foreach ($token in @('urlopen(','requests.get(','torch.','rapidocr','PIL.Image','openai')) {
+              if ($text.ToLowerInvariant().Contains($token.ToLowerInvariant())) { throw "Forbidden runtime dependency '$token' in $($f.Name)" }
+            }
+          }
+          Write-Host 'NO_FETCH_CODE_PATH=true'
+          Write-Host 'NO_OCR_CODE_PATH=true'
+          Write-Host 'NO_SEMANTIC_INFERENCE_CODE_PATH=true'
+
+      - name: Claim-level resolver self-test only
+        shell: powershell
+        run: python _system\tests\v4c_claim_level_gate.py --self-test
+
+      - name: Calibrate on 40 representative existing HOLD records
+        shell: powershell
+        run: |
+          python _system\tests\v4c_claim_calibration.py --input $env:SEMANTIC_140 --out-dir artifacts\claim-calibration --sample-size 40
+
+      - name: Connect calibrated gate to not-yet-Preservation-filtered semantic records
+        shell: powershell
+        run: |
+          python _system\tests\v4c_claim_future_bridge.py --semantic-queue $env:SEMANTIC_QUEUE --preservation-results $env:PRESERVATION_RESULTS --calibration-summary artifacts\claim-calibration\calibration_summary.json --out-dir artifacts\claim-bridge
+
+      - name: Upload calibration and bridge evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-1-claim-level-calibration
+          path: |
+            artifacts/claim-calibration
+            artifacts/claim-bridge
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Persist only new V4-C2.1 claim-level outputs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force _system\v4c\claim_gate\calibration | Out-Null
+          New-Item -ItemType Directory -Force _system\v4c\claim_gate\bridge | Out-Null
+          Copy-Item artifacts\claim-calibration\* _system\v4c\claim_gate\calibration\ -Force
+          Copy-Item artifacts\claim-bridge\* _system\v4c\claim_gate\bridge\ -Force
+          git config user.name 'TinySnow V4-C2.1 Claim Gate'
+          git config user.email 'actions@users.noreply.github.com'
+          git add _system/v4c/claim_gate
+          if (git diff --cached --quiet) {
+            Write-Host 'CLAIM_GATE_PERSIST_NO_CHANGES=true'
+          } else {
+            git commit -m 'V4-C2.1 persist claim-level calibration [skip ci]'
+            git push origin HEAD:v4c-universal-product-engine
+          }
+          Write-Host 'IMAGE_GENERATION_CALLED=false'
+          Write-Host 'TINY_SNOW_API_CALLED=false'
+          Write-Host 'PAID_API_CALLED=false'
+          Write-Host 'VISION_API_CALLED=false'
+          Write-Host 'SOURCE_PIPELINE_REDOWNLOAD=false'
