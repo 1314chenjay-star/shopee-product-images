@@ -4,6 +4,7 @@
 
 . (Join-Path $PSScriptRoot 'v4c_product_evidence.ps1')
 . (Join-Path $PSScriptRoot 'v4c_category_router.ps1')
+. (Join-Path $PSScriptRoot 'v4c_structural_guard.ps1')
 . (Join-Path $PSScriptRoot 'v4c_image_decision.ps1')
 . (Join-Path $PSScriptRoot 'v4c_adaptive_five_planner.ps1')
 . (Join-Path $PSScriptRoot 'v4c_review_gate.ps1')
@@ -37,17 +38,23 @@ function Invoke-V4C0CatalogAnalysis($Products) {
     $results = @()
     foreach ($product in @($Products)) {
         $analysis = New-V4CExcelOnlyAnalysis $product
-        $result = Invoke-V4C0Analysis $product $analysis
-        $gate = Get-V4CReviewGate $product $result.evidence $result.route
+        $baseResult = Invoke-V4C0Analysis $product $analysis
+        $route = Get-V4CFinalCategoryRoute $product $baseResult.evidence
+        $decisions = @(Get-V4CImageDecisions $analysis $baseResult.evidence $route)
+        $plan = New-V4CAdaptiveFivePlan $product $baseResult.evidence $route $decisions
+        $gate = Get-V4CReviewGate $product $baseResult.evidence $route
+
         $results += [pscustomobject]@{
-            product_id = [string]$result.product_id
+            product_id = [string]$baseResult.product_id
             title = [string](Get-V4CProperty $product 'name' '')
             raw_category = [string](Get-V4CProperty $product 'category' '')
-            route = $result.route
-            evidence = $result.evidence
+            route = $route
+            base_route = $baseResult.route
+            structural_guard_changed_route = ($route.family -ne $baseResult.route.family -or $route.subfamily -ne $baseResult.route.subfamily)
+            evidence = $baseResult.evidence
             review_gate = $gate
-            five_image_plan = $result.five_image_plan
-            excel_only_image_actions = [object[]]$result.image_decisions
+            five_image_plan = $plan
+            excel_only_image_actions = [object[]]$decisions
             image_semantic_review_completed = $false
             image_api_called = $false
             final_paid_generation_permission = 'HOLD'
@@ -58,12 +65,14 @@ function Invoke-V4C0CatalogAnalysis($Products) {
     $medium = @($results | Where-Object { $_.review_gate.risk_tier -eq 'MEDIUM' }).Count
     $low = @($results | Where-Object { $_.review_gate.risk_tier -eq 'LOW' }).Count
     $generic = @($results | Where-Object { $_.route.family -eq 'generic' }).Count
+    $structuralChanges = @($results | Where-Object { $_.structural_guard_changed_route }).Count
 
     return [pscustomobject]@{
         engine = 'TinySnow V4-C0'
         mode = 'full_catalog_free_analysis'
         image_api_called = $false
         product_count = @($results).Count
+        structural_guard_change_count = $structuralChanges
         risk_summary = [pscustomobject]@{ high=$high; medium=$medium; low=$low; generic=$generic }
         products = [object[]]$results
     }
