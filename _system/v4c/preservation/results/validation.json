@@ -1,0 +1,22 @@
+﻿{
+    "phase":  "PreservationSmoke",
+    "passed":  true,
+    "v4c1_baseline_head":  "a7447b792e65780bc95aa248b9e3a2fd0466f142",
+    "stable_head":  "5d49f061e140813b3d229520e9e530f86b27b640",
+    "stable_head_unchanged":  true,
+    "v4c1_protected_files_unchanged":  true,
+    "smoke_count":  167,
+    "preserve_count":  27,
+    "semantic_required_count":  140,
+    "semantic_queue_count":  140,
+    "block_count":  0,
+    "mixed_partial_products":  17,
+    "main_image_preserve_count":  2,
+    "sha_reuse_13_to_7":  true,
+    "checkpoint_resume_observed":  true,
+    "historical_sha_direct_skip":  true,
+    "image_generation_called":  false,
+    "tiny_snow_api_called":  false,
+    "paid_api_called":  false,
+    "source_pipeline_redownload":  false
+}
