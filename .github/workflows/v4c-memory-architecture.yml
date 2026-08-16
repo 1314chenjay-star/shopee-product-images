@@ -7,6 +7,7 @@ on:
       - '_system/tests/v4c_memory_architecture.py'
       - '_system/tests/v4c_memory_architecture_r2.py'
       - '_system/tests/v4c_memory_identity_resolver.py'
+      - '_system/tests/v4c_memory_identity_resolver_r2.py'
       - '_system/memory/memory_runtime.py'
       - '_system/memory/memory_cli.ps1'
       - '.github/workflows/v4c-memory-architecture.yml'
@@ -31,14 +32,10 @@ jobs:
       - name: Initialize V4-C4.2 runtime paths
         shell: pwsh
         run: |
-          $tempMemory=Join-Path $env:RUNNER_TEMP 'v4c42_canary_memory'
-          $bootstrapCanary=Join-Path $env:RUNNER_TEMP 'v4c42_bootstrap_canary.json'
-          $identityCanary=Join-Path $env:RUNNER_TEMP 'v4c42_identity_canary.json'
-          $performanceCanary=Join-Path $env:RUNNER_TEMP 'v4c42_performance_canary.json'
-          "TEMP_MEMORY=$tempMemory" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "BOOTSTRAP_CANARY=$bootstrapCanary" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "IDENTITY_CANARY=$identityCanary" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          "PERFORMANCE_CANARY=$performanceCanary" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "TEMP_MEMORY=$(Join-Path $env:RUNNER_TEMP 'v4c42_canary_memory')" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "BOOTSTRAP_CANARY=$(Join-Path $env:RUNNER_TEMP 'v4c42_bootstrap_canary.json')" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "IDENTITY_CANARY=$(Join-Path $env:RUNNER_TEMP 'v4c42_identity_canary.json')" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "PERFORMANCE_CANARY=$(Join-Path $env:RUNNER_TEMP 'v4c42_performance_canary.json')" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Verify sealed V4-C4.1 baseline and stable HEAD
         shell: pwsh
@@ -52,16 +49,16 @@ jobs:
           if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C1 through V4-C4.1 data or api_v2.ps1 changed.' }
           $changed=@(git diff --name-only "$env:BASE_HEAD..HEAD")
           foreach($p in $changed){
-            $ok=$p.StartsWith('_system/memory/') -or $p -eq '_system/tests/v4c_memory_architecture.py' -or $p -eq '_system/tests/v4c_memory_architecture_r2.py' -or $p -eq '_system/tests/v4c_memory_identity_resolver.py' -or $p -eq '.github/workflows/v4c-memory-architecture.yml'
+            $ok=$p.StartsWith('_system/memory/') -or $p -eq '_system/tests/v4c_memory_architecture.py' -or $p -eq '_system/tests/v4c_memory_architecture_r2.py' -or $p -eq '_system/tests/v4c_memory_identity_resolver.py' -or $p -eq '_system/tests/v4c_memory_identity_resolver_r2.py' -or $p -eq '.github/workflows/v4c-memory-architecture.yml'
             if(-not $ok){ throw "Unexpected V4-C4.2 change: $p" }
           }
 
-      - name: Compile memory, resolver, runtime and PowerShell 5.1 bridge
+      - name: Compile memory resolver runtime and PowerShell 5.1 bridge
         shell: pwsh
         run: |
-          python -m py_compile _system/tests/v4c_memory_architecture.py _system/tests/v4c_memory_architecture_r2.py _system/tests/v4c_memory_identity_resolver.py _system/memory/memory_runtime.py
+          python -m py_compile _system/tests/v4c_memory_architecture.py _system/tests/v4c_memory_architecture_r2.py _system/tests/v4c_memory_identity_resolver.py _system/tests/v4c_memory_identity_resolver_r2.py _system/memory/memory_runtime.py
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
-          powershell.exe -NoProfile -Command "$null=[scriptblock]::Create((Get-Content '_system/memory/memory_cli.ps1' -Raw)); Write-Host 'PS5.1_PARSE_PASS'"
+          powershell.exe -NoProfile -Command '$x=[scriptblock]::Create((Get-Content "_system/memory/memory_cli.ps1" -Raw)); if($null -eq $x){exit 1}; Write-Host "PS5.1_PARSE_PASS"'
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
 
       - name: Pre-bootstrap multi-category safety Canary
@@ -82,14 +79,14 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$env:TEMP_MEMORY" | Out-Null
           python _system/tests/v4c_memory_architecture_r2.py bootstrap --out "$env:TEMP_MEMORY" --canary-validation "$env:BOOTSTRAP_CANARY" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
-          python _system/tests/v4c_memory_identity_resolver.py upgrade --memory-dir "$env:TEMP_MEMORY"
+          python _system/tests/v4c_memory_identity_resolver_r2.py upgrade --memory-dir "$env:TEMP_MEMORY"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
 
       - name: Identity-First Resolver and GenerationContext Canary
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python _system/tests/v4c_memory_identity_resolver.py canary --memory-dir "$env:TEMP_MEMORY" --output "$env:IDENTITY_CANARY"
+          python _system/tests/v4c_memory_identity_resolver_r2.py canary --memory-dir "$env:TEMP_MEMORY" --output "$env:IDENTITY_CANARY"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
           $c=Get-Content "$env:IDENTITY_CANARY" -Raw | ConvertFrom-Json
           if(-not [bool]$c.passed){ throw 'Identity-First Canary failed.' }
@@ -101,7 +98,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python _system/tests/v4c_memory_identity_resolver.py performance --output "$env:PERFORMANCE_CANARY"
+          python _system/tests/v4c_memory_identity_resolver_r2.py performance --output "$env:PERFORMANCE_CANARY"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
           $p=Get-Content "$env:PERFORMANCE_CANARY" -Raw | ConvertFrom-Json
           if(-not [bool]$p.passed){ throw 'Performance Canary failed.' }
@@ -115,17 +112,17 @@ jobs:
           $ErrorActionPreference='Stop'
           python _system/tests/v4c_memory_architecture_r2.py bootstrap --out "$env:OUT" --canary-validation "$env:BOOTSTRAP_CANARY" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
-          python _system/tests/v4c_memory_identity_resolver.py upgrade --memory-dir "$env:OUT"
+          python _system/tests/v4c_memory_identity_resolver_r2.py upgrade --memory-dir "$env:OUT"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
           Copy-Item "$env:BOOTSTRAP_CANARY" "$env:OUT/memory_bootstrap_canary_validation.json" -Force
           Copy-Item "$env:IDENTITY_CANARY" "$env:OUT/memory_identity_canary_validation.json" -Force
           Copy-Item "$env:PERFORMANCE_CANARY" "$env:OUT/memory_performance_canary_validation.json" -Force
 
-      - name: Final integrity, context, SQLite and JSONL reconciliation
+      - name: Final integrity context SQLite and JSONL reconciliation
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python _system/tests/v4c_memory_identity_resolver.py validate --memory-dir "$env:OUT" --canary "$env:IDENTITY_CANARY" --performance "$env:PERFORMANCE_CANARY" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
+          python _system/tests/v4c_memory_identity_resolver_r2.py validate --memory-dir "$env:OUT" --canary "$env:IDENTITY_CANARY" --performance "$env:PERFORMANCE_CANARY" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
           $v=Get-Content "$env:OUT/memory_validation.json" -Raw | ConvertFrom-Json
           if(-not [bool]$v.passed){ throw 'Final memory validation not PASS.' }
