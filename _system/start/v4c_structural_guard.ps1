@@ -29,6 +29,13 @@ function Test-V4CPrimaryApparelBody([string]$Title) {
     return ($Title.Trim() -match '^(?:.{0,10})?(短褲|短裤|長褲|长裤|褲子|裤子|內褲|内裤|三角褲|三角裤|內衣|内衣|打底褲|打底裤|上衣|外套|背心|T恤|t恤|球衣|運動服|运动服|泳衣|裙|襪|袜|襪子|袜子|瑜伽襪|瑜伽袜|普拉提襪|普拉提袜)')
 }
 
+function Test-V4CPrimaryJewelryBody([string]$Title) {
+    if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
+    # Sport/team/player words are context when the item itself is jewelry.
+    # Do not include generic 手環 here because it can also be sports equipment.
+    return ($Title.Trim() -match '^(?:.{0,8})?(項鍊|项链|吊墜|吊坠|墜飾|坠饰|戒指|耳環|耳环|胸針|胸针|飾品|饰品)')
+}
+
 function Test-V4CPrimaryRacketCaseBody([string]$Title) {
     if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
     $clean = $Title.Trim()
@@ -71,6 +78,11 @@ function Resolve-V4CStructuralRoute($Product, $Evidence, $CurrentRoute) {
 
     # Life-safety products remain in their dedicated route.
     if (Test-V4CAnyKeyword $head @('救生衣','救生背心','浮力背心','助浮衣','浮力衣')) { return $CurrentRoute }
+
+    # A sports/team/player-themed necklace is still jewelry; sports wording is only design/context.
+    if (Test-V4CPrimaryJewelryBody $title) {
+        return New-V4CRoute 'jewelry' 'jewelry' 0.98 @('material','dimensions','plating','gem_claims','size','color_variant','bundle_count','brand','ip_rights','person_likeness') 'standard'
+    }
 
     if (Test-V4CPrimaryProtectiveBody $title) {
         return New-V4CRoute 'sports' 'protective_gear' 0.98 @('size','material','support_level','protection_claims','medical_claims','certification') 'sports_deep'
