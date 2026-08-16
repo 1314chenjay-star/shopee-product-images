@@ -1,0 +1,15 @@
+{
+  "schema_version": "v4c2.semantic-checkpoint.1",
+  "phase": "NOT_STARTED",
+  "v4c1_baseline_head": "a7447b792e65780bc95aa248b9e3a2fd0466f142",
+  "pending_queue_count": 1544,
+  "smoke_target_count": 160,
+  "analyzed_pending_count": 0,
+  "sha_reuse_count": 0,
+  "remaining_count": 1544,
+  "image_generation_called": false,
+  "tiny_snow_api_called": false,
+  "paid_api_called": false,
+  "vision_api_called": false,
+  "source_pipeline_redownload": false
+}
