@@ -1,0 +1,35 @@
+body {
+  margin: 0;
+  min-width: 360px;
+  font-family: "Microsoft JhengHei", "PingFang TC", Arial, sans-serif;
+  background: #f7f8fa;
+  color: #1f2937;
+}
+main { padding: 16px; }
+h1 { margin: 0 0 6px; font-size: 20px; }
+.sub, .note { font-size: 12px; line-height: 1.5; color: #5f6b7a; }
+.status {
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #eef3ff;
+  font-size: 13px;
+  white-space: pre-line;
+}
+button {
+  width: 100%;
+  margin: 5px 0;
+  padding: 10px 12px;
+  border: 1px solid #cdd5df;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+}
+button:hover { background: #f0f4f8; }
+button.primary { background: #2563eb; color: white; border-color: #2563eb; }
+button.primary:hover { background: #1d4ed8; }
+button.danger { color: #b91c1c; }
+.message { min-height: 18px; font-size: 12px; line-height: 1.45; color: #0f766e; }
+.message.error { color: #b91c1c; }
