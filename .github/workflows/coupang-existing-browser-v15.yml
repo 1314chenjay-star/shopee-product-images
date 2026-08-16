@@ -75,7 +75,6 @@ jobs:
           $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Existing_Browser_V1_6'
           New-Item -ItemType Directory -Path $out -Force | Out-Null
           Copy-Item 'coupang_browser_extension' -Destination $out -Recurse -Force
-          Copy-Item 'coupang_browser_extension/README_安裝使用.txt' -Destination (Join-Path $out 'README.txt') -Force
           if (Get-ChildItem -LiteralPath $out -Recurse -Filter '*.zip') { throw 'Nested ZIP detected.' }
           if (-not (Test-Path (Join-Path $out 'coupang_browser_extension/manifest.json'))) { throw 'Extension manifest missing from package.' }
           Write-Host "Single-layer package folder OK: $out"
