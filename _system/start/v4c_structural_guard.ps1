@@ -37,6 +37,18 @@ function Test-V4CPrimaryRacketCaseBody([string]$Title) {
     return ($clean -match '^(?:.{0,6})?(桌球拍保護套|桌球拍保护套|乒乓球拍保護套|乒乓球拍保护套|球拍保護套|球拍保护套|球拍盒|拍盒|球拍袋|球拍包|拍套|球桿包|球杆包|撞球桿包|撞球杆包)')
 }
 
+function Test-V4CPrimarySportsBallStorageBody([string]$Title) {
+    if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
+    $clean = $Title.Trim()
+    return ($clean -match '^(?:.{0,6})?(桌球收納盒|桌球收纳盒|乒乓球收納盒|乒乓球收纳盒|乒乓球桶|桌球桶|多球訓練球罐|多球训练球罐|桌球整理盒|乒乓球整理盒|桌球收納袋|桌球收纳袋|乒乓球收納袋|乒乓球收纳袋)')
+}
+
+function Test-V4CPrimaryRacketMaintenanceToolBody([string]$Title) {
+    if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
+    $clean = $Title.Trim()
+    return ($clean -match '^(?:.{0,8})?(桌球拍貼膠工具|桌球拍贴胶工具|乒乓球拍貼膠工具|乒乓球拍贴胶工具|滾膠棒|滚胶棒|壓膠棍|压胶棍|球拍貼膠滾輪|球拍贴胶滚轮|球拍膠皮黏貼工具|球拍胶皮粘贴工具)')
+}
+
 function Test-V4CPrimarySportsTowelBody([string]$Title) {
     if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
     $clean = $Title.Trim()
@@ -74,6 +86,16 @@ function Resolve-V4CStructuralRoute($Product, $Evidence, $CurrentRoute) {
         $bagSub = if ($sport) { 'sports_bag' } else { 'bags' }
         $bagPriority = if ($sport) { 'sports_deep' } else { 'standard' }
         return New-V4CRoute 'bags' $bagSub 0.97 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating','waterproof_claims') $bagPriority
+    }
+
+    # Sport-ball storage is a container/bag product body, not a racket merely because the title says table tennis.
+    if ((Test-V4CPrimarySportsBallStorageBody $title) -and $sport) {
+        return New-V4CRoute 'bags' 'sports_bag' 0.98 @('capacity','dimensions','material','closure','strap','rigidity','color_variant','ball_inclusion','bundle_count') 'sports_deep'
+    }
+
+    # A glue roller / rubber-sheet application tool is a maintenance tool, not the racket itself.
+    if ((Test-V4CPrimaryRacketMaintenanceToolBody $title) -and $sport) {
+        return New-V4CRoute 'tools' 'sports_maintenance_tool' 0.98 @('dimensions','material','surface_brand_text','color_variant','tool_use_claims','accessories') 'sports_deep'
     }
 
     # Secondary car-use wording must not turn a sports towel into an auto accessory.
