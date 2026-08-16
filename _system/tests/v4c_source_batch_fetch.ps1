@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
+Add-Type -AssemblyName System.Net.Http
 
 if (-not (Test-Path -LiteralPath $ManifestPath)) { throw "Source batch manifest not found: $ManifestPath" }
 $manifest = Get-Content -LiteralPath $ManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
