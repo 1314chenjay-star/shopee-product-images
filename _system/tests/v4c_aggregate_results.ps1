@@ -10,18 +10,15 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference="Stop"
 $Utf8NoBom=New-Object Text.UTF8Encoding($false)
 function Write-Text([string]$Path,[string]$Text){$p=Split-Path -Parent $Path;if($p -and -not(Test-Path $p)){New-Item -ItemType Directory -Force -Path $p|Out-Null};[IO.File]::WriteAllText($Path,$Text,$Utf8NoBom)}
-function Read-JL([string]$Path){$a=@();if(-not(Test-Path $Path)){return ,$a};foreach($l in [IO.File]::ReadAllLines($Path,$Utf8NoBom)){if([string]::IsNullOrWhiteSpace($l)){continue};$a+=($l|ConvertFrom-Json)};return ,$a}
+function Read-JL([string]$Path){$a=@();if(-not(Test-Path $Path)){return $a};foreach($l in [IO.File]::ReadAllLines($Path,$Utf8NoBom)){if([string]::IsNullOrWhiteSpace($l)){continue};$a+=($l|ConvertFrom-Json)};return $a}
 function Ensure-Inventory([string]$Path){
     $first=Get-Content -LiteralPath $Path -TotalCount 1 -Encoding UTF8
     try{$o=$first|ConvertFrom-Json}catch{return}
     if(-not($o.PSObject.Properties.Name -contains "bootstrap") -or -not [bool]$o.bootstrap){return}
     $expectedSha=if($o.PSObject.Properties.Name -contains "inventory_sha256"){[string]$o.inventory_sha256}else{""}
-    $dir=Split-Path -Parent $Path
-    $b=Join-Path $dir "source_inventory.bootstrap.gz.b64"
-    $partsDir=Join-Path $dir "source_inventory.bootstrap.parts"
+    $dir=Split-Path -Parent $Path;$b=Join-Path $dir "source_inventory.bootstrap.gz.b64";$partsDir=Join-Path $dir "source_inventory.bootstrap.parts"
     if(Test-Path $b){$encoded=([IO.File]::ReadAllText($b,$Utf8NoBom)).Trim()}elseif(Test-Path $partsDir){$encoded="";foreach($part in @(Get-ChildItem -LiteralPath $partsDir -File|Sort-Object Name)){$encoded+=([IO.File]::ReadAllText($part.FullName,$Utf8NoBom)).Trim()}}else{throw "Bootstrap inventory missing"}
-    $bytes=[Convert]::FromBase64String($encoded)
-    $ms=New-Object IO.MemoryStream(,$bytes);$gz=New-Object IO.Compression.GZipStream($ms,[IO.Compression.CompressionMode]::Decompress);$out=[IO.File]::Create($Path)
+    $bytes=[Convert]::FromBase64String($encoded);$ms=New-Object IO.MemoryStream(,$bytes);$gz=New-Object IO.Compression.GZipStream($ms,[IO.Compression.CompressionMode]::Decompress);$out=[IO.File]::Create($Path)
     try{$gz.CopyTo($out)}finally{$out.Dispose();$gz.Dispose();$ms.Dispose()}
     if(-not[string]::IsNullOrWhiteSpace($expectedSha)){$actual=(Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant();if($actual -ne $expectedSha.ToLowerInvariant()){throw "Expanded inventory SHA256 mismatch"}}
 }
@@ -32,8 +29,7 @@ function Invoke-SelfTest {
     Write-Host "SELFTEST_RESULT=$($s|ConvertTo-Json -Compress)";if(-not $passed){throw "v4c_aggregate_results self-test failed"}
 }
 if($SelfTest){Invoke-SelfTest;exit 0}
-if([string]::IsNullOrWhiteSpace($BaseProgressPath)){throw "BaseProgressPath required"}
-if([string]::IsNullOrWhiteSpace($ShardResultRoot)){throw "ShardResultRoot required"}
+if([string]::IsNullOrWhiteSpace($BaseProgressPath)){throw "BaseProgressPath required"};if([string]::IsNullOrWhiteSpace($ShardResultRoot)){throw "ShardResultRoot required"}
 Ensure-Inventory $InventoryPath
 $inventory=@(Read-JL $InventoryPath|Sort-Object {[int]$_.sequence});$base=@(Read-JL $BaseProgressPath);$map=@{}
 foreach($p in $base){if($p.PSObject.Properties.Name -contains "sequence"){$map[[int]$p.sequence]=$p}}
