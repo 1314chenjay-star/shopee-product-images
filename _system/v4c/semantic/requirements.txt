@@ -1,0 +1,4 @@
+Pillow==11.3.0
+torch==2.7.1
+torchvision==0.22.1
+rapidocr_onnxruntime==1.4.4
