@@ -8,27 +8,23 @@
 </head>
 <body>
   <main>
-    <h1>TinySnow｜Coupang</h1>
+    <h1>TinySnow｜Coupang V1.7</h1>
     <p class="sub">直接使用你目前已登入的 Chrome / Edge，不複製 Cookie。</p>
     <div id="status" class="status">讀取狀態中…</div>
 
     <button id="focusWing">1. 切到已登入的 WING 分頁</button>
-    <button id="autoCrawl" class="primary">2. 一鍵自動採集全店主要數據</button>
-    <button id="stopAutoCrawl">3. 停止自動巡航</button>
-    <button id="exportData" class="primary">4. 匯出採集資料 JSON</button>
+    <button id="autoCrawl" class="primary">2. 一鍵全店採集（商品自動翻到最後一頁）</button>
+    <button id="stopAutoCrawl">3. 停止自動採集</button>
+    <button id="exportData" class="primary">4. 匯出完整採集資料 JSON</button>
 
     <details>
-      <summary>進階／備用功能</summary>
+      <summary>備用功能</summary>
       <button id="openBackend">直接進配送管理後台</button>
-      <button id="startCapture">只開始監聽目前分頁</button>
-      <button id="reloadCapture">重新整理目前頁並抓 API</button>
-      <button id="snapshot">只採集目前頁面</button>
-      <button id="stopCapture">停止全部採集</button>
       <button id="clearData" class="danger">清空本機採集資料</button>
     </details>
 
-    <p class="note">一鍵巡航會依序嘗試：商品管理→商品列表、訂購/配送→我的訂單、退貨/退款/取消、結算、賣家成長、商業洞察。單一頁面失敗時會記錄原因並繼續。</p>
-    <p class="note">採集保留商品、SKU、價格、庫存、訂單與營運資料；密碼、Cookie、登入 Token、Authorization，以及結構化資料中的買家電話／Email／地址會遮蔽。</p>
+    <p class="note">V1.7 會優先尋找 WING 真實 href／路由，不再只靠模擬點左側文字。商品列表若有多頁，會自動嘗試切到每頁 50 件，持續按下一頁並逐頁保存，直到最後一頁或達到後台顯示的商品總數。</p>
+    <p class="note">採集保留商品、SKU、價格、庫存、訂單與營運資料；密碼、Cookie、登入 Token、Authorization，以及買家電話／Email／地址會遮蔽。</p>
     <p id="message" class="message"></p>
   </main>
   <script src="popup.js"></script>
