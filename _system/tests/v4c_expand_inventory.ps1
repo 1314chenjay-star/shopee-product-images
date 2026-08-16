@@ -58,6 +58,8 @@ if ($groupLines.Count -ne [int]$marker.product_count) { throw "Product group cou
 if ($fileLines.Count -ne [int]$marker.expected_count) { throw "Source filename count mismatch: $($fileLines.Count)/$($marker.expected_count)" }
 
 $baseUrl = [string]$marker.base_url
+$mainImageType = ([string][char]0x4E3B) + ([string][char]0x5716)
+$detailImagePrefix = ([string][char]0x5546) + ([string][char]0x54C1) + ([string][char]0x5716)
 $seq = 0
 $fileCursor = 0
 $records = New-Object System.Collections.Generic.List[string]
@@ -82,12 +84,13 @@ foreach ($groupLine in $groupLines) {
             }
         }
         $seq++
+        $imageType = if ($imageIndex -eq 0) { $mainImageType } else { $detailImagePrefix + [string]$imageIndex }
         $record = [ordered]@{
             sequence = $seq
             source_id = ("V4C-S{0:D6}" -f $seq)
             product_id = $productId
             image_index = $imageIndex
-            image_type = $(if ($imageIndex -eq 0) { "主圖" } else { "商品圖$($imageIndex)" })
+            image_type = $imageType
             url = $baseUrl + $filename
             source_action = "PRESERVE_WITH_CAUTION"
         }
