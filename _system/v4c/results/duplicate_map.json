@@ -1,1 +1,22 @@
-{"url_duplicates":[],"sha256_duplicates":[]}
+{
+    "url_duplicates":  [
+
+                       ],
+    "sha256_duplicates":  [
+                              {
+                                  "sequence":  1469,
+                                  "sha256":  "00f1d296ab2f6b1b95bec9cb46954353269de669e549325a831bef014f87eebc",
+                                  "canonical_sequence":  1468
+                              },
+                              {
+                                  "sequence":  1533,
+                                  "sha256":  "b083aa8683deaad0772de9de7086c1813c216224c5f28f68bbafc286e515c909",
+                                  "canonical_sequence":  1532
+                              },
+                              {
+                                  "sequence":  2307,
+                                  "sha256":  "e08b4aae2125223b6fb19d8d357f3a6ba6cc4e3aead0bf0fc9f111be5bae1c19",
+                                  "canonical_sequence":  2304
+                              }
+                          ]
+}
