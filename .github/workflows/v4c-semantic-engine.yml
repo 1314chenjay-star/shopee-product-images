@@ -8,7 +8,7 @@ on:
     paths:
       - ".github/workflows/v4c-semantic-engine.yml"
       - "_system/tests/v4c_semantic_*.ps1"
-      - "_system/tests/v4c_semantic_worker.py"
+      - "_system/tests/v4c_semantic_worker*.py"
       - "_system/v4c/semantic/**"
 
 permissions:
@@ -108,27 +108,27 @@ jobs:
       - name: Compile and self-test local semantic worker
         shell: powershell
         run: |
-          python -m py_compile .\_system\tests\v4c_semantic_worker.py
-          python .\_system\tests\v4c_semantic_worker.py --self-test
+          python -m py_compile .\_system\tests\v4c_semantic_worker.py .\_system\tests\v4c_semantic_worker_v2.py
+          python .\_system\tests\v4c_semantic_worker_v2.py --self-test
       - name: Smoke checkpoint seed - first 20 images
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force artifacts\smoke-work | Out-Null
-          python .\_system\tests\v4c_semantic_worker.py --manifest $env:SMOKE_MANIFEST --context $env:PRODUCT_CONTEXT --progress artifacts\smoke-work\semantic_progress.jsonl --summary artifacts\smoke-work\partial_summary.json --cache-dir artifacts\smoke-cache --max-items 20
-      - name: Resume same checkpoint - skip DONE and finish 160
+          python .\_system\tests\v4c_semantic_worker_v2.py --manifest $env:SMOKE_MANIFEST --context $env:PRODUCT_CONTEXT --progress artifacts\smoke-work\semantic_progress.jsonl --summary artifacts\smoke-work\partial_summary.json --cache-dir artifacts\smoke-cache --max-items 20
+      - name: Resume same checkpoint - skip terminal and finish 160
         shell: powershell
         run: |
-          python .\_system\tests\v4c_semantic_worker.py --manifest $env:SMOKE_MANIFEST --context $env:PRODUCT_CONTEXT --progress artifacts\smoke-work\semantic_progress.jsonl --summary artifacts\smoke-work\resume_summary.json --cache-dir artifacts\smoke-cache
+          python .\_system\tests\v4c_semantic_worker_v2.py --manifest $env:SMOKE_MANIFEST --context $env:PRODUCT_CONTEXT --progress artifacts\smoke-work\semantic_progress.jsonl --summary artifacts\smoke-work\resume_summary.json --cache-dir artifacts\smoke-cache
           $resume = Get-Content artifacts\smoke-work\resume_summary.json -Raw | ConvertFrom-Json
           if ([int]$resume.checkpoint_skipped_this_run -lt 20) { throw "Checkpoint did not skip first 20 terminal records" }
           if ([int]$resume.covered_after_run -ne 160) { throw "Smoke checkpoint reconciliation failed" }
           Write-Host "CHECKPOINT_RESUME_OBSERVED=true"
       - name: Aggregate smoke and prove SHA reuse 13 to 7
         shell: powershell
-        run: .\_system\tests\v4c_semantic_aggregate.ps1 -Phase Smoke -QueuePath $env:SEMANTIC_QUEUE -SourceEvidencePath $env:SOURCE_EVIDENCE -DuplicateMapPath $env:DUPLICATE_MAP -SeedProgressPath artifacts\smoke-work\semantic_progress.jsonl -OutputDir artifacts\smoke-aggregate
+        run: .\_system\tests\v4c_semantic_aggregate_v2.ps1 -Phase Smoke -QueuePath $env:SEMANTIC_QUEUE -SourceEvidencePath $env:SOURCE_EVIDENCE -DuplicateMapPath $env:DUPLICATE_MAP -SeedProgressPath artifacts\smoke-work\semantic_progress.jsonl -OutputDir artifacts\smoke-aggregate
       - name: Validate semantic smoke invariants
         shell: powershell
-        run: .\_system\tests\v4c_semantic_validate.ps1 -Phase Smoke -ProgressPath artifacts\smoke-aggregate\semantic_progress.jsonl -SummaryPath artifacts\smoke-aggregate\semantic_summary.json -QueuePath $env:SEMANTIC_QUEUE -SmokeManifestPath $env:SMOKE_MANIFEST -WorkerResumeSummaryPath artifacts\smoke-work\resume_summary.json -OutputPath artifacts\smoke-aggregate\validation.json -ExpectedStableHead $env:STABLE_HEAD -V4C1BaselineHead $env:V4C1_BASELINE_HEAD
+        run: .\_system\tests\v4c_semantic_validate_v2.ps1 -Phase Smoke -ProgressPath artifacts\smoke-aggregate\semantic_progress.jsonl -SummaryPath artifacts\smoke-aggregate\semantic_summary.json -QueuePath $env:SEMANTIC_QUEUE -SmokeManifestPath $env:SMOKE_MANIFEST -WorkerResumeSummaryPath artifacts\smoke-work\resume_summary.json -OutputPath artifacts\smoke-aggregate\validation.json -ExpectedStableHead $env:STABLE_HEAD -V4C1BaselineHead $env:V4C1_BASELINE_HEAD
       - uses: actions/upload-artifact@v4
         with:
           name: v4c2-semantic-smoke
@@ -154,7 +154,7 @@ jobs:
         with:
           name: v4c2-semantic-smoke
           path: artifacts/smoke-artifact
-      - name: Build remaining 1384 queue without rerunning smoke DONE
+      - name: Build remaining 1384 queue without rerunning smoke terminal records
         shell: powershell
         run: .\_system\tests\v4c_semantic_plan.ps1 -Mode Full -QueuePath $env:SEMANTIC_QUEUE -ContextPath $env:PRODUCT_CONTEXT -SeedProgressPath artifacts\smoke-artifact\smoke-aggregate\semantic_progress.jsonl -OutDir artifacts\full-plan -ShardCount 4
       - name: Export semantic full matrix
@@ -207,7 +207,7 @@ jobs:
           SHARD: ${{ matrix.shard }}
         run: |
           New-Item -ItemType Directory -Force artifacts\full-results | Out-Null
-          python .\_system\tests\v4c_semantic_worker.py --manifest ("artifacts\full-plan\shards\" + $env:SHARD + ".jsonl") --context $env:PRODUCT_CONTEXT --progress ("artifacts\full-results\" + $env:SHARD + ".progress.jsonl") --summary ("artifacts\full-results\" + $env:SHARD + ".summary.json") --cache-dir ("artifacts\cache-" + $env:SHARD)
+          python .\_system\tests\v4c_semantic_worker_v2.py --manifest ("artifacts\full-plan\shards\" + $env:SHARD + ".jsonl") --context $env:PRODUCT_CONTEXT --progress ("artifacts\full-results\" + $env:SHARD + ".progress.jsonl") --summary ("artifacts\full-results\" + $env:SHARD + ".summary.json") --cache-dir ("artifacts\cache-" + $env:SHARD)
       - uses: actions/upload-artifact@v4
         with:
           name: v4c2-semantic-${{ matrix.shard }}
@@ -231,12 +231,12 @@ jobs:
           pattern: v4c2-semantic-semantic-*
           path: artifacts/full-results
           merge-multiple: true
-      - name: Aggregate all 1544 semantic pending plus four SHA reuses
+      - name: Aggregate all 1544 pending semantic records plus four SHA reuses
         shell: powershell
-        run: .\_system\tests\v4c_semantic_aggregate.ps1 -Phase Final -QueuePath $env:SEMANTIC_QUEUE -SourceEvidencePath $env:SOURCE_EVIDENCE -DuplicateMapPath $env:DUPLICATE_MAP -SeedProgressPath artifacts\smoke-artifact\smoke-aggregate\semantic_progress.jsonl -ShardResultRoot artifacts\full-results -OutputDir artifacts\final
+        run: .\_system\tests\v4c_semantic_aggregate_v2.ps1 -Phase Final -QueuePath $env:SEMANTIC_QUEUE -SourceEvidencePath $env:SOURCE_EVIDENCE -DuplicateMapPath $env:DUPLICATE_MAP -SeedProgressPath artifacts\smoke-artifact\smoke-aggregate\semantic_progress.jsonl -ShardResultRoot artifacts\full-results -OutputDir artifacts\final
       - name: Validate final semantic coverage and frozen V4-C1 evidence
         shell: powershell
-        run: .\_system\tests\v4c_semantic_validate.ps1 -Phase Final -ProgressPath artifacts\final\semantic_progress.jsonl -SummaryPath artifacts\final\semantic_summary.json -QueuePath $env:SEMANTIC_QUEUE -OutputPath artifacts\final\validation.json -ExpectedStableHead $env:STABLE_HEAD -V4C1BaselineHead $env:V4C1_BASELINE_HEAD
+        run: .\_system\tests\v4c_semantic_validate_v2.ps1 -Phase Final -ProgressPath artifacts\final\semantic_progress.jsonl -SummaryPath artifacts\final\semantic_summary.json -QueuePath $env:SEMANTIC_QUEUE -OutputPath artifacts\final\validation.json -ExpectedStableHead $env:STABLE_HEAD -V4C1BaselineHead $env:V4C1_BASELINE_HEAD
       - name: Persist V4-C2 semantic ledger only on experimental branch
         shell: powershell
         run: |
