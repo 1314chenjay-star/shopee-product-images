@@ -1,20 +1,20 @@
 {
   "target": 221,
-  "artifact_found": 0,
-  "artifact_not_found": 221,
-  "sha_matched": 0,
+  "artifact_found": 37,
+  "artifact_not_found": 184,
+  "sha_matched": 37,
   "sha_mismatch": 0,
-  "preserve": 0,
-  "needs_localization": 0,
-  "partial_safe": 0,
-  "hold_remaining": 221,
+  "preserve": 6,
+  "needs_localization": 31,
+  "partial_safe": 28,
+  "hold_remaining": 187,
   "block": 0,
   "pass": 0,
   "remaining": 0,
-  "local_ocr_executed": 0,
+  "local_ocr_executed": 37,
   "semantic_actually_executed": 0,
   "api_flags": {
-    "github_artifact_download_called": false,
+    "github_artifact_download_called": true,
     "source_fetch_called": false,
     "image_generation_called": false,
     "tiny_snow_api_called": false,
@@ -27,6 +27,6 @@
     "completed_ocr_rerun": false,
     "completed_semantic_rerun": false
   },
-  "schema_version": "v4c2.4.final-summary.1",
+  "schema_version": "v4c2.4.final-summary.3",
   "passed": true
 }

@@ -1,25 +1,22 @@
 {
-  "schema_version": "v4c2.4.plan-summary.1",
+  "schema_version": "v4c2.4.plan-summary.3",
   "passed": true,
   "target": 221,
   "canary": 40,
   "remaining_after_canary": 181,
   "batch_counts": {
-    "B001": 12,
-    "B002": 1,
-    "B006": 4,
-    "B007": 24,
-    "B008": 15,
-    "B009": 5,
-    "B010": 6,
-    "B011": 16,
-    "B012": 18,
-    "B014": 22,
-    "B015": 12,
-    "B016": 13,
-    "B017": 31,
-    "B018": 42
+    "B018": 37,
+    "SEARCH_B001_B018": 184
   },
+  "mapping_origin_counts": {
+    "legacy_batch+legacy_sequence": 37,
+    "B001_B018_MANIFEST_SOURCE_URL_SEARCH": 184
+  },
+  "manifest_search_fallback_count": 184,
+  "v4c1_progress_sha_present": 184,
+  "legacy_coordinate_source": "_system/v4c/progress/v4c_source_progress.jsonl",
+  "fallback_mapping_source": "B001-B018 download_manifest source_url + product_id + recorded SHA",
+  "current_sequence_not_assumed_to_be_artifact_sequence": true,
   "other_holds_touched": 0,
   "existing_blocks_touched": 0,
   "rerun_1378": false,
