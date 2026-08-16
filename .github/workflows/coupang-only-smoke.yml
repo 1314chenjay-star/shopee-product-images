@@ -20,6 +20,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $files = @(
             '_system/start/coupang_local_collector.ps1',
+            '_system/start/coupang_existing_session.ps1',
             '_system/start/coupang_only.ps1'
           )
           foreach ($file in $files) {
@@ -37,20 +38,21 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1'
+          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1_1'
           $startDir = Join-Path $out '_system\start'
           New-Item -ItemType Directory -Path $startDir -Force | Out-Null
           Copy-Item 'START.bat' -Destination $out -Force
           Copy-Item 'README_COUPANG.txt' -Destination $out -Force
           Copy-Item '_system/start/coupang_local_collector.ps1' -Destination $startDir -Force
+          Copy-Item '_system/start/coupang_existing_session.ps1' -Destination $startDir -Force
           Copy-Item '_system/start/coupang_only.ps1' -Destination $startDir -Force
-          $zip = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1.zip'
+          $zip = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1_1.zip'
           Compress-Archive -Path (Join-Path $out '*') -DestinationPath $zip -CompressionLevel Optimal
           Write-Host "Package: $zip"
 
       - name: Upload test build
         uses: actions/upload-artifact@v4
         with:
-          name: TinySnow_Coupang_Only_V1
-          path: ${{ runner.temp }}\TinySnow_Coupang_Only_V1.zip
+          name: TinySnow_Coupang_Only_V1_1
+          path: ${{ runner.temp }}\TinySnow_Coupang_Only_V1_1.zip
           if-no-files-found: error
