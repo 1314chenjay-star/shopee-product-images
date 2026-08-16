@@ -153,3 +153,75 @@ function Invoke-CdpCommandV1 {
         $ws.Dispose()
     }
 }
+
+function Get-CoupangStartUrlV4 {
+    return 'https://wing.coupang.com/tenants/sfl-portal/delivery/management'
+}
+
+function Start-CoupangBrowserV1 {
+    $workspace = Get-CoupangWorkspaceV1
+    $profile = Join-Path $workspace 'browser_profile'
+    New-Item -ItemType Directory -Path $profile -Force | Out-Null
+
+    if (Wait-CoupangCdpV1 -TimeoutSeconds 1) {
+        Write-Host 'TinySnow Coupang 專用瀏覽器已經在執行。' -ForegroundColor Green
+        return
+    }
+
+    $browser = Get-CoupangBrowserExecutableV1
+    $args = @(
+        '--remote-debugging-port=9333',
+        ('--user-data-dir="{0}"' -f $profile),
+        '--no-first-run',
+        '--new-window',
+        (Get-CoupangStartUrlV4)
+    )
+
+    Start-Process -FilePath $browser -ArgumentList $args | Out-Null
+    if (-not (Wait-CoupangCdpV1 -TimeoutSeconds 20)) {
+        throw '瀏覽器已啟動，但 TinySnow 無法連接本機瀏覽器控制埠 9333。請關閉剛開啟的專用瀏覽器後重試。'
+    }
+
+    Write-Host ''
+    Write-Host '已直接開啟 Coupang 配送管理後台。' -ForegroundColor Green
+    Write-Host '第一次使用若被要求登入，請在瀏覽器內自行完成驗證；TinySnow 不讀取、不保存你的帳號密碼。' -ForegroundColor Cyan
+}
+
+function Start-CoupangImportedProfileV2 {
+    $workspace = Get-CoupangWorkspaceV1
+    $cloneRoot = Join-Path $workspace 'browser_profile_existing'
+    $meta = Get-CoupangImportedProfileMetaV2
+    if (-not $meta) { throw '尚未匯入現有瀏覽器登入狀態。請先選「使用目前 Edge/Chrome 已登入狀態」。' }
+
+    $executable = Resolve-CoupangBrowserExecutableV3 $meta
+
+    $metaPath = Join-Path $cloneRoot 'TinySnow_profile.json'
+    if ([string]$meta.executable -ne $executable) {
+        $meta.executable = $executable
+        $meta | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $metaPath -Encoding UTF8
+        Write-Host '已自動修復瀏覽器程式位置。' -ForegroundColor Cyan
+    }
+
+    if (Wait-CoupangCdpV1 -TimeoutSeconds 1) {
+        Write-Host 'TinySnow Coupang 瀏覽器已經在執行。' -ForegroundColor Green
+        return
+    }
+
+    $args = @(
+        '--remote-debugging-port=9333',
+        ('--user-data-dir="{0}"' -f $cloneRoot),
+        ('--profile-directory="{0}"' -f [string]$meta.profile_directory),
+        '--no-first-run',
+        '--new-window',
+        (Get-CoupangStartUrlV4)
+    )
+    Start-Process -FilePath $executable -ArgumentList $args | Out-Null
+
+    if (-not (Wait-CoupangCdpV1 -TimeoutSeconds 20)) {
+        throw '已啟動瀏覽器，但 TinySnow 無法連接本機控制埠 9333。'
+    }
+
+    Write-Host ''
+    Write-Host '已使用你原本的登入狀態直接開啟 Coupang 配送管理後台。' -ForegroundColor Green
+    Write-Host '如果 Coupang 仍要求登入，代表該登入工作階段已過期或瀏覽器安全機制不允許複製；TinySnow 不會繞過驗證。' -ForegroundColor Yellow
+}
