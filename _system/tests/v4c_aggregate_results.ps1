@@ -121,6 +121,26 @@ foreach ($file in $resultFiles) {
 
 $shaCanonical = @{}
 $shaDuplicates = @()
+
+# Preserve SHA duplicate evidence that already exists in the checkpoint/base ledger.
+# This is required when a smoke phase has already converted a DONE record into
+# SHA_DUPLICATE before the final/full aggregation pass.
+foreach ($seq in ($map.Keys | Sort-Object)) {
+    $record = $map[$seq]
+    if ([string]$record.status -ne "SHA_DUPLICATE") { continue }
+    if (-not ($record.PSObject.Properties.Name -contains "sha256") -or [string]::IsNullOrWhiteSpace([string]$record.sha256)) {
+        throw "SHA_DUPLICATE without SHA256 at $seq"
+    }
+    if (-not ($record.PSObject.Properties.Name -contains "sha_duplicate_of_sequence")) {
+        throw "SHA_DUPLICATE without canonical sequence at $seq"
+    }
+    $shaDuplicates += [pscustomobject]@{
+        sequence=[int]$seq
+        sha256=([string]$record.sha256).ToLowerInvariant()
+        canonical_sequence=[int]$record.sha_duplicate_of_sequence
+    }
+}
+
 foreach ($seq in ($map.Keys | Sort-Object)) {
     $record = $map[$seq]
     if ([string]$record.status -ne "DONE") { continue }
