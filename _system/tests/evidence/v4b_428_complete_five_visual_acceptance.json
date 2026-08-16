@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "product_id": "42833435408",
+  "status": "complete_five_visual_acceptance_pass",
+  "acceptance_model": "logical five-slot acceptance assembled from independently locked successful runs; no successful slot was regenerated merely to create one batch",
+  "source_review": {
+    "run_id": "31917384949",
+    "artifact_id": "9255311958",
+    "original_count": 9,
+    "human_source_review_completed": true
+  },
+  "slots": {
+    "main": {
+      "round": "R14",
+      "run_id": "31917729737",
+      "head_sha": "2459132183a7e8b52520134178c23c6570d0e270",
+      "payload_artifact_id": "9255422585",
+      "receipt_artifact_id": "9255422817",
+      "source_index": 0,
+      "output_sha256": "25346b4e2cfa8020ccc0663e187b0560039fd9f51cce414e47f5a44bebbd5f72",
+      "human_visual_result": "pass"
+    },
+    "detail1": {
+      "round": "R13",
+      "run_id": "31917560621",
+      "head_sha": "a937a02aa5fe5036bc8bd538c5d6eceed63c5cc6",
+      "payload_artifact_id": "9255373648",
+      "receipt_artifact_id": "9255373855",
+      "source_index": 4,
+      "output_sha256": "f1aa95d0a9f65480aac6491b4a5872096add4ffaff813e4e0b4178a0206c21ab",
+      "human_visual_result": "pass"
+    },
+    "detail2": {
+      "round": "R15",
+      "run_id": "31917900063",
+      "head_sha": "7d028bac11bce14976da49d68b509fe80afc09f4",
+      "payload_artifact_id": "9255471200",
+      "receipt_artifact_id": "9255471480",
+      "source_index": 6,
+      "output_sha256": "f3eac22a059380eec74a2473cb4df35e2230afae5edd320277fc386b2af5c14a",
+      "human_visual_result": "pass"
+    },
+    "detail3": {
+      "round": "R15",
+      "run_id": "31917900063",
+      "head_sha": "7d028bac11bce14976da49d68b509fe80afc09f4",
+      "payload_artifact_id": "9255468796",
+      "receipt_artifact_id": "9255469021",
+      "source_index": 8,
+      "output_sha256": "375631009ff0a17049f5a637d0aa4eea5b635943bb5d56f87830d5b560540aa5",
+      "human_visual_result": "pass"
+    },
+    "detail4": {
+      "round": "R15",
+      "run_id": "31917900063",
+      "head_sha": "7d028bac11bce14976da49d68b509fe80afc09f4",
+      "payload_artifact_id": "9255470419",
+      "receipt_artifact_id": "9255470716",
+      "source_index": 1,
+      "output_sha256": "bfd7bef33bcdc457abba68641f427ffe04d7024f307e6e52c51beb4d682b08bd",
+      "human_visual_result": "pass"
+    }
+  },
+  "human_visual_acceptance": {
+    "same_product_identity_preserved": true,
+    "double_layer_fake_two_piece_structure_preserved": true,
+    "waistband_drawstrings_and_hem_structure_preserved": true,
+    "source_specific_flame_or_decorative_prints_preserved_without_cross_variant_generalization": true,
+    "seller_watermark_removed_where_present": true,
+    "new_visible_pocket_added": false,
+    "new_dimension_or_size_table_added": false,
+    "new_material_claim_added": false,
+    "new_function_performance_medical_or_safety_claim_added": false,
+    "new_brand_logo_accessory_gift_or_certification_added": false,
+    "variant_display_changed_to_fixed_bundle": false,
+    "surface_decorative_text_changed_to_invented_brand_like_text": false
+  },
+  "locked_slots": ["main:R14", "detail1:R13", "detail2:R15", "detail3:R15", "detail4:R15"],
+  "do_not_rerun": true,
+  "boundary": "428 complete five visual acceptance is passed on V4-B experiment. This does not mean V4-B is merged, stable regression is passed, release package is approved, or START.bat user release is complete.",
+  "next_gate": "Run non-paid Windows smoke on the current V4-B head, re-check stable/V4-B refs, then ask the user whether to open/merge V4-B into the stable line."
+}
