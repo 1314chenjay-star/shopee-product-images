@@ -1,0 +1,1 @@
+{"bootstrap":true,"expected_count":2394,"inventory_sha256":"120eaf766c1bce2eee1e4bd2993f64af6a3df83da85431f985ccd3a635e3a2fd","bootstrap_file":"source_inventory.bootstrap.gz.b64","source":"TinySnow_V4C0_375件全量測試報告.xlsx/圖片來源明細","note":"Workflow expands the verified bootstrap before processing; finalizer commits the full JSONL inventory."}
