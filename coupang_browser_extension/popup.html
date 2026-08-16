@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TinySnow Coupang</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <h1>TinySnow｜Coupang</h1>
+    <p class="sub">直接使用你目前已登入的 Chrome / Edge，不複製 Cookie。</p>
+    <div id="status" class="status">讀取狀態中…</div>
+
+    <button id="focusWing">1. 切到已登入的 WING 分頁</button>
+    <button id="openBackend">2. 直接進配送管理後台</button>
+    <button id="startCapture" class="primary">3. 開始採集後台資料</button>
+    <button id="reloadCapture">4. 重新整理並抓取 API</button>
+    <button id="snapshot">5. 採集目前頁面</button>
+    <button id="stopCapture">6. 停止採集</button>
+    <button id="exportData" class="primary">7. 匯出採集資料 JSON</button>
+    <button id="clearData" class="danger">清空本機採集資料</button>
+
+    <p class="note">採集內容會保留商品、SKU、價格、庫存、訂單與營運資料；密碼、Cookie、登入 Token、Authorization，以及買家電話／Email／地址會遮蔽。</p>
+    <p id="message" class="message"></p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
