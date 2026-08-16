@@ -83,8 +83,41 @@ function Get-LegacyCompleted {
         if (-not ($manifest.PSObject.Properties.Name -contains "batch_id")) { continue }
         $batch = [string]$manifest.batch_id
         if ($batch -notmatch "^B(0(0[1-9]|1[0-8]))$") { continue }
+
+        # Historical manifests used the canonical `rows` schema. A small number of
+        # intermediate commits may contain batch metadata without actual source rows;
+        # ignore those commits instead of treating them as completed evidence.
+        $records = @()
+        $schema = ""
+        if ($manifest.PSObject.Properties.Name -contains "rows") {
+            $records = @($manifest.rows)
+            $schema = "rows"
+        } elseif ($manifest.PSObject.Properties.Name -contains "sources") {
+            $records = @($manifest.sources)
+            $schema = "sources"
+        } else {
+            continue
+        }
+        if ($records.Count -eq 0) { continue }
+
+        $normalized = New-Object System.Collections.Generic.List[object]
+        $valid = $true
+        foreach ($record in $records) {
+            if (-not ($record.PSObject.Properties.Name -contains "sequence")) { $valid = $false; break }
+            $seq = [int]$record.sequence
+            $url = ""
+            if ($schema -eq "rows" -and $record.PSObject.Properties.Name -contains "source_url") {
+                $url = ([string]$record.source_url).Trim()
+            } elseif ($schema -eq "sources" -and $record.PSObject.Properties.Name -contains "url") {
+                $url = ([string]$record.url).Trim()
+            }
+            if ([string]::IsNullOrWhiteSpace($url)) { $valid = $false; break }
+            $normalized.Add([pscustomobject]@{ sequence=$seq; url=$url })
+        }
+        if (-not $valid) { continue }
+
         if (-not $byBatch.ContainsKey($batch)) {
-            $byBatch[$batch] = [pscustomobject]@{ sha=$sha; manifest=$manifest }
+            $byBatch[$batch] = [pscustomobject]@{ sha=$sha; records=@($normalized) }
         }
     }
 
@@ -93,8 +126,7 @@ function Get-LegacyCompleted {
     $urlMap = @{}
     $legacySequences = New-Object System.Collections.Generic.List[int]
     foreach ($batch in ($byBatch.Keys | Sort-Object)) {
-        $m = $byBatch[$batch].manifest
-        foreach ($s in @($m.sources)) {
+        foreach ($s in @($byBatch[$batch].records)) {
             $seq = [int]$s.sequence
             $url = ([string]$s.url).Trim()
             if ([string]::IsNullOrWhiteSpace($url)) { throw "Legacy $batch contains blank URL" }
