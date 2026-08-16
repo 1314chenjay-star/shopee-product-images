@@ -1,0 +1,31 @@
+{
+  "schema_version": "v4c3.factual-gate-summary.1",
+  "passed": true,
+  "input_partial_safe": 1046,
+  "eligibility_counts": {
+    "BLOCK_FACTUAL": 967,
+    "ELIGIBLE_PARTIAL": 79,
+    "ELIGIBLE_SAFE": 0,
+    "HOLD_FACTUAL": 0
+  },
+  "verified_fact_count": 746,
+  "unknown_fact_count": 85,
+  "conflict_fact_count": 7125,
+  "forbidden_fact_count": 8511,
+  "variant_conflicts": 0,
+  "downstream_generation_eligible_count": 0,
+  "product_count": 178,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false
+  }
+}

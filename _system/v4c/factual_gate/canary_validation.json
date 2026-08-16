@@ -1,0 +1,28 @@
+{
+  "schema_version": "v4c3.factual-gate-canary-validation.1",
+  "passed": true,
+  "input": 120,
+  "terminal": 120,
+  "checkpoint_seed": 30,
+  "checkpoint_resume_skipped": 30,
+  "checkpoint_resume_processed": 90,
+  "verified_source_only": true,
+  "unknown_never_generation_safe": true,
+  "variant_isolation": true,
+  "high_risk_without_source_forbidden": true,
+  "non_partial_excluded": true,
+  "input_output_reconciliation": true,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false
+  }
+}

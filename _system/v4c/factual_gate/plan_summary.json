@@ -1,0 +1,30 @@
+{
+  "schema_version": "v4c3.factual-gate-plan.1",
+  "passed": true,
+  "canonical_total": 1378,
+  "canonical_counts": {
+    "PARTIAL_SAFE": 1046,
+    "HOLD_FINAL": 39,
+    "PRESERVE": 280,
+    "BLOCK_FINAL": 13
+  },
+  "input_partial_safe": 1046,
+  "canary_count": 120,
+  "remaining_after_canary": 926,
+  "excluded_preserve": 280,
+  "excluded_hold_final": 39,
+  "excluded_block_final": 13,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false
+  }
+}
