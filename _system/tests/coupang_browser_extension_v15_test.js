@@ -12,22 +12,28 @@ global.chrome = {
     onDetach: noopListener
   },
   runtime: { onMessage: noopListener },
-  tabs: { query: async () => [], get: async () => ({}), update: async () => ({}), reload: async () => {} },
+  tabs: { query: async () => [], get: async () => ({}), update: async () => ({}) },
   windows: { update: async () => ({}) }
 };
 
 require('../../coupang_browser_extension/background.js');
-const t = global.__TinySnowV16Test;
-assert(t, 'V1.6 test helpers should be exposed');
+const t = global.__TinySnowV17Test;
+assert(t, 'V1.7 test helpers should be exposed');
 
 assert.strictEqual(t.TARGET_URL, 'https://wing.coupang.com/tenants/sfl-portal/delivery/management');
 assert.strictEqual(Array.isArray(t.AUTO_CRAWL_PLAN), true);
 assert.strictEqual(t.AUTO_CRAWL_PLAN.length, 6);
 assert.deepStrictEqual(t.AUTO_CRAWL_PLAN.map(x => x.id), ['products','orders','returns','settlement','growth','insights']);
-assert(t.AUTO_CRAWL_PLAN[0].path[0].includes('商品管理'));
-assert(t.AUTO_CRAWL_PLAN[1].path[1].includes('我的訂單'));
-assert(t.AUTO_CRAWL_PLAN[2].path[1].some(x => x.includes('退貨')));
-assert(t.AUTO_CRAWL_PLAN[5].path[0].includes('商業洞察'));
+assert(t.AUTO_CRAWL_PLAN[0].labels.some(x => x.includes('商品')));
+assert(t.AUTO_CRAWL_PLAN[1].labels.includes('我的订单'));
+assert(t.AUTO_CRAWL_PLAN[1].labels.includes('我的訂單'));
+assert(t.AUTO_CRAWL_PLAN[2].labels.some(x => x.includes('退货')));
+assert(t.AUTO_CRAWL_PLAN[5].labels.includes('商业洞察'));
+
+assert.strictEqual(t.normalizeNavText(' 訂購／配送 '), '訂購/配送');
+assert(t.scoreLabel('我的订单', ['我的订单', '我的訂單']) > 0);
+assert(t.scoreLabel('商业洞察', ['商業洞察', '商业洞察']) > 0);
+assert.strictEqual(t.scoreLabel('完全不同', ['商品列表']), -1);
 
 assert.strictEqual(t.isCoupangBusinessUrl('https://wing.coupang.com/tenants/sfl-portal/delivery/management'), true);
 assert.strictEqual(t.isCoupangBusinessUrl('https://xauth.coupang.com/auth/realms/seller'), false);
@@ -62,4 +68,8 @@ assert.strictEqual(parsed.stock, 4);
 assert.strictEqual(parsed.email, '[REDACTED_PII]');
 assert.strictEqual(parsed.refresh_token, '[REDACTED_SECRET]');
 
-console.log('ALL COUPANG EXISTING-BROWSER V1.6 UNIT TESTS PASSED');
+assert.strictEqual(t.rowFingerprint(['A', 1]), '["A",1]');
+assert.strictEqual(t.rowFingerprint(['A', 1]), t.rowFingerprint(['A', 1]));
+assert.notStrictEqual(t.rowFingerprint(['A', 1]), t.rowFingerprint(['B', 1]));
+
+console.log('ALL COUPANG EXISTING-BROWSER V1.7 UNIT TESTS PASSED');
