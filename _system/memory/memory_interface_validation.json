@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "exact_sha_reuse": true,
+  "identity_isolation": true,
+  "regression_lookup": true,
+  "segregated_memory_buckets": [
+    "blocked_memory",
+    "layout_templates",
+    "previous_errors",
+    "reusable_approved_outputs",
+    "risk_guards",
+    "verified_facts"
+  ],
+  "generation_executed": false
+}

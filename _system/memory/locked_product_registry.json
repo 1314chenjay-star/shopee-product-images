@@ -1,0 +1,47 @@
+{
+  "memory_schema_version": "tinysnow.memory.v1.0.0",
+  "migration_version": 1,
+  "unlock_policy": "EXPLICIT_HUMAN_UNLOCK_ONLY",
+  "products": [
+    {
+      "product_id": "42833435408",
+      "locked": true,
+      "automatic_unlock_forbidden": true,
+      "generation_forbidden_until_human_unlock": true,
+      "approval_materialized": true,
+      "source_stage": "FROZEN_PROJECT_GUARD",
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z"
+    },
+    {
+      "product_id": "52915734564",
+      "locked": true,
+      "automatic_unlock_forbidden": true,
+      "generation_forbidden_until_human_unlock": true,
+      "approval_materialized": false,
+      "source_stage": "FROZEN_PROJECT_GUARD",
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z"
+    },
+    {
+      "product_id": "57565745174",
+      "locked": true,
+      "automatic_unlock_forbidden": true,
+      "generation_forbidden_until_human_unlock": true,
+      "approval_materialized": false,
+      "source_stage": "FROZEN_PROJECT_GUARD",
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z"
+    },
+    {
+      "product_id": "58015741169",
+      "locked": true,
+      "automatic_unlock_forbidden": true,
+      "generation_forbidden_until_human_unlock": true,
+      "approval_materialized": false,
+      "source_stage": "FROZEN_PROJECT_GUARD",
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z"
+    }
+  ]
+}

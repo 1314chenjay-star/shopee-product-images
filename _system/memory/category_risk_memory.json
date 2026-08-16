@@ -1,0 +1,188 @@
+{
+  "memory_schema_version": "tinysnow.memory.v1.0.0",
+  "migration_version": 1,
+  "policy": "RISK_MEMORY_IS_GUARD_ONLY_NEVER_FACTUAL_EVIDENCE",
+  "profiles": [
+    {
+      "profile_id": "apparel",
+      "risk_fields": [
+        "size",
+        "material",
+        "pocket",
+        "lining",
+        "fit",
+        "elasticity"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "bags",
+      "risk_fields": [
+        "capacity",
+        "internal_compartments",
+        "strap",
+        "accessories",
+        "waterproof"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "footwear",
+      "risk_fields": [
+        "shoe_size",
+        "outsole_material",
+        "slip_resistance",
+        "air_cushion",
+        "terrain_suitability"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "outdoor",
+      "risk_fields": [
+        "waterproof",
+        "uv_protection",
+        "load_rating",
+        "dimensions",
+        "safety_performance"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "sports",
+      "risk_fields": [
+        "material",
+        "weight",
+        "dimensions",
+        "competition_spec",
+        "professional_performance"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "fitness",
+      "risk_fields": [
+        "resistance",
+        "load_rating",
+        "material",
+        "dimensions",
+        "usage_claims",
+        "safety"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "camping",
+      "risk_fields": [
+        "dimensions",
+        "material",
+        "waterproof",
+        "load_rating",
+        "capacity",
+        "accessories",
+        "bundle_count"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "water_sports_safety",
+      "risk_fields": [
+        "certification",
+        "buoyancy",
+        "material",
+        "size_user_mapping",
+        "safety_performance"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "home",
+      "risk_fields": [
+        "capacity",
+        "material",
+        "electrical_safety",
+        "dimensions",
+        "performance"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "pet",
+      "risk_fields": [
+        "size",
+        "material",
+        "weight_limit",
+        "safety",
+        "accessories"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    },
+    {
+      "profile_id": "general_merchandise",
+      "risk_fields": [
+        "material",
+        "dimensions",
+        "quantity",
+        "accessories",
+        "certification",
+        "performance"
+      ],
+      "allowed_usage": "GUARD_ONLY",
+      "may_increase_review_strictness": true,
+      "may_supply_product_fact": false,
+      "created_at": "2026-08-16T23:00:56Z",
+      "updated_at": "2026-08-16T23:00:56Z",
+      "source_stage": "V4-C4.2"
+    }
+  ]
+}
