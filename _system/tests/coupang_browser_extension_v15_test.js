@@ -17,10 +17,18 @@ global.chrome = {
 };
 
 require('../../coupang_browser_extension/background.js');
-const t = global.__TinySnowV15Test;
-assert(t, 'test helpers should be exposed');
+const t = global.__TinySnowV16Test;
+assert(t, 'V1.6 test helpers should be exposed');
 
 assert.strictEqual(t.TARGET_URL, 'https://wing.coupang.com/tenants/sfl-portal/delivery/management');
+assert.strictEqual(Array.isArray(t.AUTO_CRAWL_PLAN), true);
+assert.strictEqual(t.AUTO_CRAWL_PLAN.length, 6);
+assert.deepStrictEqual(t.AUTO_CRAWL_PLAN.map(x => x.id), ['products','orders','returns','settlement','growth','insights']);
+assert(t.AUTO_CRAWL_PLAN[0].path[0].includes('商品管理'));
+assert(t.AUTO_CRAWL_PLAN[1].path[1].includes('我的訂單'));
+assert(t.AUTO_CRAWL_PLAN[2].path[1].some(x => x.includes('退貨')));
+assert(t.AUTO_CRAWL_PLAN[5].path[0].includes('商業洞察'));
+
 assert.strictEqual(t.isCoupangBusinessUrl('https://wing.coupang.com/tenants/sfl-portal/delivery/management'), true);
 assert.strictEqual(t.isCoupangBusinessUrl('https://xauth.coupang.com/auth/realms/seller'), false);
 assert.strictEqual(t.isCoupangBusinessUrl('https://example.com/data'), false);
@@ -54,4 +62,4 @@ assert.strictEqual(parsed.stock, 4);
 assert.strictEqual(parsed.email, '[REDACTED_PII]');
 assert.strictEqual(parsed.refresh_token, '[REDACTED_SECRET]');
 
-console.log('ALL COUPANG EXISTING-BROWSER V1.5 UNIT TESTS PASSED');
+console.log('ALL COUPANG EXISTING-BROWSER V1.6 UNIT TESTS PASSED');
