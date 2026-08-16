@@ -9,6 +9,7 @@ $host.UI.RawUI.WindowTitle = '蝦皮商品圖片優化工具 V2 | V4-A.1 | API-R
 . (Join-Path $PSScriptRoot 'image_pipeline_v2.ps1')
 . (Join-Path $PSScriptRoot 'v4a1_guard.ps1')
 . (Join-Path $PSScriptRoot 'v4a1_visual_truth.ps1')
+. (Join-Path $PSScriptRoot 'coupang_local_collector.ps1')
 
 function Pause-Menu {
     Write-Host ''
@@ -50,6 +51,7 @@ while ($true) {
     Write-Host '7. 查看處理進度'
     Write-Host '8. 打開「已生成圖片」資料夾'
     Write-Host '9. 進階設定'
+    Write-Host '10. Coupang 本地數據採集（實驗）'
     Write-Host '0. 離開'
     Write-Host '================================='
 
@@ -170,6 +172,8 @@ while ($true) {
                 }
                 Pause-Menu
             }
+
+            '10' { Show-CoupangCollectorMenuV1 }
 
             '0' { return }
 
