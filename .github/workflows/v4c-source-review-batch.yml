@@ -7,6 +7,8 @@ on:
       - v4c-universal-product-engine
     paths:
       - '_system/tests/fixtures/v4c_source_batch_manifest.json'
+      - '_system/tests/v4c_source_batch_fetch.ps1'
+      - '.github/workflows/v4c-source-review-batch.yml'
 
 jobs:
   source-review:
