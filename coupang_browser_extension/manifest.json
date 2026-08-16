@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "TinySnow Coupang Existing Browser Bridge",
-  "version": "1.6.0",
-  "description": "直接在目前已登入的 Chrome/Edge 中一鍵巡航 Coupang WING 並採集商業資料，不複製 Cookie、不匯出密碼或登入 Token。",
+  "version": "1.7.0",
+  "minimum_chrome_version": "118",
+  "description": "直接在目前已登入的 Chrome/Edge 中自動發現 WING 真實路由，巡航主要營運頁並全量翻頁採集商品資料。",
   "permissions": [
     "activeTab",
     "tabs",
