@@ -1,14 +1,15 @@
 ﻿$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
-$host.UI.RawUI.WindowTitle = 'TinySnow Coupang 數據採集工具 V1.2'
+$host.UI.RawUI.WindowTitle = 'TinySnow Coupang 數據採集工具 V1.3'
 
 . (Join-Path $PSScriptRoot 'coupang_local_collector.ps1')
 . (Join-Path $PSScriptRoot 'coupang_existing_session.ps1')
+. (Join-Path $PSScriptRoot 'coupang_v13_hardening.ps1')
 
 while ($true) {
     Clear-Host
     Write-Host '=================================' -ForegroundColor Cyan
-    Write-Host 'TinySnow｜Coupang 數據採集工具 V1.2'
+    Write-Host 'TinySnow｜Coupang 數據採集工具 V1.3'
     Write-Host '純酷澎版｜不修改 Open API｜不保存帳號密碼' -ForegroundColor Green
     Write-Host '=================================' -ForegroundColor Cyan
     Write-Host '1. 使用目前 Edge/Chrome 已登入狀態（推薦）'
