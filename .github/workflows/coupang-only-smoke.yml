@@ -1,4 +1,4 @@
-name: Coupang Only V1.3 Full Test
+name: Coupang Only V1.4 Full Test
 
 on:
   push:
@@ -23,7 +23,8 @@ jobs:
             '_system/start/coupang_existing_session.ps1',
             '_system/start/coupang_v13_hardening.ps1',
             '_system/start/coupang_only.ps1',
-            '_system/tests/coupang_v13_selftest.ps1'
+            '_system/tests/coupang_v13_selftest.ps1',
+            '_system/tests/coupang_v14_selftest.ps1'
           )
           foreach ($file in $files) {
             $tokens = $null
@@ -36,17 +37,23 @@ jobs:
             Write-Host "Syntax OK: $file"
           }
 
-      - name: Full Windows functional self-test
+      - name: V1.3 Windows functional regression test
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           & "$PWD/_system/tests/coupang_v13_selftest.ps1"
 
-      - name: Package Coupang-only V1.3 build
+      - name: V1.4 direct-entry self-test
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1_3'
+          & "$PWD/_system/tests/coupang_v14_selftest.ps1"
+
+      - name: Prepare single-layer Coupang-only V1.4 build
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1_4'
           $startDir = Join-Path $out '_system\start'
           New-Item -ItemType Directory -Path $startDir -Force | Out-Null
           Copy-Item 'START.bat' -Destination $out -Force
@@ -55,15 +62,16 @@ jobs:
           Copy-Item '_system/start/coupang_existing_session.ps1' -Destination $startDir -Force
           Copy-Item '_system/start/coupang_v13_hardening.ps1' -Destination $startDir -Force
           Copy-Item '_system/start/coupang_only.ps1' -Destination $startDir -Force
-          $zip = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1_3.zip'
-          Compress-Archive -Path (Join-Path $out '*') -DestinationPath $zip -CompressionLevel Optimal
-          if (-not (Test-Path $zip)) { throw 'Package ZIP missing.' }
-          if ((Get-Item $zip).Length -le 0) { throw 'Package ZIP is empty.' }
-          Write-Host "Package OK: $zip"
 
-      - name: Upload verified build
+          if (-not (Test-Path (Join-Path $out 'START.bat'))) { throw 'START.bat missing from prepared build.' }
+          if (-not (Test-Path (Join-Path $out '_system\start\coupang_only.ps1'))) { throw 'Runtime script missing from prepared build.' }
+          $nestedZip = @(Get-ChildItem -LiteralPath $out -Recurse -File -Filter '*.zip')
+          if ($nestedZip.Count -gt 0) { throw 'Prepared build contains a nested ZIP; users would need to unzip twice.' }
+          Write-Host 'Single-layer build OK: no nested ZIP files.'
+
+      - name: Upload verified single-layer build
         uses: actions/upload-artifact@v4
         with:
-          name: TinySnow_Coupang_Only_V1_3_VERIFIED
-          path: ${{ runner.temp }}\TinySnow_Coupang_Only_V1_3.zip
+          name: TinySnow_Coupang_Only_V1_4_VERIFIED
+          path: ${{ runner.temp }}\TinySnow_Coupang_Only_V1_4\**
           if-no-files-found: error
