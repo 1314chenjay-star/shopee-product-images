@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "TinySnow Coupang Existing Browser Bridge",
+  "version": "1.5.0",
+  "description": "在你目前已登入的 Chrome/Edge 分頁中讀取 Coupang WING 商業資料，不複製 Cookie、不匯出密碼或登入 Token。",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "debugger",
+    "downloads",
+    "storage",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://wing.coupang.com/*",
+    "https://*.coupang.com/*",
+    "https://*.coupangcdn.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "TinySnow Coupang",
+    "default_popup": "popup.html"
+  }
+}
