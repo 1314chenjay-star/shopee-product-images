@@ -1,0 +1,32 @@
+{
+  "schema_version": "v4c3.2.canary-validation.1",
+  "passed": true,
+  "input": 120,
+  "same_image_false_conflicts_releasable": 6519,
+  "true_same_scope_conflicts_locked": 606,
+  "cross_image_complementary_false_conflicts_releasable": 42,
+  "formatting_duplicate_false_conflicts_releasable": 8,
+  "true_cross_image_conflicts_locked": 202,
+  "sibling_block_propagation_removed": true,
+  "unknown_never_safe": true,
+  "conflict_never_safe": true,
+  "forbidden_never_safe": true,
+  "variant_isolation_preserved": true,
+  "identity_critical_conflicts_block_product": true,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "generation_queue_executed": false
+  }
+}

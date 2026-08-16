@@ -1,0 +1,41 @@
+{
+  "schema_version": "v4c3.2.summary.1",
+  "passed": true,
+  "original_conflicts": 7125,
+  "safely_corrected_false_conflicts": 6569,
+  "remaining_true_image_conflicts": 606,
+  "remaining_true_product_conflicts": 202,
+  "eligibility_counts": {
+    "BLOCK_FACTUAL": 171,
+    "ELIGIBLE_PARTIAL": 875,
+    "ELIGIBLE_SAFE": 0,
+    "HOLD_FACTUAL": 0
+  },
+  "products_with_at_least_one_downstream_eligible_image": 174,
+  "generation_queue_count": 875,
+  "generation_queue_product_count": 174,
+  "unknown_leaked_to_safe_facts": 0,
+  "conflict_leaked_to_safe_facts": 0,
+  "forbidden_leaked_to_safe_facts": 0,
+  "identity_critical_unresolved_conflicts": 0,
+  "identity_critical_unresolved_product_count": 0,
+  "affected_image_records": 1046,
+  "affected_products": 178,
+  "generation_queue_executed": false,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "generation_queue_executed": false
+  }
+}

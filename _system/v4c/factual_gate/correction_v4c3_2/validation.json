@@ -1,0 +1,29 @@
+{
+  "schema_version": "v4c3.2.validation.1",
+  "passed": true,
+  "image_count": 1046,
+  "product_count": 178,
+  "overlay_count": 1046,
+  "queue_count": 875,
+  "queue_product_count": 174,
+  "unknown_leak": 0,
+  "conflict_leak": 0,
+  "forbidden_leak": 0,
+  "generation_executed": false,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "generation_queue_executed": false
+  }
+}

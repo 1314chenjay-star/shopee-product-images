@@ -1,0 +1,28 @@
+{
+  "schema_version": "v4c3.2.plan.1",
+  "passed": true,
+  "affected_image_records": 1046,
+  "affected_products": 178,
+  "canary_count": 120,
+  "false_image_conflicts": 6519,
+  "true_image_conflicts_locked": 606,
+  "false_product_conflicts": 50,
+  "true_product_conflicts_locked": 202,
+  "safely_fixable": 6569,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "generation_queue_executed": false
+  }
+}
