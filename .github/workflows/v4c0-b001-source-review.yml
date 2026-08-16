@@ -1,0 +1,34 @@
+name: V4-C0 B001 Source Review
+
+on:
+  push:
+    branches:
+      - v4c-universal-product-engine
+
+jobs:
+  b001-source-review:
+    if: github.event.head_commit.message == 'RUN-V4C0-B001-SOURCE-REVIEW'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Normalize PowerShell encoding
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\start\encoding_fix.ps1
+
+      - name: Download B001 source images only
+        shell: powershell
+        run: |
+          & .\_system\tests\v4c0_b001_source_review.ps1
+
+      - name: Upload B001 source images
+        uses: actions/upload-artifact@v4
+        with:
+          name: V4-C0-B001-Source-Images
+          path: _system/source_review_v4c_b001/
+          if-no-files-found: error
+          retention-days: 14
