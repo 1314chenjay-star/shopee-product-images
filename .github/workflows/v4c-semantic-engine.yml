@@ -123,6 +123,13 @@ jobs:
           if ([int]$resume.checkpoint_skipped_this_run -lt 20) { throw "Checkpoint did not skip first 20 terminal records" }
           if ([int]$resume.covered_after_run -ne 160) { throw "Smoke checkpoint reconciliation failed" }
           Write-Host "CHECKPOINT_RESUME_OBSERVED=true"
+      - name: Preserve completed smoke checkpoint before aggregation
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-semantic-smoke-checkpoint
+          path: artifacts/smoke-work
+          if-no-files-found: error
+          retention-days: 14
       - name: Aggregate smoke and prove SHA reuse 13 to 7
         shell: powershell
         run: .\_system\tests\v4c_semantic_aggregate_v2.ps1 -Phase Smoke -QueuePath $env:SEMANTIC_QUEUE -SourceEvidencePath $env:SOURCE_EVIDENCE -DuplicateMapPath $env:DUPLICATE_MAP -SeedProgressPath artifacts\smoke-work\semantic_progress.jsonl -OutputDir artifacts\smoke-aggregate
@@ -255,7 +262,10 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add _system/v4c/semantic
           git diff --cached --quiet
-          if ($LASTEXITCODE -ne 0) { git commit -m "V4-C2 finalize semantic evidence [skip ci]"; git push origin HEAD:v4c-universal-product-engine }
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "V4-C2 finalize semantic evidence [skip ci]"
+            git push origin HEAD:v4c-universal-product-engine
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: v4c2-semantic-final
