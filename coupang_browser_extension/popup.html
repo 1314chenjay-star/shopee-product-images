@@ -13,15 +13,22 @@
     <div id="status" class="status">讀取狀態中…</div>
 
     <button id="focusWing">1. 切到已登入的 WING 分頁</button>
-    <button id="openBackend">2. 直接進配送管理後台</button>
-    <button id="startCapture" class="primary">3. 開始採集後台資料</button>
-    <button id="reloadCapture">4. 重新整理並抓取 API</button>
-    <button id="snapshot">5. 採集目前頁面</button>
-    <button id="stopCapture">6. 停止採集</button>
-    <button id="exportData" class="primary">7. 匯出採集資料 JSON</button>
-    <button id="clearData" class="danger">清空本機採集資料</button>
+    <button id="autoCrawl" class="primary">2. 一鍵自動採集全店主要數據</button>
+    <button id="stopAutoCrawl">3. 停止自動巡航</button>
+    <button id="exportData" class="primary">4. 匯出採集資料 JSON</button>
 
-    <p class="note">採集內容會保留商品、SKU、價格、庫存、訂單與營運資料；密碼、Cookie、登入 Token、Authorization，以及買家電話／Email／地址會遮蔽。</p>
+    <details>
+      <summary>進階／備用功能</summary>
+      <button id="openBackend">直接進配送管理後台</button>
+      <button id="startCapture">只開始監聽目前分頁</button>
+      <button id="reloadCapture">重新整理目前頁並抓 API</button>
+      <button id="snapshot">只採集目前頁面</button>
+      <button id="stopCapture">停止全部採集</button>
+      <button id="clearData" class="danger">清空本機採集資料</button>
+    </details>
+
+    <p class="note">一鍵巡航會依序嘗試：商品管理→商品列表、訂購/配送→我的訂單、退貨/退款/取消、結算、賣家成長、商業洞察。單一頁面失敗時會記錄原因並繼續。</p>
+    <p class="note">採集保留商品、SKU、價格、庫存、訂單與營運資料；密碼、Cookie、登入 Token、Authorization，以及結構化資料中的買家電話／Email／地址會遮蔽。</p>
     <p id="message" class="message"></p>
   </main>
   <script src="popup.js"></script>
