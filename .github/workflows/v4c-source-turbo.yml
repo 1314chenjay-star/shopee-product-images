@@ -24,6 +24,7 @@ concurrency:
 env:
   INVENTORY: _system/v4c/inventory/source_inventory.jsonl
   PROGRESS: _system/v4c/progress/v4c_source_progress.jsonl
+  SMOKE_CHECKPOINT: _system/v4c/progress/smoke_checkpoint.json
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
   V4C_BASELINE_HEAD: 28d8eb1f024dd7ff17076b9f2fd69243164c7f6e
 
@@ -32,10 +33,30 @@ jobs:
     runs-on: windows-latest
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
+      checkpoint_run: ${{ steps.checkpoint.outputs.run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Resolve one-time smoke checkpoint
+        id: checkpoint
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $runId = ""
+          if (Test-Path $env:SMOKE_CHECKPOINT) {
+            $checkpoint = Get-Content $env:SMOKE_CHECKPOINT -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ([int]$checkpoint.source_count -ne 150) { throw "Smoke checkpoint source_count must be 150" }
+            if ([bool]$checkpoint.image_generation_called -or [bool]$checkpoint.tiny_snow_api_called -or [bool]$checkpoint.paid_api_called) {
+              throw "Smoke checkpoint contains forbidden API flag"
+            }
+            $runId = [string]$checkpoint.workflow_run_id
+            Write-Host "SMOKE_CHECKPOINT_RUN=$runId"
+          } else {
+            Write-Host "SMOKE_CHECKPOINT_RUN=none"
+          }
+          $enc = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, ("run_id=" + $runId + "`n"), $enc)
       - name: Expand verified source inventory
         shell: powershell
         run: |
@@ -89,7 +110,42 @@ jobs:
         with:
           name: v4c-smoke-plan
           path: artifacts/smoke-plan
+      - name: Restore successful smoke checkpoint
+        if: ${{ needs.preflight.outputs.checkpoint_run != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: v4c-smoke-${{ matrix.shard }}
+          path: artifacts/smoke-results
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ needs.preflight.outputs.checkpoint_run }}
+      - name: Validate restored smoke checkpoint
+        if: ${{ needs.preflight.outputs.checkpoint_run != '' }}
+        shell: powershell
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $planPath = "artifacts\smoke-plan\shards\" + $env:SHARD + ".jsonl"
+          $progressPath = "artifacts\smoke-results\" + $env:SHARD + ".progress.jsonl"
+          if (-not (Test-Path $planPath)) { throw "Checkpoint plan missing: $planPath" }
+          if (-not (Test-Path $progressPath)) { throw "Checkpoint progress missing: $progressPath" }
+          $expected = @(Get-Content $planPath -Encoding UTF8 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { [int](($_ | ConvertFrom-Json).sequence) })
+          $records = @(Get-Content $progressPath -Encoding UTF8 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_ | ConvertFrom-Json })
+          $actual = @($records | ForEach-Object { [int]$_.sequence })
+          if ($expected.Count -ne 50 -or $actual.Count -ne 50) { throw "Checkpoint shard count mismatch" }
+          if (($expected -join ',') -ne ($actual -join ',')) { throw "Checkpoint sequence mismatch for $env:SHARD" }
+          foreach ($record in $records) {
+            if ([string]$record.status -ne "DONE") { throw "Checkpoint contains non-DONE source $($record.sequence)" }
+            if (-not ($record.PSObject.Properties.Name -contains "sha256") -or [string]::IsNullOrWhiteSpace([string]$record.sha256)) { throw "Checkpoint DONE without SHA256: $($record.sequence)" }
+            if ([bool]$record.image_generation_called -or [bool]$record.tiny_snow_api_called -or [bool]$record.paid_api_called) { throw "Checkpoint forbidden API flag: $($record.sequence)" }
+          }
+          Write-Host "CHECKPOINT_REUSED=true"
+          Write-Host "CHECKPOINT_SOURCE_COUNT=$($records.Count)"
+          Write-Host "IMAGE_GENERATION_CALLED=false"
+          Write-Host "TINY_SNOW_API_CALLED=false"
+          Write-Host "PAID_API_CALLED=false"
       - name: Turbo smoke shard
+        if: ${{ needs.preflight.outputs.checkpoint_run == '' }}
         shell: powershell
         env:
           SHARD: ${{ matrix.shard }}
@@ -173,12 +229,12 @@ jobs:
             $p = $_ | ConvertFrom-Json
             if ($p.status -in @("DONE","SHA_DUPLICATE")) { $smokeDone[[int]$p.sequence] = $true }
           }
-          $bad = New-Object System.Collections.Generic.List[int]
+          $bad = @()
           Get-ChildItem artifacts\full-plan\shards\*.jsonl | ForEach-Object {
             Get-Content $_.FullName | ForEach-Object {
               if ([string]::IsNullOrWhiteSpace($_)) { return }
               $s = $_ | ConvertFrom-Json
-              if ($smokeDone.ContainsKey([int]$s.sequence)) { $bad.Add([int]$s.sequence) }
+              if ($smokeDone.ContainsKey([int]$s.sequence)) { $bad += [int]$s.sequence }
             }
           }
           if ($bad.Count -gt 0) { throw ("Second-run DONE skip failed: " + ($bad -join ",")) }
@@ -296,6 +352,7 @@ jobs:
           Copy-Item artifacts\final\semantic_evidence_queue.jsonl _system\v4c\results\semantic_evidence_queue.jsonl -Force
           Copy-Item artifacts\final\aggregate_summary.json _system\v4c\results\aggregate_summary.json -Force
           Copy-Item artifacts\final\validation.json _system\v4c\results\validation.json -Force
+          if (Test-Path $env:SMOKE_CHECKPOINT) { Remove-Item $env:SMOKE_CHECKPOINT -Force }
           if (Test-Path _system\v4c\inventory\source_inventory.bootstrap.gz.b64) { Remove-Item _system\v4c\inventory\source_inventory.bootstrap.gz.b64 -Force }
           if (Test-Path _system\v4c\inventory\source_inventory.bootstrap.parts) { Remove-Item _system\v4c\inventory\source_inventory.bootstrap.parts -Recurse -Force }
           git config user.name "TinySnow V4-C1 Turbo"
