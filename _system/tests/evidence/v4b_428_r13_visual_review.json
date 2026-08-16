@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "product_id": "42833435408",
+  "round": "R13",
+  "scope": "detail1 only",
+  "run_id": "31917560621",
+  "head_sha": "a937a02aa5fe5036bc8bd538c5d6eceed63c5cc6",
+  "payload_artifact_id": "9255373648",
+  "receipt_artifact_id": "9255373855",
+  "source_review_run_id": "31917384949",
+  "source_review_artifact_id": "9255311958",
+  "selected_source_index": 4,
+  "technical_result": "pass",
+  "human_visual_result": "pass",
+  "comparison": {
+    "same_product_identity": true,
+    "black_outer_short_preserved": true,
+    "double_layer_inner_short_preserved": true,
+    "waistband_and_drawstrings_preserved": true,
+    "hem_stripes_preserved": true,
+    "pink_flame_graphics_preserved": true,
+    "existing_DGIUK_S20H_decorative_print_preserved_without_new_brand_like_text": true,
+    "seller_watermark_removed": true,
+    "new_visible_pocket_added": false,
+    "new_dimension_added": false,
+    "new_material_claim_added": false,
+    "new_function_or_performance_claim_added": false,
+    "new_brand_logo_or_accessory_added": false
+  },
+  "boundary": "This closes only 428/detail1 R13. It does not close main, detail2, detail3, detail4, the complete five-image product, PR/merge, stable regression, or release.",
+  "next_gate": "Test main alone because source_00 is the highest text/variant-composite risk. Do not regenerate detail1."
+}
