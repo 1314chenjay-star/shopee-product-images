@@ -46,7 +46,8 @@ Assert-428Guard (-not [bool]$product.multi_variant_flags.has_multiple_quantities
 
 $facts = $product.verified_facts
 foreach ($property in @('verified_dimensions','verified_materials','verified_accessories','verified_gifts','verified_bundle_contents','verified_colors','verified_sizes','verified_models','verified_quantities','verified_resistance_levels','verified_features','verified_use_cases','verified_certifications')) {
-    Assert-428Guard (@($facts.$property).Count -eq 0) ('variant-only fact leaked into common facts: ' + $property)
+    $values = @(Get-V4A1Property $facts $property @())
+    Assert-428Guard ($values.Count -eq 0) ('variant-only fact leaked into common facts: ' + $property + ' = ' + ($values -join '|'))
 }
 
 $label = Get-V4BSafeProductLabel $product
