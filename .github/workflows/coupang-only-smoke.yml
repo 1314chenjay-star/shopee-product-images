@@ -41,7 +41,7 @@ jobs:
           $startDir = Join-Path $out '_system\start'
           New-Item -ItemType Directory -Path $startDir -Force | Out-Null
           Copy-Item 'START.bat' -Destination $out -Force
-          Copy-Item 'README_酷澎版.txt' -Destination $out -Force
+          Copy-Item 'README_COUPANG.txt' -Destination $out -Force
           Copy-Item '_system/start/coupang_local_collector.ps1' -Destination $startDir -Force
           Copy-Item '_system/start/coupang_only.ps1' -Destination $startDir -Force
           $zip = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Only_V1.zip'
