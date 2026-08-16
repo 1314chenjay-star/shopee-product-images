@@ -1,0 +1,259 @@
+name: V4-C3 Factual Gate and Generation Eligibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-factual-gate.yml"
+      - "_system/tests/v4c_factual_gate.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v4c3-factual-gate
+  cancel-in-progress: true
+
+env:
+  BASE_HEAD: 891d472eb7610af8bf5d009d1eeef12bd9a8fc4d
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  CANONICAL: _system/v4c/closeout/canonical_ledger.jsonl
+  OUT_DIR: _system/v4c/factual_gate
+
+jobs:
+  plan:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify V4-C2 sealed baseline and stable HEAD
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'HEAD is not descended from sealed V4-C2 closeout HEAD' }
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c
+          if ($LASTEXITCODE -ne 0) { throw 'Sealed V4-C2 durable data changed before V4-C3' }
+          git diff --quiet $env:BASE_HEAD -- _system/start/api_v2.ps1 .github/workflows/v4c-final-exception-closeout.yml _system/tests/v4c_final_exception_closeout.py
+          if ($LASTEXITCODE -ne 0) { throw 'Sealed V4-C2 module/API entrypoint changed' }
+          Write-Host 'V4C2_RETESTED=false'
+          Write-Host 'SOURCE_DOWNLOAD=false'
+          Write-Host 'ARTIFACT_DOWNLOAD=false'
+          Write-Host 'OCR=false'
+          Write-Host 'SEMANTIC=false'
+          Write-Host 'PRESERVATION_RERUN=false'
+      - name: Compile and self-test only new V4-C3 factual gate
+        shell: powershell
+        run: |
+          python -m py_compile _system\tests\v4c_factual_gate.py
+          python _system\tests\v4c_factual_gate.py self-test
+      - name: Build exact 1046 PARTIAL_SAFE target and 120 canary
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force artifacts\plan | Out-Null
+          python _system\tests\v4c_factual_gate.py plan `
+            --canonical $env:CANONICAL `
+            --target-out artifacts\plan\target_1046.jsonl `
+            --canary-out artifacts\plan\canary_120.jsonl `
+            --remaining-out artifacts\plan\remaining_926.jsonl `
+            --summary artifacts\plan\plan_summary.json `
+            --canary-size 120
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c3-factual-gate-plan
+          path: artifacts/plan
+          if-no-files-found: error
+          retention-days: 14
+
+  canary:
+    needs: plan
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c3-factual-gate-plan
+          path: artifacts/plan
+      - name: Canary checkpoint seed first 30
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force artifacts\canary | Out-Null
+          python _system\tests\v4c_factual_gate.py process `
+            --manifest artifacts\plan\canary_120.jsonl `
+            --progress artifacts\canary\progress.jsonl `
+            --summary artifacts\canary\seed_summary.json `
+            --max-items 30
+      - name: Resume same canary checkpoint to 120
+        shell: powershell
+        run: |
+          python _system\tests\v4c_factual_gate.py process `
+            --manifest artifacts\plan\canary_120.jsonl `
+            --progress artifacts\canary\progress.jsonl `
+            --summary artifacts\canary\resume_summary.json
+      - name: Validate V4-C3 factual policy canary
+        shell: powershell
+        run: |
+          python _system\tests\v4c_factual_gate.py validate-canary `
+            --manifest artifacts\plan\canary_120.jsonl `
+            --evidence artifacts\canary\progress.jsonl `
+            --seed-summary artifacts\canary\seed_summary.json `
+            --resume-summary artifacts\canary\resume_summary.json `
+            --expected 120 `
+            --seed 30 `
+            --output artifacts\canary\validation.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c3-factual-gate-canary
+          path: artifacts/canary
+          if-no-files-found: error
+          retention-days: 14
+
+  full:
+    needs: [plan, canary]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c3-factual-gate-plan
+          path: artifacts/plan
+      - name: Seed remaining checkpoint first 200
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force artifacts\full | Out-Null
+          python _system\tests\v4c_factual_gate.py process `
+            --manifest artifacts\plan\remaining_926.jsonl `
+            --progress artifacts\full\progress.jsonl `
+            --summary artifacts\full\seed_summary.json `
+            --max-items 200
+      - name: Resume and finish remaining 926 after Canary PASS
+        shell: powershell
+        run: |
+          python _system\tests\v4c_factual_gate.py process `
+            --manifest artifacts\plan\remaining_926.jsonl `
+            --progress artifacts\full\progress.jsonl `
+            --summary artifacts\full\resume_summary.json
+          $resume = Get-Content artifacts\full\resume_summary.json -Raw | ConvertFrom-Json
+          if ([int]$resume.checkpoint_existing_terminal -ne 200) { throw 'Full checkpoint did not resume from 200' }
+          if ([int]$resume.covered_after_run -ne 926) { throw 'Full factual gate did not cover remaining 926' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c3-factual-gate-full
+          path: artifacts/full
+          if-no-files-found: error
+          retention-days: 14
+
+  aggregate_and_persist:
+    needs: [plan, canary, full]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c3-factual-gate-plan
+          path: artifacts/plan
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c3-factual-gate-canary
+          path: artifacts/canary
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c3-factual-gate-full
+          path: artifacts/full
+      - name: Aggregate per-image and per-product factual gates
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force artifacts\final | Out-Null
+          python _system\tests\v4c_factual_gate.py aggregate `
+            --target-manifest artifacts\plan\target_1046.jsonl `
+            --canary-progress artifacts\canary\progress.jsonl `
+            --full-progress artifacts\full\progress.jsonl `
+            --image-out artifacts\final\image_gate.jsonl `
+            --product-out artifacts\final\product_gate.jsonl `
+            --queue-out artifacts\final\generation_queue.jsonl `
+            --summary artifacts\final\summary.json
+      - name: Final V4-C3 reconciliation
+        shell: powershell
+        run: |
+          python _system\tests\v4c_factual_gate.py validate-final `
+            --images artifacts\final\image_gate.jsonl `
+            --products artifacts\final\product_gate.jsonl `
+            --queue artifacts\final\generation_queue.jsonl `
+            --summary artifacts\final\summary.json `
+            --output artifacts\final\validation.json
+      - name: Recheck stable and sealed V4-C2 before persistence
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c
+          if ($LASTEXITCODE -ne 0) { throw 'Sealed V4-C2 durable data changed during V4-C3' }
+          git diff --quiet $env:BASE_HEAD -- _system/start/api_v2.ps1 .github/workflows/v4c-final-exception-closeout.yml _system/tests/v4c_final_exception_closeout.py
+          if ($LASTEXITCODE -ne 0) { throw 'Sealed V4-C2 module/API entrypoint changed during V4-C3' }
+          Write-Host "STABLE_HEAD=$stableHead"
+      - name: Persist only V4-C3 factual gate and build lock
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force $env:OUT_DIR | Out-Null
+          Copy-Item artifacts\plan\plan_summary.json "$env:OUT_DIR\plan_summary.json" -Force
+          Copy-Item artifacts\canary\validation.json "$env:OUT_DIR\canary_validation.json" -Force
+          Copy-Item artifacts\final\image_gate.jsonl "$env:OUT_DIR\image_gate.jsonl" -Force
+          Copy-Item artifacts\final\product_gate.jsonl "$env:OUT_DIR\product_gate.jsonl" -Force
+          Copy-Item artifacts\final\generation_queue.jsonl "$env:OUT_DIR\generation_queue.jsonl" -Force
+          Copy-Item artifacts\final\summary.json "$env:OUT_DIR\summary.json" -Force
+          Copy-Item artifacts\final\validation.json "$env:OUT_DIR\validation.json" -Force
+          $s = Get-Content artifacts\final\summary.json -Raw | ConvertFrom-Json
+          $lock = [ordered]@{
+            schema_version = 'v4c3.factual-gate-lock.1'
+            passed = $true
+            workflow_run = "$env:GITHUB_RUN_ID"
+            base_head = $env:BASE_HEAD
+            stable_head = $env:STABLE_HEAD
+            input_partial_safe = [int]$s.input_partial_safe
+            eligible_safe = [int]$s.eligibility_counts.ELIGIBLE_SAFE
+            eligible_partial = [int]$s.eligibility_counts.ELIGIBLE_PARTIAL
+            hold_factual = [int]$s.eligibility_counts.HOLD_FACTUAL
+            block_factual = [int]$s.eligibility_counts.BLOCK_FACTUAL
+            verified_fact_count = [int]$s.verified_fact_count
+            unknown_fact_count = [int]$s.unknown_fact_count
+            conflict_fact_count = [int]$s.conflict_fact_count
+            forbidden_fact_count = [int]$s.forbidden_fact_count
+            variant_conflicts = [int]$s.variant_conflicts
+            downstream_generation_eligible_count = [int]$s.downstream_generation_eligible_count
+            source_download_called = $false
+            artifact_download_called = $false
+            ocr_executed = $false
+            semantic_inference_executed = $false
+            preservation_reexecuted = $false
+            image_generation_called = $false
+            tiny_snow_api_called = $false
+            vision_api_called = $false
+            paid_api_called = $false
+            v4c1_retested = $false
+            v4c2_retested = $false
+          }
+          $lock | ConvertTo-Json -Depth 8 | Set-Content "$env:OUT_DIR\V4_C3_FACTUAL_GATE_LOCK.json" -Encoding UTF8
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $env:OUT_DIR
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { throw 'No V4-C3 factual gate outputs to persist' }
+          git commit -m "V4-C3 persist factual gate [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c3-factual-gate-final
+          path: artifacts/final
+          if-no-files-found: error
+          retention-days: 14
