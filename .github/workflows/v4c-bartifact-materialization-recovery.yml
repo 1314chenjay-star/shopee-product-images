@@ -22,7 +22,7 @@ env:
   BASE_HEAD: 6f73d4d4abec248d66387df545de966e4d382b32
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
   GAP_INDEX: _system/v4c/evidence_hydration/evidence_gap_index.jsonl
-  HYDRATED_EVIDENCE: _system/v4c/evidence_hydration/hydrated_evidence.jsonl
+  HYDRATED_EVIDENCE: _system/v4c/evidence_hydration/evidence.jsonl
   PRODUCT_CONTEXT: _system/v4c/semantic/bootstrap/product_context.jsonl.gz.b64
   REQUIREMENTS: _system/v4c/preservation/requirements.txt
   DURABLE_PATH: _system/v4c/evidence_hydration/bartifact_recovery/materialized_evidence.jsonl
@@ -56,7 +56,7 @@ jobs:
             '_system/v4c/evidence_hydration/canary_validation.json',
             '_system/v4c/evidence_hydration/evidence_gap_index.jsonl',
             '_system/v4c/evidence_hydration/gap_summary.json',
-            '_system/v4c/evidence_hydration/hydrated_evidence.jsonl',
+            '_system/v4c/evidence_hydration/evidence.jsonl',
             '_system/v4c/evidence_hydration/validation.json',
             '_system/tests/v4c_hold_hydration.py',
             '_system/tests/v4c_hold_hydration_validate.py',
@@ -294,7 +294,7 @@ jobs:
           if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
           $frozen = @(
             '_system/v4c/inventory','_system/v4c/progress','_system/v4c/results','_system/v4c/preservation','_system/v4c/semantic/preservation','_system/v4c/claim_gate','_system/v4c/progressive_claim',
-            '_system/v4c/evidence_hydration/EVIDENCE_HYDRATION_LOCK.json','_system/v4c/evidence_hydration/canary_validation.json','_system/v4c/evidence_hydration/evidence_gap_index.jsonl','_system/v4c/evidence_hydration/gap_summary.json','_system/v4c/evidence_hydration/hydrated_evidence.jsonl','_system/v4c/evidence_hydration/validation.json',
+            '_system/v4c/evidence_hydration/EVIDENCE_HYDRATION_LOCK.json','_system/v4c/evidence_hydration/canary_validation.json','_system/v4c/evidence_hydration/evidence_gap_index.jsonl','_system/v4c/evidence_hydration/gap_summary.json','_system/v4c/evidence_hydration/evidence.jsonl','_system/v4c/evidence_hydration/validation.json',
             '_system/tests/v4c_hold_hydration.py','_system/tests/v4c_hold_hydration_validate.py','_system/tests/v4c_claim_level_gate.py','.github/workflows/v4c-hold-evidence-hydration.yml','.github/workflows/v4c-hold-evidence-hydration-resume.yml','_system/start/api_v2.ps1'
           )
           git diff --quiet $env:BASE_HEAD -- $frozen
