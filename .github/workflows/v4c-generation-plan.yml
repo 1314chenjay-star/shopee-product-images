@@ -5,6 +5,7 @@ on:
     branches: [v4c-universal-product-engine]
     paths:
       - '_system/tests/v4c_generation_plan.py'
+      - '_system/tests/v4c_generation_plan_r2.py'
       - '.github/workflows/v4c-generation-plan.yml'
   workflow_dispatch:
 
@@ -33,7 +34,7 @@ jobs:
           $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
           if($stable -ne $env:STABLE_HEAD){ throw "Stable HEAD changed: $stable" }
           $changed=@(git diff --name-only "$env:BASE_HEAD..HEAD")
-          $allowed=@('_system/tests/v4c_generation_plan.py','.github/workflows/v4c-generation-plan.yml')
+          $allowed=@('_system/tests/v4c_generation_plan.py','_system/tests/v4c_generation_plan_r2.py','.github/workflows/v4c-generation-plan.yml')
           foreach($p in $changed){ if($allowed -notcontains $p){ throw "Unexpected pre-plan change since frozen V4-C3.2: $p" } }
           git diff --quiet $env:BASE_HEAD -- _system/start/api_v2.ps1
           if($LASTEXITCODE -ne 0){ throw '_system/start/api_v2.ps1 changed.' }
@@ -43,7 +44,7 @@ jobs:
       - name: Compile new planner only
         shell: pwsh
         run: |
-          python -m py_compile _system/tests/v4c_generation_plan.py
+          python -m py_compile _system/tests/v4c_generation_plan.py _system/tests/v4c_generation_plan_r2.py
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
 
       - name: Build global canonical base state
@@ -51,7 +52,7 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           New-Item -ItemType Directory -Force -Path $env:OUT | Out-Null
-          python _system/tests/v4c_generation_plan.py prepare `
+          python _system/tests/v4c_generation_plan_r2.py prepare `
             --inventory _system/v4c/inventory/source_inventory.jsonl `
             --progress _system/v4c/progress/v4c_source_progress.jsonl `
             --duplicates _system/v4c/results/duplicate_map.json `
@@ -67,7 +68,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python _system/tests/v4c_generation_plan.py canary `
+          python _system/tests/v4c_generation_plan_r2.py canary `
             --base-state "$env:OUT/canonical_image_state_base.jsonl" `
             --canary-size 25 `
             --canary-manifest "$env:OUT/canary_manifest.jsonl" `
@@ -79,7 +80,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python _system/tests/v4c_generation_plan.py full `
+          python _system/tests/v4c_generation_plan_r2.py full `
             --base-state "$env:OUT/canonical_image_state_base.jsonl" `
             --prepare-summary "$env:OUT/prepare_summary.json" `
             --canary-validation "$env:OUT/canary_validation.json" `
