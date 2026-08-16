@@ -1,0 +1,30 @@
+param(
+ [Parameter(Mandatory=$true)][string]$ManifestPath,
+ [Parameter(Mandatory=$true)][string]$AggregateDir,
+ [Parameter(Mandatory=$true)][string]$ResumeSummaryPath,
+ [Parameter(Mandatory=$true)][string]$HistoryReplaySummaryPath,
+ [string]$OutputPath='artifacts/preservation-validation.json',
+ [string]$ExpectedStableHead='5d49f061e140813b3d229520e9e530f86b27b640',
+ [string]$V4C1BaselineHead='a7447b792e65780bc95aa248b9e3a2fd0466f142'
+)
+$ErrorActionPreference='Stop'
+function Read-Jsonl([string]$Path){if(-not(Test-Path $Path)){throw "Missing JSONL: $Path"};$a=@();Get-Content $Path -Encoding UTF8|ForEach-Object{if(-not[string]::IsNullOrWhiteSpace($_)){$a+=($_|ConvertFrom-Json)}};return $a}
+
+git merge-base --is-ancestor $V4C1BaselineHead HEAD;if($LASTEXITCODE-ne0){throw 'Preservation HEAD not descended from V4-C1 baseline'}
+$stableLine=git ls-remote origin refs/heads/tinysnow-tool-only;$stableHead=($stableLine -split '\s+')[0];if($stableHead-ne$ExpectedStableHead){throw "Stable HEAD changed: $stableHead"}
+$protected=@('_system/v4c/inventory/source_inventory.jsonl','_system/v4c/progress/v4c_source_progress.jsonl','_system/v4c/results/source_evidence.jsonl','_system/v4c/results/duplicate_map.json','_system/v4c/results/failed_sources.json','_system/v4c/results/semantic_evidence_queue.jsonl','_system/v4c/results/aggregate_summary.json','_system/v4c/results/validation.json','_system/start/api_v2.ps1')
+git diff --quiet $V4C1BaselineHead -- $protected;if($LASTEXITCODE-ne0){throw 'Frozen V4-C1 evidence or api_v2.ps1 changed'}
+$manifest=@(Read-Jsonl $ManifestPath);$all=@(Read-Jsonl (Join-Path $AggregateDir 'image_preservation.jsonl'));$semantic=@(Read-Jsonl (Join-Path $AggregateDir 'preservation_semantic_queue.jsonl'));$products=@(Read-Jsonl (Join-Path $AggregateDir 'product_preservation_summary.jsonl'));$summary=Get-Content (Join-Path $AggregateDir 'preservation_summary.json') -Raw -Encoding UTF8|ConvertFrom-Json
+if($manifest.Count-lt100-or$manifest.Count-gt200){throw "Smoke count outside 100-200: $($manifest.Count)"};if($all.Count-ne$manifest.Count){throw 'Input/output reconciliation failed'}
+$seen=@{};foreach($r in $all){$seq=[int]$r.sequence;if($seen.ContainsKey($seq)){throw "Duplicate preservation result $seq"};$seen[$seq]=$true;if([bool]$r.flags.image_generation_called-or[bool]$r.flags.tiny_snow_api_called-or[bool]$r.flags.paid_api_called-or[bool]$r.flags.source_pipeline_redownload){throw "Forbidden flag at sequence $seq"}}
+$semSeq=@{};foreach($r in $semantic){$semSeq[[int]$r.sequence]=$true;if([string]$r.decision-ne'SEMANTIC_REQUIRED'){throw "Non-semantic decision leaked into semantic queue: $($r.sequence)"}}
+foreach($r in $all){$seq=[int]$r.sequence;if([string]$r.decision-eq'PRESERVE'-and$semSeq.ContainsKey($seq)){throw "Preserved image leaked into semantic queue: $seq"};if([string]$r.decision-eq'SEMANTIC_REQUIRED'-and-not$semSeq.ContainsKey($seq)){throw "Missing semantic-required image from queue: $seq"}}
+$dup=@($all|Where-Object{[int]$_.sequence-eq13});if($dup.Count-ne1-or[string]$dup[0].evidence.method-ne'SHA_REUSE'-or[int]$dup[0].evidence.sha_reuse_from_sequence-ne7){throw 'SHA reuse proof 13 -> 7 failed'}
+$resume=Get-Content $ResumeSummaryPath -Raw -Encoding UTF8|ConvertFrom-Json;if([int]$resume.checkpoint_skipped_this_run-lt25){throw "Checkpoint resume did not skip first 25 records: $($resume.checkpoint_skipped_this_run)"};if([int]$resume.covered_after_run-ne$manifest.Count){throw 'Checkpoint resume coverage failed'}
+$history=Get-Content $HistoryReplaySummaryPath -Raw -Encoding UTF8|ConvertFrom-Json;if([int]$history.history_skip_this_run-lt1){throw 'Historical SHA skip was not observed'};if([int]$history.network_fetch_this_run-ne0-or[int]$history.ocr_this_run-ne0){throw 'Historical SHA replay performed fetch/OCR instead of direct SKIP'}
+$mainTrad=@($all|Where-Object{[bool]$_.is_main_image-and[string]$_.decision-eq'PRESERVE'}).Count;if($mainTrad-lt1){throw 'No already-complete main image was preserved in smoke'}
+$mixed=@($products|Where-Object{[string]$_.product_state-eq'MIXED_PARTIAL'});if($mixed.Count-lt1){throw 'No real mixed-state product observed; cannot prove partial-product behavior'}
+foreach($p in $mixed){foreach($seq in @($p.preserved_sequences)){if($semSeq.ContainsKey([int]$seq)){throw "Mixed product preserved image leaked to semantic queue: product=$($p.product_id) sequence=$seq"}};foreach($seq in @($p.semantic_sequences)){if(-not$semSeq.ContainsKey([int]$seq)){throw "Mixed product missing unfinished image in semantic queue: product=$($p.product_id) sequence=$seq"}}}
+$result=[ordered]@{phase='PreservationSmoke';passed=$true;v4c1_baseline_head=$V4C1BaselineHead;stable_head=$stableHead;stable_head_unchanged=$true;v4c1_protected_files_unchanged=$true;smoke_count=$manifest.Count;preserve_count=[int]$summary.preserve_count;semantic_required_count=[int]$summary.semantic_required_count;block_count=[int]$summary.block_count;mixed_partial_products=$mixed.Count;main_image_preserve_count=$mainTrad;sha_reuse_13_to_7=$true;checkpoint_resume_observed=$true;historical_sha_direct_skip=$true;image_generation_called=$false;tiny_snow_api_called=$false;paid_api_called=$false;source_pipeline_redownload=$false}
+$d=Split-Path -Parent $OutputPath;if($d){New-Item -ItemType Directory -Force $d|Out-Null};$result|ConvertTo-Json -Depth 20|Set-Content $OutputPath -Encoding UTF8
+Write-Host 'PRESERVATION_SMOKE_PASSED=true';Write-Host "PRESERVE_COUNT=$($summary.preserve_count)";Write-Host "SEMANTIC_REQUIRED_COUNT=$($summary.semantic_required_count)";Write-Host "MIXED_PARTIAL_PRODUCTS=$($mixed.Count)";Write-Host 'SHA_REUSE_13_TO_7=true';Write-Host 'CHECKPOINT_RESUME_OBSERVED=true';Write-Host 'HISTORICAL_SHA_DIRECT_SKIP=true';Write-Host 'IMAGE_GENERATION_CALLED=false';Write-Host 'TINY_SNOW_API_CALLED=false'
