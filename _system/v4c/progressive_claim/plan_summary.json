@@ -1,0 +1,12 @@
+{
+  "schema_version": "v4c2.2.progressive-plan.1",
+  "passed": true,
+  "total": 1378,
+  "canary_count": 250,
+  "canary_product_count": 33,
+  "route": "PRESERVATION_GATE_THEN_CLAIM_LEVEL_EVIDENCE",
+  "source_download_allowed": false,
+  "semantic_all_at_once_forbidden": true,
+  "queue_sha256": "04b5490973a5df475fbe98af22199c2bf91ff3b323e35f2a26d1064950471b0d",
+  "canary_sha256": "d148033c0b431fceed2101181953a5093e2988bd4e84875e0a5ce31734533642"
+}

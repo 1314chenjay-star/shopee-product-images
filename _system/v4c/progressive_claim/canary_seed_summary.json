@@ -1,0 +1,20 @@
+{
+  "schema_version": "v4c2.2.progressive-run.1",
+  "manifest_count": 250,
+  "target_total": 50,
+  "checkpoint_existing_terminal": 0,
+  "checkpoint_skipped_this_run": 0,
+  "processed_this_run": 50,
+  "covered_after_run": 50,
+  "status_counts": {
+    "HOLD": 50
+  },
+  "source_download_called": false,
+  "ocr_rerun": false,
+  "semantic_inference_rerun": false,
+  "semantic_actually_executed": 0,
+  "image_generation_called": false,
+  "tiny_snow_api_called": false,
+  "paid_api_called": false,
+  "vision_api_called": false
+}
