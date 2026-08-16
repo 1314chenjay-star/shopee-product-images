@@ -24,11 +24,22 @@ jobs:
         run: |
           & .\_system\tests\v4c0_universal_smoke.ps1
 
-      - name: Confirm no paid image workflow assets are invoked
+      - name: V4-C0 Shopee Excel adapter smoke
         shell: powershell
         run: |
-          $test = Get-Content -LiteralPath '.\_system\tests\v4c0_universal_smoke.ps1' -Raw
-          if ($test -match 'image_gen|OpenAI|Invoke-RestMethod|api_v2') {
-            throw 'V4-C0 free smoke unexpectedly references paid/API transport code.'
+          & .\_system\tests\v4c0_excel_adapter_smoke.ps1
+
+      - name: Confirm V4-C0 remains free-analysis only
+        shell: powershell
+        run: |
+          $files = @(
+            Get-ChildItem -LiteralPath '.\_system\start' -File -Filter 'v4c_*.ps1'
+            Get-ChildItem -LiteralPath '.\_system\tests' -File -Filter 'v4c0_*smoke.ps1'
+          )
+          foreach ($file in $files) {
+            $text = Get-Content -LiteralPath $file.FullName -Raw
+            if ($text -match '(?i)Invoke-RestMethod|api_v2|openai|image_gen') {
+              throw ('V4-C0 free-analysis boundary violation: ' + $file.Name)
+            }
           }
           Write-Host 'V4-C0 free-analysis boundary: PASS'
