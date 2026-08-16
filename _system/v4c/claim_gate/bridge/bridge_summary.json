@@ -1,0 +1,35 @@
+{
+  "schema_version": "v4c2.1.claim-future-bridge.1",
+  "passed": true,
+  "frozen_semantic_queue_count": 1544,
+  "preservation_result_count": 167,
+  "preservation_evaluated_inside_semantic_queue_count": 166,
+  "preservation_sha_reuse_outside_semantic_queue_count": 1,
+  "preservation_sha_reuse_outside_semantic_queue": [
+    {
+      "sequence": 13,
+      "canonical_sequence": 7,
+      "sha256": "90533d2709454e4c5a78a115dc9afe4f097d23516f737fdc7e427ae607329648"
+    }
+  ],
+  "already_semantic_completed_count": 140,
+  "remaining_not_yet_preservation_filtered_count": 1378,
+  "route": "PRESERVATION_GATE_THEN_CLAIM_LEVEL_EVIDENCE",
+  "calibration_passed": true,
+  "calibration_sample_count": 40,
+  "full_remaining_execution_started": false,
+  "source_download_called": false,
+  "preservation_smoke_retested": false,
+  "semantic_140_retested": false,
+  "ocr_rerun": false,
+  "semantic_inference_rerun": false,
+  "v4c1_retested": false,
+  "v4b_retested": false,
+  "image_generation_called": false,
+  "tiny_snow_api_called": false,
+  "paid_api_called": false,
+  "vision_api_called": false,
+  "semantic_queue_sha256": "1bf487fcb7cbabdb776535841a1b00eb5434c8676d73592e67902c14e2c9411d",
+  "preservation_results_sha256": "d3c2fa3e5f8bf9bdd4fed436a24c82ca8a459689b419f7373ed34fa2ed1eaa79",
+  "future_queue_sha256": "04b5490973a5df475fbe98af22199c2bf91ff3b323e35f2a26d1064950471b0d"
+}

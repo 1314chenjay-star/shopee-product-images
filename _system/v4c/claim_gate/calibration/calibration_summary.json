@@ -1,0 +1,44 @@
+{
+  "schema_version": "v4c2.1.claim-calibration.1",
+  "passed": true,
+  "source_semantic_count": 140,
+  "sample_count": 40,
+  "sample_product_count": 20,
+  "family_coverage": {
+    "sports": 32,
+    "shoes": 3,
+    "bags": 2,
+    "apparel": 3
+  },
+  "subcategory_coverage": {
+    "outdoor_camping": 5,
+    "fitness_training": 5,
+    "combat_martial_arts": 3,
+    "sports_footwear": 3,
+    "protective_gear": 3,
+    "racket_sports": 2,
+    "billiards": 4,
+    "water_sports": 2,
+    "golf": 3,
+    "ball_sports": 5,
+    "sports_bag": 2,
+    "sports_apparel": 3
+  },
+  "gate_status_counts": {
+    "PARTIAL_SAFE": 39,
+    "HOLD": 1
+  },
+  "verified_source_claim_count": 438,
+  "unknown_claim_count": 329,
+  "input_semantic_evidence_sha256": "c48346e2db8a6b3f89f5dc342cc5b351de56077f201c1add8ce36a59420ae93c",
+  "calibration_manifest_sha256": "eae97f9ff59430ddce310e3743be4ec0a0c6351d7d22e7d647727bc7a5d9a044",
+  "claim_results_sha256": "ce82ec3d31a1d6571f6313e97c3432024d983ac66d84a8ea1fa72ff74ae8e419",
+  "ocr_confidence_floor": 0.9,
+  "source_download_called": false,
+  "ocr_rerun": false,
+  "semantic_inference_rerun": false,
+  "image_generation_called": false,
+  "tiny_snow_api_called": false,
+  "paid_api_called": false,
+  "vision_api_called": false
+}
