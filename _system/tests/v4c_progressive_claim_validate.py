@@ -24,13 +24,13 @@ def check_claims(r):
 
 def frozen_fixtures(old_preservation,old_semantic):
  p=rows(old_preservation);s=rows(old_semantic);sseq={int(x['sequence']) for x in s}
- preserve=[x for x in p if str(x.get('decision'))=='PRESERVE_DIRECT']
+ preserve=[x for x in p if str(x.get('decision'))=='PRESERVE']
  if not preserve:raise RuntimeError('No frozen PRESERVE fixture')
  leak=sorted(int(x['sequence']) for x in preserve if int(x['sequence']) in sseq)
  if leak:raise RuntimeError(f'Frozen PRESERVE leaked to semantic: {leak[:10]}')
  byp=defaultdict(set)
  for x in p:byp[str(x.get('product_id',''))].add(str(x.get('decision','')))
- mixed=[pid for pid,d in byp.items() if 'PRESERVE_DIRECT'in d and 'SEMANTIC_REQUIRED'in d]
+ mixed=[pid for pid,d in byp.items() if 'PRESERVE'in d and 'SEMANTIC_REQUIRED'in d]
  if not mixed:raise RuntimeError('No frozen mixed-partial routing fixture')
  sha13=[x for x in p if int(x.get('sequence',0))==13]
  if not sha13 or int(((sha13[0].get('evidence') or {}).get('sha_reuse_from_sequence') or 0))!=7:raise RuntimeError('Frozen SHA reuse 13->7 missing')
