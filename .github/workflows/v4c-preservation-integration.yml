@@ -1,0 +1,40 @@
+name: V4-C2.0 Preservation + Semantic Queue Integration
+
+on:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - "_system/v4c/preservation/PRESERVATION_GATE_LOCK.json"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: v4c2-preservation-integration
+  cancel-in-progress: true
+
+env:
+  V4C1_BASELINE_HEAD: a7447b792e65780bc95aa248b9e3a2fd0466f142
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+
+jobs:
+  integration:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preservation Gate to Semantic Queue interface only
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $null = [scriptblock]::Create((Get-Content .\_system\tests\v4c_preservation_semantic_integration.ps1 -Raw -Encoding UTF8))
+          .\_system\tests\v4c_preservation_semantic_integration.ps1 -OutputPath artifacts\preservation-semantic-integration.json -V4C1BaselineHead $env:V4C1_BASELINE_HEAD -ExpectedStableHead $env:STABLE_HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-preservation-semantic-integration
+          path: artifacts/preservation-semantic-integration.json
+          if-no-files-found: error
+          retention-days: 14
