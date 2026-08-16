@@ -26,6 +26,12 @@ Assert-Route '51515651767' '戶外折疊水桶 伸縮儲水桶 露營車載水�
 # Vehicle-seat use is secondary; the primary product is a sports towel.
 Assert-Route '47515735339' '運動吸汗毛巾 健身跑步擦汗巾 柔軟加厚多用途毛巾 車用座椅鋪巾' 'Sports & Outdoors/Badminton/Others' 'sports' 'sports_towel'
 
+# Table-tennis wording is context; the primary product body is a glue roller maintenance tool.
+Assert-Route '28195530371' '桌球拍貼膠工具 滾膠棒 壓膠棍 球拍膠皮黏貼工具 加厚款 桌球用品維修保養配件' 'Sports & Outdoors/Table Tennis/Others' 'tools' 'sports_maintenance_tool'
+
+# Table-tennis wording is context; the primary product body is a ball-storage container/bag.
+Assert-Route '28845515575' '桌球收納盒 乒乓球桶 多球訓練球罐 大容量桌球整理盒 防摔耐磨 運動訓練用品 球館教練專用' 'Sports & Outdoors/Table Tennis/Others' 'bags' 'sports_bag'
+
 # Negative control: a product whose actual body is explicitly a vehicle purifier must remain auto.
 Assert-Route '42383385337' '太陽能車載淨化器 免插電自動運行 臭氧除味消毒機 車內除臭除菌裝置' 'Sports & Outdoors/Camping & Hiking/Others' 'auto' 'auto_accessory'
 
