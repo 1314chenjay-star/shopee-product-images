@@ -45,8 +45,8 @@ function New-V4CSemanticReviewManifest($CatalogAnalysis, $CheckpointStates = $nu
 
         foreach ($source in @($product.excel_only_image_actions | Sort-Object position)) {
             $sequence++
-            $batchNumber = [Math]::Floor(($sequence - 1) / $BatchSize) + 1
-            $batchId = ('B{0:D3}' -f $batchNumber)
+            $batchNumber = [int]([Math]::Floor(($sequence - 1) / $BatchSize) + 1)
+            $batchId = 'B' + $batchNumber.ToString('000', [System.Globalization.CultureInfo]::InvariantCulture)
             $rows += [pscustomobject]@{
                 sequence = $sequence
                 batch_id = $batchId
