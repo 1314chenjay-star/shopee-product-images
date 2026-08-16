@@ -87,7 +87,7 @@ function Invoke-CdpCommandV1 {
 
     $ws = New-Object System.Net.WebSockets.ClientWebSocket
     $token = [Threading.CancellationToken]::None
-    $uri = New-Object Uri($WebSocketUrl)
+    $uri = [Uri]$WebSocketUrl
     $ws.ConnectAsync($uri, $token).GetAwaiter().GetResult()
 
     try {
