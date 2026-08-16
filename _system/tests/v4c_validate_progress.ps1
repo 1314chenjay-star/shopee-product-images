@@ -12,7 +12,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference="Stop"
 $Utf8NoBom=New-Object Text.UTF8Encoding($false)
-function Read-JL([string]$Path){$a=@();foreach($l in [IO.File]::ReadAllLines($Path,$Utf8NoBom)){if(-not[string]::IsNullOrWhiteSpace($l)){$a+=($l|ConvertFrom-Json)}};return ,$a}
+function Read-JL([string]$Path){$a=@();foreach($l in [IO.File]::ReadAllLines($Path,$Utf8NoBom)){if(-not[string]::IsNullOrWhiteSpace($l)){$a+=($l|ConvertFrom-Json)}};return $a}
 function Write-Text([string]$Path,[string]$Text){$p=Split-Path -Parent $Path;if($p -and -not(Test-Path $p)){New-Item -ItemType Directory -Force -Path $p|Out-Null};[IO.File]::WriteAllText($Path,$Text,$Utf8NoBom)}
 foreach($p in @($InventoryPath,$ProgressPath,$DuplicateMapPath,$FailedPath,$SummaryPath)){if(-not(Test-Path $p)){throw "Validation input missing: $p"}}
 $inv=@(Read-JL $InventoryPath|Sort-Object {[int]$_.sequence});$progress=@(Read-JL $ProgressPath|Sort-Object {[int]$_.sequence})
