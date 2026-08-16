@@ -1,6 +1,7 @@
 # TinySnow V4-C0
 # Sports-first universal category router.
-# Sports families get deeper routing; non-sports families receive conservative safe fallback rules.
+# Product structure wins over sport-context words: basketball shorts are apparel, basketball shoes are shoes,
+# and basketball knee pads are protective gear. Sports equipment receives deeper routing after structure checks.
 
 function Test-V4CAnyKeyword([string]$Text, [string[]]$Keywords) {
     if ([string]::IsNullOrWhiteSpace($Text)) { return $false }
@@ -25,42 +26,49 @@ function Get-V4CCategoryRoute($Product, $Evidence) {
     $title = [string](Get-V4CProperty $Evidence 'title' (Get-V4CProperty $Product 'name' ''))
     $category = [string](Get-V4CProperty $Evidence 'raw_category' (Get-V4CProperty $Product 'category' ''))
     $text = ($title + ' ' + $category)
+    $sportContext = Test-V4CAnyKeyword $text @('運動','运动','Sports','Outdoor','籃球','篮球','排球','足球','棒球','壘球','垒球','羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','跑步','健身','瑜伽','露營','露营','登山','游泳','自行車','自行车','騎行','骑行')
 
-    # Sports-first deep routes.
+    # Structural/product-form routes outrank context words.
+    if (Test-V4CAnyKeyword $title @('護膝','护膝','護腕','护腕','護肘','护肘','護踝','护踝','護具','护具','頭盔','头盔')) {
+        return New-V4CRoute 'sports' 'protective_gear' 0.97 @('size','material','support_level','protection_claims','medical_claims','certification') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $title @('短褲','短裤','長褲','长裤','上衣','外套','背心','T恤','t恤','裙','泳衣','衣服','運動服','运动服','球衣','褲子','裤子','襪子','袜子')) {
+        $sub = if ($sportContext) { 'sports_apparel' } else { 'apparel' }
+        $priority = if ($sportContext) { 'sports_deep' } else { 'standard' }
+        return New-V4CRoute 'apparel' $sub 0.95 @('pockets','zipper','lining','fit','sleeve','hem','print','size','material','color_variant') $priority
+    }
+    if (Test-V4CAnyKeyword $title @('球鞋','跑鞋','運動鞋','运动鞋','登山鞋','拖鞋','涼鞋','凉鞋','靴子','鞋子')) {
+        $sub = if ($sportContext) { 'sports_footwear' } else { 'footwear' }
+        $priority = if ($sportContext) { 'sports_deep' } else { 'standard' }
+        return New-V4CRoute 'shoes' $sub 0.94 @('size','material','sole','closure','compatibility','waterproof_claims') $priority
+    }
+    if (Test-V4CAnyKeyword $title @('包包','背包','後背包','后背包','腰包','手提包','旅行袋','球袋','拍套')) {
+        $sub = if ($sportContext) { 'sports_bag' } else { 'bags' }
+        $priority = if ($sportContext) { 'sports_deep' } else { 'standard' }
+        return New-V4CRoute 'bags' $sub 0.94 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating') $priority
+    }
+
+    # Sports-first deep equipment routes.
+    if (Test-V4CAnyKeyword $text @('羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','球拍')) {
+        return New-V4CRoute 'sports' 'racket_sports' 0.95 @('racket_type','material','weight','grip','string','size','bundle_count','accessories') 'sports_deep'
+    }
     if (Test-V4CAnyKeyword $text @('籃球','篮球','排球','足球','棒球','壘球','垒球','橄欖球','橄榄球','球類','球类')) {
         return New-V4CRoute 'sports' 'ball_sports' 0.96 @('size','material','ball_type','surface_pattern','bundle_count','accessories','certification') 'sports_deep'
-    }
-    if (Test-V4CAnyKeyword $text @('羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','球拍','拍套')) {
-        return New-V4CRoute 'sports' 'racket_sports' 0.95 @('racket_type','material','weight','grip','string','size','bundle_count','accessories') 'sports_deep'
     }
     if (Test-V4CAnyKeyword $text @('啞鈴','哑铃','壺鈴','壶铃','彈力帶','弹力带','瑜伽','健身','訓練器','训练器','拉力器','跳繩','跳绳','槓鈴','杠铃')) {
         return New-V4CRoute 'sports' 'fitness_training' 0.94 @('weight','resistance','load_rating','material','dimensions','bundle_count','accessories','usage_claims') 'sports_deep'
     }
-    if (Test-V4CAnyKeyword $text @('護膝','护膝','護腕','护腕','護肘','护肘','護踝','护踝','護具','护具','頭盔','头盔')) {
-        return New-V4CRoute 'sports' 'protective_gear' 0.95 @('size','material','support_level','protection_claims','medical_claims','certification') 'sports_deep'
-    }
     if (Test-V4CAnyKeyword $text @('露營','露营','帳篷','帐篷','睡袋','登山','戶外','户外','野營','野营','天幕','營釘','营钉')) {
         return New-V4CRoute 'sports' 'outdoor_camping' 0.91 @('dimensions','material','waterproof_rating','load_rating','capacity','accessories','bundle_count') 'sports_deep'
     }
-    if (Test-V4CAnyKeyword $text @('泳鏡','泳镜','泳帽','泳衣','游泳','浮板','蛙鞋','潛水','潜水')) {
+    if (Test-V4CAnyKeyword $text @('泳鏡','泳镜','泳帽','游泳','浮板','蛙鞋','潛水','潜水')) {
         return New-V4CRoute 'sports' 'swimming' 0.93 @('size','material','waterproof_claims','lens_claims','certification','accessories') 'sports_deep'
     }
-    if (Test-V4CAnyKeyword $text @('自行車','自行车','單車','单车','騎行','骑行','車燈','车灯','碼表','码表')) {
+    if (Test-V4CAnyKeyword $text @('自行車','自行车','單車','单车','騎行','骑行','碼表','码表','自行車燈','自行车灯')) {
         return New-V4CRoute 'sports' 'cycling' 0.92 @('compatibility','mounting','dimensions','material','battery','power','waterproof_rating') 'sports_deep'
     }
 
-    # Apparel may include sports apparel, but structural truth matters more than marketing labels.
-    if (Test-V4CAnyKeyword $text @('短褲','短裤','長褲','长裤','上衣','外套','背心','T恤','t恤','裙','衣','褲','裤','襪','袜')) {
-        $sub = 'apparel'
-        if (Test-V4CAnyKeyword $text @('運動','运动','籃球','篮球','跑步','健身','瑜伽')) { $sub = 'sports_apparel' }
-        return New-V4CRoute 'apparel' $sub 0.90 @('pockets','zipper','lining','fit','sleeve','hem','print','size','material','color_variant') $(if ($sub -eq 'sports_apparel') { 'sports_deep' } else { 'standard' })
-    }
-    if (Test-V4CAnyKeyword $text @('鞋','球鞋','跑鞋','拖鞋','涼鞋','凉鞋','靴')) {
-        return New-V4CRoute 'shoes' 'footwear' 0.90 @('size','material','sole','closure','compatibility','waterproof_claims')
-    }
-    if (Test-V4CAnyKeyword $text @('包包','背包','後背包','后背包','腰包','手提包','旅行袋','球袋')) {
-        return New-V4CRoute 'bags' 'bags' 0.90 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating')
-    }
+    # Non-sports universal safe fallback routes.
     if (Test-V4CAnyKeyword $text @('充電','充电','充電器','充电器','充電線','充电线','耳機','耳机','藍牙','蓝牙','USB','Type-C','電源','电源','行動電源','移动电源')) {
         return New-V4CRoute 'electronics' 'electronics_accessory' 0.92 @('connector','voltage','power','capacity','compatibility','certification','battery','protocol')
     }

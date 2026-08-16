@@ -21,7 +21,7 @@ function New-TestImage([string]$Path, [int]$Position, [double]$Risk = 0.20) {
     }
 }
 
-# 1) Sports gets deep routing.
+# 1) Sports equipment gets deep routing.
 $productSports = [pscustomobject]@{
     product_id = 'S001'
     name = '籃球訓練球 室內戶外練習用'
@@ -40,13 +40,32 @@ $analysisSports = [pscustomobject]@{
     )
 }
 $r1 = Invoke-V4C0Analysis $productSports $analysisSports
-Assert-True ($r1.route.family -eq 'sports') '籃球應路由到 sports。'
-Assert-True ($r1.route.subfamily -eq 'ball_sports') '籃球應路由到 ball_sports。'
+Assert-True ($r1.route.family -eq 'sports') '籃球本體應路由到 sports。'
+Assert-True ($r1.route.subfamily -eq 'ball_sports') '籃球本體應路由到 ball_sports。'
 Assert-True ($r1.route.priority -eq 'sports_deep') '運動商品應套 sports_deep。'
 Assert-True ($r1.five_image_plan.slots.Count -eq 5) '安全商品必須得到五個 slot。'
 Assert-True ($r1.image_api_called -eq $false) 'V4-C0 不得呼叫圖片 API。'
 
-# 2) Non-sports still routes safely.
+# 2) Product structure outranks sports context: basketball shorts are apparel, not ball equipment.
+$product428Like = [pscustomobject]@{
+    product_id = '42833435408'
+    name = '籃球短褲 男款寬鬆五分褲 假兩件設計'
+    category = 'Sports & Outdoors/Basketball/Others'
+    verified_facts = [pscustomobject]@{}
+}
+$analysis428Like = [pscustomobject]@{ product_id='42833435408'; images=@((New-TestImage 'a1.jpg' 0 0.12),(New-TestImage 'a2.jpg' 1 0.16)) }
+$r428 = Invoke-V4C0Analysis $product428Like $analysis428Like
+Assert-True ($r428.route.family -eq 'apparel') '籃球短褲必須判為 apparel。'
+Assert-True ($r428.route.subfamily -eq 'sports_apparel') '籃球短褲應保留 sports_apparel 場景。'
+Assert-True (@($r428.five_image_plan.slots | Where-Object { $_.role -match 'dimensions|size' }).Count -eq 0) '沒有尺寸證據時服飾不得安排尺寸圖。'
+
+# 3) Protective gear outranks sport-context words.
+$productGuard = [pscustomobject]@{ product_id='G001'; name='籃球護膝 運動護具'; category='Sports'; verified_facts=[pscustomobject]@{} }
+$analysisGuard = [pscustomobject]@{ product_id='G001'; images=@((New-TestImage 'g1.jpg' 0 0.10),(New-TestImage 'g2.jpg' 1 0.20)) }
+$rGuard = Invoke-V4C0Analysis $productGuard $analysisGuard
+Assert-True ($rGuard.route.subfamily -eq 'protective_gear') '籃球護膝必須優先判為 protective_gear。'
+
+# 4) Non-sports still routes safely.
 $productElectronics = [pscustomobject]@{
     product_id = 'E001'
     name = 'Type-C 充電線'
@@ -58,14 +77,14 @@ $r2 = Invoke-V4C0Analysis $productElectronics $analysisElectronics
 Assert-True ($r2.route.family -eq 'electronics') '3C 商品應被安全辨識。'
 Assert-True ($r2.route.policy -eq 'universal_safe_fallback') '非運動商品第一階段走通用安全兜底。'
 
-# 3) Unknown category is not allowed into paid generation automatically.
+# 5) Unknown category is not allowed into paid generation automatically.
 $productUnknown = [pscustomobject]@{ product_id='U001'; name='神秘商品XYZ'; category='Misc'; verified_facts=[pscustomobject]@{} }
 $analysisUnknown = [pscustomobject]@{ product_id='U001'; images=@((New-TestImage 'u1.jpg' 0 0.18)) }
 $r3 = Invoke-V4C0Analysis $productUnknown $analysisUnknown
 Assert-True ($r3.route.family -eq 'generic') '未知類目應進 generic。'
 Assert-True ($r3.can_enter_paid_generation -eq $false) '未知商品不得直接進付費生成。'
 
-# 4) Duplicate source must block that image.
+# 6) Duplicate source must block that image.
 $dup = New-TestImage 'dup.jpg' 0 0.10
 $dup.duplicate = $true
 $productDup = [pscustomobject]@{ product_id='D001'; name='羽球拍'; category='Sports'; verified_facts=[pscustomobject]@{} }
@@ -73,7 +92,7 @@ $analysisDup = [pscustomobject]@{ product_id='D001'; images=@($dup,(New-TestImag
 $r4 = Invoke-V4C0Analysis $productDup $analysisDup
 Assert-True (@($r4.image_decisions | Where-Object { $_.action -eq 'BLOCK' }).Count -eq 1) '重複來源必須 BLOCK。'
 
-# 5) Unverified dimensions cannot create a dimension slot.
+# 7) Unverified dimensions cannot create a dimension slot.
 $productNoDims = [pscustomobject]@{ product_id='H001'; name='戶外露營帳篷'; category='Sports/Outdoor'; verified_facts=[pscustomobject]@{} }
 $analysisNoDims = [pscustomobject]@{ product_id='H001'; images=@((New-TestImage 'h1.jpg' 0 0.10),(New-TestImage 'h2.jpg' 1 0.16)) }
 $r5 = Invoke-V4C0Analysis $productNoDims $analysisNoDims
