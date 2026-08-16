@@ -52,7 +52,9 @@ function Resolve-V4CStructuralRoute($Product, $Evidence, $CurrentRoute) {
     )) {
         # Avoid confusing "桌球拍套裝" / "球拍套裝" with a cover.
         if ($head -notmatch '拍套裝|拍套装') {
-            return New-V4CRoute 'bags' (if ($sport) { 'sports_bag' } else { 'bags' }) 0.97 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating','waterproof_claims') (if ($sport) { 'sports_deep' } else { 'standard' })
+            $bagSub = if ($sport) { 'sports_bag' } else { 'bags' }
+            $bagPriority = if ($sport) { 'sports_deep' } else { 'standard' }
+            return New-V4CRoute 'bags' $bagSub 0.97 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating','waterproof_claims') $bagPriority
         }
     }
 
