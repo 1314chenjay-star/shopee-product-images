@@ -1,0 +1,173 @@
+name: V4-C2.6 Final Exception Triage and V4-C2 Closeout
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-final-exception-closeout.yml"
+      - "_system/tests/v4c_final_exception_closeout.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v4c2-6-final-exception-closeout
+  cancel-in-progress: true
+
+env:
+  BASE_HEAD: e0fafa8f6ea76c254af2682239f7d7955a5d3b9f
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  V23_EVIDENCE: _system/v4c/evidence_hydration/evidence.jsonl
+  V24_EVIDENCE: _system/v4c/evidence_hydration/bartifact_recovery/materialized_evidence.jsonl
+  V25_EVIDENCE: _system/v4c/evidence_hydration/source_fallback/evidence.jsonl
+  GAP_INDEX: _system/v4c/evidence_hydration/evidence_gap_index.jsonl
+  SOURCE_EVIDENCE: _system/v4c/results/source_evidence.jsonl
+  DUPLICATE_MAP: _system/v4c/results/duplicate_map.json
+  PRODUCT_CONTEXT: _system/v4c/semantic/bootstrap/product_context.jsonl.gz.b64
+  CLOSEOUT_DIR: _system/v4c/closeout
+
+jobs:
+  closeout:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify V4-C1 through V4-C2.5 remain frozen
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'HEAD is not descended from frozen V4-C2.5 HEAD' }
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          $frozen = @(
+            '_system/v4c/inventory',
+            '_system/v4c/progress',
+            '_system/v4c/results',
+            '_system/v4c/preservation',
+            '_system/v4c/semantic',
+            '_system/v4c/claim_gate',
+            '_system/v4c/progressive_claim',
+            '_system/v4c/evidence_hydration',
+            '_system/tests/v4c_hold_hydration.py',
+            '_system/tests/v4c_hold_hydration_validate.py',
+            '_system/tests/v4c_claim_level_gate.py',
+            '_system/tests/v4c_bartifact_recovery.py',
+            '_system/tests/v4c_bartifact_recovery_validate.py',
+            '_system/tests/v4c_source_fallback.py',
+            '_system/tests/v4c_source_fallback_validate.py',
+            '.github/workflows/v4c-hold-evidence-hydration.yml',
+            '.github/workflows/v4c-hold-evidence-hydration-resume.yml',
+            '.github/workflows/v4c-bartifact-materialization-recovery.yml',
+            '.github/workflows/v4c-source-fallback.yml',
+            '_system/start/api_v2.ps1'
+          )
+          git diff --quiet $env:BASE_HEAD -- $frozen
+          if ($LASTEXITCODE -ne 0) { throw 'A frozen V4-C1 through V4-C2.5 file changed' }
+          Write-Host 'SOURCE_DOWNLOAD_CALLED=false'
+          Write-Host 'ARTIFACT_DOWNLOAD_CALLED=false'
+          Write-Host 'OCR_EXECUTED=false'
+          Write-Host 'SEMANTIC_INFERENCE_EXECUTED=false'
+          Write-Host 'PRESERVATION_REEXECUTED=false'
+
+      - name: Compile and self-test only V4-C2.6 closeout module
+        shell: powershell
+        run: |
+          python -m py_compile _system\tests\v4c_final_exception_closeout.py
+          python _system\tests\v4c_final_exception_closeout.py self-test
+
+      - name: Triage exact 26 exceptions and build canonical V4-C2 ledger
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force artifacts\closeout | Out-Null
+          python _system\tests\v4c_final_exception_closeout.py run `
+            --v23-evidence $env:V23_EVIDENCE `
+            --v24-evidence $env:V24_EVIDENCE `
+            --v25-evidence $env:V25_EVIDENCE `
+            --gap-index $env:GAP_INDEX `
+            --source-evidence $env:SOURCE_EVIDENCE `
+            --duplicate-map $env:DUPLICATE_MAP `
+            --product-context $env:PRODUCT_CONTEXT `
+            --hold-out artifacts\closeout\hold_triage.jsonl `
+            --block-out artifacts\closeout\block_triage.jsonl `
+            --ledger-out artifacts\closeout\canonical_ledger.jsonl `
+            --summary-out artifacts\closeout\summary.json
+
+      - name: Validate closeout invariants without historical retests
+        shell: powershell
+        run: |
+          python _system\tests\v4c_final_exception_closeout.py validate `
+            --hold-triage artifacts\closeout\hold_triage.jsonl `
+            --block-triage artifacts\closeout\block_triage.jsonl `
+            --ledger artifacts\closeout\canonical_ledger.jsonl `
+            --summary artifacts\closeout\summary.json `
+            --validation-out artifacts\closeout\validation.json
+
+      - name: Recheck stable HEAD and frozen inputs before persistence
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          git diff --quiet
+          if ($LASTEXITCODE -ne 0) { throw 'Working tree changed before closeout persistence' }
+          Write-Host "STABLE_HEAD=$stableHead"
+
+      - name: Build V4-C2 closeout lock and persist only closeout ledger
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force $env:CLOSEOUT_DIR | Out-Null
+          Copy-Item artifacts\closeout\hold_triage.jsonl "$env:CLOSEOUT_DIR\hold_triage.jsonl" -Force
+          Copy-Item artifacts\closeout\block_triage.jsonl "$env:CLOSEOUT_DIR\block_triage.jsonl" -Force
+          Copy-Item artifacts\closeout\canonical_ledger.jsonl "$env:CLOSEOUT_DIR\canonical_ledger.jsonl" -Force
+          Copy-Item artifacts\closeout\summary.json "$env:CLOSEOUT_DIR\summary.json" -Force
+          Copy-Item artifacts\closeout\validation.json "$env:CLOSEOUT_DIR\validation.json" -Force
+          $s = Get-Content artifacts\closeout\summary.json -Raw | ConvertFrom-Json
+          $lock = [ordered]@{
+            schema_version = 'v4c2.closeout-lock.1'
+            passed = $true
+            workflow_run = "$env:GITHUB_RUN_ID"
+            base_head = $env:BASE_HEAD
+            stable_head = $env:STABLE_HEAD
+            target = [int]$s.target
+            hold_resolved = [int]$s.hold_resolved
+            hold_final_targeted = [int]$s.hold_final_targeted
+            block_resolved = [int]$s.block_resolved
+            block_final_targeted = [int]$s.block_final_targeted
+            canonical_total = [int]$s.canonical_total
+            canonical_counts = $s.canonical_counts
+            downstream_eligible_count = [int]$s.downstream_eligible_count
+            preserved_count = [int]$s.preserved_count
+            inherited_frozen_hold_final_not_retriaged = [int]$s.inherited_frozen_hold_final_not_retriaged
+            v4c2_sealed = $true
+            next_stage = 'V4-C3'
+            source_download_called = $false
+            artifact_download_called = $false
+            ocr_executed = $false
+            semantic_inference_executed = $false
+            preservation_reexecuted = $false
+            image_generation_called = $false
+            tiny_snow_api_called = $false
+            paid_api_called = $false
+            vision_api_called = $false
+          }
+          $lock | ConvertTo-Json -Depth 10 | Set-Content "$env:CLOSEOUT_DIR\V4_C2_CLOSEOUT_LOCK.json" -Encoding UTF8
+          git add -- $env:CLOSEOUT_DIR
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { throw 'No V4-C2 closeout outputs to persist' }
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'V4-C2.6 persist final exception triage and V4-C2 closeout [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-6-final-exception-closeout
+          path: artifacts/closeout
+          if-no-files-found: error
+          retention-days: 14
