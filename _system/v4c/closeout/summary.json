@@ -1,0 +1,42 @@
+{
+  "schema_version": "v4c2.6.closeout-summary.1",
+  "passed": true,
+  "target": 26,
+  "hold_target": 13,
+  "hold_resolved": 0,
+  "hold_final_targeted": 13,
+  "block_target": 13,
+  "block_resolved": 0,
+  "block_final_targeted": 13,
+  "canonical_total": 1378,
+  "canonical_counts": {
+    "BLOCK_FINAL": 13,
+    "HOLD_FINAL": 39,
+    "PARTIAL_SAFE": 1046,
+    "PRESERVE": 280
+  },
+  "downstream_eligible_count": 1046,
+  "preserved_count": 280,
+  "inherited_frozen_hold_final_not_retriaged": 26,
+  "block_classification_counts": {
+    "DATA_MAPPING_CONFLICT": 13
+  },
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "paid_api_called": false,
+    "vision_api_called": false,
+    "v4c1_retested": false,
+    "v4c2_0_retested": false,
+    "v4c2_1_retested": false,
+    "v4c2_2_retested": false,
+    "v4c2_3_retested": false,
+    "v4c2_4_retested": false,
+    "v4c2_5_retested": false
+  }
+}

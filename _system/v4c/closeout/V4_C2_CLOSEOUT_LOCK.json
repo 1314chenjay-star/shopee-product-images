@@ -1,0 +1,33 @@
+﻿{
+    "schema_version":  "v4c2.closeout-lock.1",
+    "passed":  true,
+    "workflow_run":  "31955828498",
+    "base_head":  "e0fafa8f6ea76c254af2682239f7d7955a5d3b9f",
+    "stable_head":  "5d49f061e140813b3d229520e9e530f86b27b640",
+    "target":  26,
+    "hold_resolved":  0,
+    "hold_final_targeted":  13,
+    "block_resolved":  0,
+    "block_final_targeted":  13,
+    "canonical_total":  1378,
+    "canonical_counts":  {
+                             "BLOCK_FINAL":  13,
+                             "HOLD_FINAL":  39,
+                             "PARTIAL_SAFE":  1046,
+                             "PRESERVE":  280
+                         },
+    "downstream_eligible_count":  1046,
+    "preserved_count":  280,
+    "inherited_frozen_hold_final_not_retriaged":  26,
+    "v4c2_sealed":  true,
+    "next_stage":  "V4-C3",
+    "source_download_called":  false,
+    "artifact_download_called":  false,
+    "ocr_executed":  false,
+    "semantic_inference_executed":  false,
+    "preservation_reexecuted":  false,
+    "image_generation_called":  false,
+    "tiny_snow_api_called":  false,
+    "paid_api_called":  false,
+    "vision_api_called":  false
+}
