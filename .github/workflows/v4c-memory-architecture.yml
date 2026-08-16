@@ -1,0 +1,149 @@
+name: V4-C4.2 Approved Memory + Edit Feedback Memory Architecture
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/tests/v4c_memory_architecture.py'
+      - '_system/tests/v4c_memory_architecture_r2.py'
+      - '_system/memory/memory_runtime.py'
+      - '_system/memory/memory_cli.ps1'
+      - '.github/workflows/v4c-memory-architecture.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_HEAD: b064b8a022e29eec6eeaeb1e5561b25d5abda9e9
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  OUT: _system/memory
+
+jobs:
+  memory-architecture:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize V4-C4.2 runtime paths
+        shell: pwsh
+        run: |
+          $canary = Join-Path $env:RUNNER_TEMP 'v4c42_memory_canary.json'
+          "CANARY_VALIDATION=$canary" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Verify sealed V4-C4.1 baseline and stable HEAD
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Current HEAD is not descended from sealed V4-C4.1 HEAD.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable HEAD changed: $stable" }
+          $allowed=@(
+            '_system/tests/v4c_memory_architecture.py',
+            '_system/tests/v4c_memory_architecture_r2.py',
+            '_system/memory/memory_runtime.py',
+            '_system/memory/memory_cli.ps1',
+            '.github/workflows/v4c-memory-architecture.yml'
+          )
+          $changed=@(git diff --name-only "$env:BASE_HEAD..HEAD")
+          foreach($p in $changed){ if($allowed -notcontains $p){ throw "Unexpected pre-memory change since sealed V4-C4.1: $p" } }
+          git diff --quiet $env:BASE_HEAD -- _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw '_system/start/api_v2.ps1 changed.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c
+          if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C1 through V4-C4.1 data changed before memory stage.' }
+          Write-Host "BASE_HEAD=$env:BASE_HEAD"
+          Write-Host "STABLE_HEAD=$stable"
+
+      - name: Compile memory architecture and runtime only
+        shell: pwsh
+        run: |
+          python -m py_compile _system/tests/v4c_memory_architecture.py _system/tests/v4c_memory_architecture_r2.py _system/memory/memory_runtime.py
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          powershell.exe -NoProfile -Command "$null=[scriptblock]::Create((Get-Content '_system/memory/memory_cli.ps1' -Raw)); Write-Host 'WINDOWS_POWERSHELL_5_1_SCRIPT_PARSE_PASS'"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Run multi-category Memory Canary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_memory_architecture_r2.py canary --output "$env:CANARY_VALIDATION" --stable-head "$env:STABLE_HEAD"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          $c=Get-Content "$env:CANARY_VALIDATION" -Raw | ConvertFrom-Json
+          if(-not [bool]$c.passed){ throw 'V4-C4.2 Memory Canary did not PASS.' }
+          foreach($k in @('unknown_reusable_count','conflict_reusable_count','forbidden_reusable_count','hold_block_upgraded','locked_product_overwrite')){
+            if([int]$c.$k -ne 0){ throw "Canary safety metric nonzero: $k=$($c.$k)" }
+          }
+          foreach($k in @('exact_sha_reuse','identity_mismatch_blocked','rejected_output_excluded','superseded_output_inactive','revoked_fact_inactive','edit_feedback_to_regression_guard','category_memory_not_factual_evidence','template_memory_fact_free','incremental_append_preserves_old_records','variant_isolation','regression_lookup')){
+            if(-not [bool]$c.$k){ throw "Canary contract failed: $k" }
+          }
+          if([bool]$c.generation_executed){ throw 'Generation executed during Memory Canary.' }
+          foreach($prop in $c.api_flags.PSObject.Properties){ if([bool]$prop.Value){ throw "Forbidden Canary flag true: $($prop.Name)" } }
+
+      - name: Build initial approved memory bootstrap after Canary PASS
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_memory_architecture_r2.py bootstrap --out "$env:OUT" --canary-validation "$env:CANARY_VALIDATION" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          Copy-Item "$env:CANARY_VALIDATION" "$env:OUT/memory_canary_validation.json" -Force
+
+      - name: Smoke safe lookup, exact reuse, identity isolation, regression interface
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import json, sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('_system/memory').resolve()))
+          import memory_runtime as m
+          d=Path('_system/memory')
+          outs=m._read_jsonl(d/'approved_output_memory.jsonl')
+          if not outs: raise SystemExit('no approved outputs')
+          o=next((x for x in outs if x.get('human_approved')), outs[0])
+          exact=m.memory_safe_lookup(str(d),o['product_id'],o['source_sha256'],o.get('variant_scope') or [],o['canonical_slot'],o.get('category'),o.get('subcategory'))
+          if len(exact['reusable_approved_outputs'])!=1: raise SystemExit('exact reuse smoke failed')
+          idx=m._read_json(d/'memory_index.json')
+          other=next(p for p in sorted(idx['product_index']) if p!=o['product_id'])
+          bad=m.memory_safe_lookup(str(d),other,o['source_sha256'],o.get('variant_scope') or [],o['canonical_slot'],o.get('category'),o.get('subcategory'))
+          if bad['reusable_approved_outputs'] or not any(x.get('reason')=='MEMORY_IDENTITY_CONFLICT' for x in bad['blocked_memory']): raise SystemExit('identity conflict smoke failed')
+          reg=m.pre_generation_regression_check(str(d),'42833435408','sports','sports_apparel',[])
+          if not any('pocket' in str(x).lower() for x in reg['blocked_error_patterns']): raise SystemExit('regression smoke failed')
+          result={'passed':True,'exact_sha_reuse':True,'identity_isolation':True,'regression_lookup':True,'segregated_memory_buckets':sorted(exact.keys()),'generation_executed':False}
+          (d/'memory_interface_validation.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(result,ensure_ascii=False,sort_keys=True))
+          '@ | python -
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Final memory integrity and frozen-state reconciliation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $v=Get-Content "$env:OUT/memory_validation.json" -Raw | ConvertFrom-Json
+          if(-not [bool]$v.passed){ throw 'Memory validation not PASS.' }
+          foreach($k in @('unknown_reusable','conflict_reusable','forbidden_reusable','hold_block_upgraded','memory_identity_conflicts','duplicate_active_memory','broken_references')){
+            if([int]$v.$k -ne 0){ throw "Memory final safety metric nonzero: $k=$($v.$k)" }
+          }
+          if(-not [bool]$v.incremental_lookup_pass -or -not [bool]$v.exact_sha_reuse_pass -or -not [bool]$v.variant_isolation_pass -or -not [bool]$v.regression_lookup_pass -or -not [bool]$v.jsonl_sqlite_reconciliation){ throw 'One or more memory architecture contracts failed.' }
+          if([bool]$v.generation_executed){ throw 'Generation executed unexpectedly.' }
+          foreach($prop in $v.api_flags.PSObject.Properties){ if([bool]$prop.Value){ throw "Forbidden final flag true: $($prop.Name)" } }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw 'Stable changed during V4-C4.2.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen prior-stage data changed during V4-C4.2.' }
+
+      - name: Persist V4-C4.2 memory layer only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add _system/memory
+          git diff --cached --quiet
+          if($LASTEXITCODE -eq 0){ throw 'No V4-C4.2 memory outputs were staged.' }
+          $staged=@(git diff --cached --name-only)
+          foreach($p in $staged){ if(-not $p.StartsWith('_system/memory/')){ throw "Unexpected staged file: $p" } }
+          git commit -m 'V4-C4.2 persist approved and feedback memory architecture [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
