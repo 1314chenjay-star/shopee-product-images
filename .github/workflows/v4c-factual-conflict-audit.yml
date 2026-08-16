@@ -1,0 +1,158 @@
+name: V4-C3.1 Factual Conflict Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-factual-conflict-audit.yml"
+      - "_system/tests/v4c_factual_conflict_audit.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v4c3-1-factual-conflict-audit
+  cancel-in-progress: true
+
+env:
+  BASE_HEAD: 411460f1fff63ba9c1bb3be3f248d7e171996c40
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  IMAGE_GATE: _system/v4c/factual_gate/image_gate.jsonl
+  PRODUCT_GATE: _system/v4c/factual_gate/product_gate.jsonl
+  SUMMARY: _system/v4c/factual_gate/summary.json
+  VALIDATION: _system/v4c/factual_gate/validation.json
+  CANONICAL: _system/v4c/closeout/canonical_ledger.jsonl
+  OUT_DIR: _system/v4c/factual_gate/audit
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify sealed V4-C2 and frozen V4-C3 baseline
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'HEAD is not descended from frozen V4-C3 HEAD' }
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          git diff --quiet $env:BASE_HEAD -- `
+            _system/v4c/factual_gate/image_gate.jsonl `
+            _system/v4c/factual_gate/product_gate.jsonl `
+            _system/v4c/factual_gate/summary.json `
+            _system/v4c/factual_gate/validation.json `
+            _system/v4c/factual_gate/V4_C3_FACTUAL_GATE_LOCK.json `
+            _system/v4c/closeout/canonical_ledger.jsonl `
+            _system/tests/v4c_factual_gate.py `
+            .github/workflows/v4c-factual-gate.yml
+          if ($LASTEXITCODE -ne 0) { throw 'Frozen V4-C2/V4-C3 inputs or gate logic changed' }
+          Write-Host 'V4C2_RETESTED=false'
+          Write-Host 'V4C3_RETESTED=false'
+          Write-Host 'SOURCE_DOWNLOAD=false'
+          Write-Host 'ARTIFACT_DOWNLOAD=false'
+          Write-Host 'OCR=false'
+          Write-Host 'SEMANTIC=false'
+          Write-Host 'PRESERVATION=false'
+          Write-Host 'GENERATION=false'
+
+      - name: Compile audit only
+        shell: powershell
+        run: python -m py_compile _system\tests\v4c_factual_conflict_audit.py
+
+      - name: Run read-only factual conflict audit
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force artifacts\audit | Out-Null
+          python _system\tests\v4c_factual_conflict_audit.py `
+            --images $env:IMAGE_GATE `
+            --products $env:PRODUCT_GATE `
+            --summary $env:SUMMARY `
+            --validation $env:VALIDATION `
+            --canonical $env:CANONICAL `
+            --root-summary artifacts\audit\conflict_root_cause_summary.json `
+            --audit-out artifacts\audit\conflict_audit.jsonl `
+            --product-summary artifacts\audit\product_block_reason_summary.json `
+            --eligible-analysis artifacts\audit\eligible_partial_block_analysis.json `
+            --validation-out artifacts\audit\audit_validation.json
+
+      - name: Verify audit did not mutate frozen inputs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git diff --exit-code -- `
+            _system/v4c/factual_gate/image_gate.jsonl `
+            _system/v4c/factual_gate/product_gate.jsonl `
+            _system/v4c/factual_gate/summary.json `
+            _system/v4c/factual_gate/validation.json `
+            _system/v4c/closeout/canonical_ledger.jsonl `
+            _system/tests/v4c_factual_gate.py
+          $v = Get-Content artifacts\audit\audit_validation.json -Raw | ConvertFrom-Json
+          if (-not $v.passed) { throw 'Audit validation did not PASS' }
+          if ([int]$v.image_conflicts_reconciled -ne 7125) { throw '7,125 conflict reconciliation failed' }
+          if ([int]$v.eligible_partial_reconciled -ne 79) { throw '79 ELIGIBLE_PARTIAL reconciliation failed' }
+          $flags = $v.api_flags
+          if ($flags.source_download_called -or $flags.artifact_download_called -or $flags.ocr_executed -or $flags.semantic_inference_executed -or $flags.preservation_reexecuted -or $flags.image_generation_called -or $flags.tiny_snow_api_called -or $flags.vision_api_called -or $flags.paid_api_called -or $flags.generation_queue_started -or $flags.gate_logic_modified) { throw 'Forbidden audit flag true' }
+
+      - name: Persist audit outputs only
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force $env:OUT_DIR | Out-Null
+          Copy-Item artifacts\audit\conflict_root_cause_summary.json "$env:OUT_DIR\conflict_root_cause_summary.json" -Force
+          Copy-Item artifacts\audit\conflict_audit.jsonl "$env:OUT_DIR\conflict_audit.jsonl" -Force
+          Copy-Item artifacts\audit\product_block_reason_summary.json "$env:OUT_DIR\product_block_reason_summary.json" -Force
+          Copy-Item artifacts\audit\eligible_partial_block_analysis.json "$env:OUT_DIR\eligible_partial_block_analysis.json" -Force
+          Copy-Item artifacts\audit\audit_validation.json "$env:OUT_DIR\audit_validation.json" -Force
+          $root = Get-Content artifacts\audit\conflict_root_cause_summary.json -Raw | ConvertFrom-Json
+          $lock = [ordered]@{
+            schema_version = 'v4c3.1.factual-conflict-audit-lock.1'
+            passed = $true
+            workflow_run = "$env:GITHUB_RUN_ID"
+            base_head = $env:BASE_HEAD
+            stable_head = $env:STABLE_HEAD
+            total_conflicts = [int]$root.current_image_fact_conflicts_total
+            true_conflicts = [int]$root.current_image_true_conflicts
+            false_conflicts = [int]$root.current_image_false_conflicts
+            aggregation_induced_conflicts = [int]$root.product_aggregation_induced_conflicts
+            cross_image_false_conflicts = [int]$root.cross_image_false_conflicts
+            variant_scope_conflicts = [int]$root.variant_scope_conflicts
+            malformed_or_duplicate_evidence_conflicts = [int]$root.malformed_or_duplicate_evidence_conflicts
+            safely_fixable_by_aggregation_or_comparison_only = [int]$root.safely_fixable_by_aggregation_or_comparison_only
+            conflicts_requiring_block_or_new_explicit_evidence = [int]$root.conflicts_requiring_block_or_new_explicit_evidence
+            gate_modified = $false
+            generation_queue_started = $false
+            source_download_called = $false
+            artifact_download_called = $false
+            ocr_executed = $false
+            semantic_inference_executed = $false
+            preservation_reexecuted = $false
+            image_generation_called = $false
+            tiny_snow_api_called = $false
+            vision_api_called = $false
+            paid_api_called = $false
+            v4c2_retested = $false
+            v4c3_retested = $false
+          }
+          $lock | ConvertTo-Json -Depth 8 | Set-Content "$env:OUT_DIR\V4_C3_1_CONFLICT_AUDIT_LOCK.json" -Encoding UTF8
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $env:OUT_DIR
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { throw 'No audit outputs to persist' }
+          git commit -m "V4-C3.1 persist factual conflict audit [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c3-1-factual-conflict-audit
+          path: artifacts/audit
+          if-no-files-found: error
+          retention-days: 14
