@@ -114,6 +114,11 @@ jobs:
         run: |
           & .\_system\tests\v4c0_b013_semantic_gate_smoke.ps1
 
+      - name: V4-C0 B014 semantic gate smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4c0_b014_semantic_gate_smoke.ps1
+
       - name: Confirm V4-C0 remains free-analysis only
         shell: powershell
         run: |
