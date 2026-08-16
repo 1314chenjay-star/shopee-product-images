@@ -25,8 +25,8 @@ jobs:
           foreach ($p in $required) {
             if ($manifest.permissions -notcontains $p) { throw "Missing permission: $p" }
           }
-          foreach ($host in $manifest.host_permissions) {
-            if ($host -notmatch '^https://.*coupang(cd?n)?\.com/') { throw "Unexpected host permission: $host" }
+          foreach ($hostPattern in $manifest.host_permissions) {
+            if ($hostPattern -notmatch '^https://.*coupang(cd?n)?\.com/') { throw "Unexpected host permission: $hostPattern" }
           }
           Write-Host 'Manifest OK'
 
