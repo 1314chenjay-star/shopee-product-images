@@ -31,11 +31,16 @@ $products = @(
     [pscustomobject]@{ product_id='51365698925'; name='桌球拍 七星入門訓練拍 小學生成人初學橫拍直拍套組 室內運動用品'; category='Sports & Outdoors/Table Tennis/Table Tennis Bats'; image_urls=(New-Urls 'p9' 5); variation_options=@(); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} },
     [pscustomobject]@{ product_id='25348397564'; name='網球拍入門套組 成人初學訓練球拍 超輕耐用 附球拍包 單人練習運動用品'; category='Sports & Outdoors/Tennis/Tennis Rackets'; image_urls=(New-Urls 'p10' 5); variation_options=@(); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} },
     [pscustomobject]@{ product_id='54365715350'; name='匹克球拍 Pickleball球拍 入門超輕球拍套組 含4顆球與收納袋'; category='Sports & Outdoors/Tennis/Tennis Rackets'; image_urls=(New-Urls 'p11' 5); variation_options=@(); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} },
-    [pscustomobject]@{ product_id='43933411549'; name='泰拳腰靶 格鬥訓練護腰靶 散打陪練靶 拳擊踢擊訓練器 加厚防撞護具'; category='Sports & Outdoors/Boxing & Martial Arts/Punching Bags & Paddings'; image_urls=(New-Urls 'p12' 5); variation_options=@(); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} }
+    [pscustomobject]@{ product_id='43933411549'; name='泰拳腰靶 格鬥訓練護腰靶 散打陪練靶 拳擊踢擊訓練器 加厚防撞護具'; category='Sports & Outdoors/Boxing & Martial Arts/Punching Bags & Paddings'; image_urls=(New-Urls 'p12' 5); variation_options=@(); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} },
+
+    # Real B001 regressions: secondary car-use wording must not override the product body.
+    [pscustomobject]@{ product_id='47515735339'; name='運動吸汗毛巾 健身跑步擦汗巾 柔軟加厚多用途毛巾 車用座椅鋪巾'; category='Sports & Outdoors/Sports Accessories/Others'; image_urls=(New-Urls 'p13' 9); variation_options=@('紅','藍','灰'); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} },
+    [pscustomobject]@{ product_id='51515651767'; name='戶外折疊水桶 伸縮儲水桶 露營車載水桶 帶龍頭水壺 15L大容量 加厚耐用提手 旅行便攜水桶'; category='Sports & Outdoors/Camping & Hiking/Others'; image_urls=(New-Urls 'p14' 4); variation_options=@(); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} },
+    [pscustomobject]@{ product_id='42383385337'; name='太陽能車載淨化器 免插電自動運行 臭氧除味消毒機 無風扇靜音設計 停車自啟淨化空氣 車內除臭除菌裝置'; category='Automobiles/Car Accessories'; image_urls=(New-Urls 'p15' 4); variation_options=@(); multi_variant_flags=[pscustomobject]@{}; verified_facts=[pscustomobject]@{} }
 )
 
 $r = Invoke-V4C0CatalogAnalysis $products
-Assert-True ($r.product_count -eq 12) 'must analyze all products.'
+Assert-True ($r.product_count -eq 15) 'must analyze all products.'
 Assert-True ($r.image_api_called -eq $false) 'must remain free-analysis only.'
 Assert-True (($r.products | Where-Object { $_.product_id -eq 'P2' }).route.subfamily -eq 'billiards') 'billiards ambiguity must resolve.'
 Assert-True (($r.products | Where-Object { $_.product_id -eq 'P3' }).route.family -eq 'home_garden') 'wrong historical camping category must not override garden product body.'
@@ -50,7 +55,11 @@ Assert-True (($r.products | Where-Object { $_.product_id -eq '25348397564' }).ro
 Assert-True (($r.products | Where-Object { $_.product_id -eq '54365715350' }).route.subfamily -eq 'racket_sports') 'pickleball racket set must stay racket_sports.'
 Assert-True (($r.products | Where-Object { $_.product_id -eq '43933411549' }).route.subfamily -eq 'combat_martial_arts') 'boxing waist target must not become wearable protective gear.'
 
-Assert-True ($r.structural_guard_change_count -ge 4) 'structural guard must actually correct context-word routes.'
+Assert-True (($r.products | Where-Object { $_.product_id -eq '47515735339' }).route.subfamily -eq 'sports_towel') 'sports towel must not become auto accessory because of secondary seat-cover use.'
+Assert-True (($r.products | Where-Object { $_.product_id -eq '51515651767' }).route.subfamily -eq 'outdoor_camping') 'camping folding water bucket must not become auto accessory because of 車載 wording.'
+Assert-True (($r.products | Where-Object { $_.product_id -eq '42383385337' }).route.family -eq 'auto') 'true car purifier must remain auto.'
+
+Assert-True ($r.structural_guard_change_count -ge 6) 'structural guard must actually correct context-word routes.'
 Assert-True (@($r.products | Where-Object { $_.final_paid_generation_permission -ne 'HOLD' }).Count -eq 0) 'catalog analyzer may not auto-approve paid generation.'
 
 Write-Host 'V4-C0 catalog analyzer smoke: PASS'
