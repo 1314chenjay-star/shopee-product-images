@@ -1,0 +1,11 @@
+{
+  "schema_version": "v4c4.1.recovery-final.1",
+  "sha_gap_target": 859,
+  "zero_download_sha_recovered": 0,
+  "targeted_fetch_planned": 859,
+  "targeted_fetch_success": 859,
+  "fetch_failed": 0,
+  "sha_recovered_total": 859,
+  "sha_still_missing": 0,
+  "source_changed_or_ambiguous": 0
+}

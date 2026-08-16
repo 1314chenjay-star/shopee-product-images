@@ -1,0 +1,32 @@
+{
+  "schema_version": "v4c4.1.canary-validation.1",
+  "passed": true,
+  "canary_target_count": 75,
+  "existing_sha_source_refetch": 0,
+  "recovery_mapping_cross_source_error": 0,
+  "sha_format_errors": 0,
+  "sequence_source_reconciliation": true,
+  "fetch_failure_remains_hold_capable": true,
+  "checkpoint_resume": true,
+  "original_ready_plan_mutations": 0,
+  "original_660_queue_mutations": 0,
+  "generation_executed": false,
+  "api_flags": {
+    "source_download_called": true,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "factual_gate_reexecuted": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "v4c3_2_retested": false,
+    "v4c4_0_retested": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "generation_executed": false
+  }
+}

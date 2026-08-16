@@ -1,0 +1,13 @@
+{
+  "schema_version": "v4c4.1.targeted-fetch.1",
+  "scope": "full",
+  "scope_target_count": 859,
+  "checkpoint_terminal_before": 75,
+  "already_terminal_in_scope_before": 75,
+  "new_targeted_fetch_attempts": 784,
+  "new_targeted_fetch_success": 784,
+  "new_targeted_fetch_failed": 0,
+  "checkpoint_terminal_after": 859,
+  "existing_sha_source_refetch": 0,
+  "generation_executed": false
+}

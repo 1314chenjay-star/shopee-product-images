@@ -1,0 +1,10 @@
+{
+  "schema_version": "v4c4.1.existing-recovery.1",
+  "scope": "full",
+  "scope_target_count": 859,
+  "checkpoint_terminal_count": 75,
+  "new_recovered_existing_sha": 0,
+  "new_ambiguous": 0,
+  "candidate_index_count": 4630,
+  "source_download_called": false
+}

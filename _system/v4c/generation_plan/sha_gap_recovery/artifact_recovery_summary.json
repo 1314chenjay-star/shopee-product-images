@@ -1,0 +1,113 @@
+{
+  "schema_version": "v4c4.1.artifact-cache.1",
+  "historical_artifact_refs": 17,
+  "historical_artifact_downloaded": 0,
+  "historical_artifact_failed": 17,
+  "extracted_metadata_files": 0,
+  "failures": [
+    {
+      "batch_id": "B001",
+      "artifact_id": 9256537596,
+      "run_id": 31921704158,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B002",
+      "artifact_id": 9256739173,
+      "run_id": 31922278167,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B003",
+      "artifact_id": 9256924772,
+      "run_id": 31922897583,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B004",
+      "artifact_id": 9257117101,
+      "run_id": 31923361068,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B005",
+      "artifact_id": 9257395553,
+      "run_id": 31924400950,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B006",
+      "artifact_id": 9257497440,
+      "run_id": 31924765593,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B007",
+      "artifact_id": 9257620074,
+      "run_id": 31925171868,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B008",
+      "artifact_id": 9257733023,
+      "run_id": 31925560855,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B009",
+      "artifact_id": 9257927735,
+      "run_id": 31926247643,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B010",
+      "artifact_id": 9258051598,
+      "run_id": 31926660026,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B011",
+      "artifact_id": 9258330515,
+      "run_id": 31927650034,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B012",
+      "artifact_id": 9258507112,
+      "run_id": 31928251613,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B013",
+      "artifact_id": 9258703390,
+      "run_id": 31928863852,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B014",
+      "artifact_id": 9259460160,
+      "run_id": 31931565685,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B015",
+      "artifact_id": 9259743014,
+      "run_id": 31932609529,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B016",
+      "artifact_id": 9261265376,
+      "run_id": 31938176888,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    },
+    {
+      "batch_id": "B017",
+      "artifact_id": 9261435689,
+      "run_id": 31938766189,
+      "error": "HTTP Error 401: Server failed to authenticate the request. Please refer to the information in the www-authenticate header."
+    }
+  ],
+  "source_download_called": false,
+  "artifact_download_called": false
+}

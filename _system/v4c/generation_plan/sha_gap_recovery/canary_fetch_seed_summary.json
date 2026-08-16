@@ -1,0 +1,13 @@
+{
+  "schema_version": "v4c4.1.targeted-fetch.1",
+  "scope": "canary",
+  "scope_target_count": 75,
+  "checkpoint_terminal_before": 0,
+  "already_terminal_in_scope_before": 0,
+  "new_targeted_fetch_attempts": 25,
+  "new_targeted_fetch_success": 25,
+  "new_targeted_fetch_failed": 0,
+  "checkpoint_terminal_after": 25,
+  "existing_sha_source_refetch": 0,
+  "generation_executed": false
+}
