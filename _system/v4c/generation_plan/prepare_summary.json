@@ -1,0 +1,81 @@
+{
+  "schema_version": "v4c4.0.prepare-r3.1",
+  "passed": true,
+  "authoritative_product_count": 375,
+  "authoritative_source_image_count": 2394,
+  "base_state_counts": {
+    "HOLD": 1042,
+    "DUPLICATE_ALIAS": 4,
+    "PRESERVE": 304,
+    "BLOCK": 182,
+    "PROCESS_SAFE": 857,
+    "LOCKED_APPROVED": 5
+  },
+  "global_preserve_underlying_count": 304,
+  "locked_approved_count": 5,
+  "raw_v4c3_2_generation_candidate_count": 875,
+  "canonical_process_safe_count": 857,
+  "duplicate_alias_count": 4,
+  "source_sha_available_count": 1535,
+  "source_sha_not_durably_persisted_count": 859,
+  "source_sha_missing_sequences_sample": [
+    1,
+    2,
+    3,
+    4,
+    50,
+    51,
+    52,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66
+  ],
+  "preserve_discovered_but_sha_unavailable_count": 0,
+  "locked_product_guards": [
+    "42833435408",
+    "52915734564",
+    "57565745174",
+    "58015741169"
+  ],
+  "locked_product_guards_present": [
+    "42833435408",
+    "52915734564",
+    "57565745174",
+    "58015741169"
+  ],
+  "locked_approval_files": [
+    {
+      "path": "_system\\tests\\evidence\\v4b_428_complete_five_visual_acceptance.json",
+      "product_id": "42833435408",
+      "accepted_slots": 5
+    }
+  ],
+  "taxonomy_products_observable": 20,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "v4c3_2_retested": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "generation_executed": false
+  },
+  "locked_preserve_priority_restored_count": 7
+}

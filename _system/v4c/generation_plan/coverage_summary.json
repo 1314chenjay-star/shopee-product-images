@@ -1,0 +1,76 @@
+{
+  "schema_version": "v4c4.0.coverage-summary.1",
+  "passed": true,
+  "authoritative_product_count": 375,
+  "authoritative_source_image_count": 2394,
+  "global_preserve_count": 304,
+  "locked_approved_count": 5,
+  "process_safe_candidate_count": 857,
+  "raw_v4c3_2_candidate_count": 875,
+  "safe_not_selected_count": 310,
+  "block_hold_count": 1224,
+  "duplicate_alias_count": 4,
+  "canonical_state_counts": {
+    "HOLD": 1042,
+    "DUPLICATE_ALIAS": 4,
+    "PRESERVE": 297,
+    "BLOCK": 182,
+    "PROCESS_SAFE": 554,
+    "SAFE_NOT_SELECTED": 310,
+    "LOCKED_APPROVED": 5
+  },
+  "underlying_state_counts": {
+    "HOLD": 1042,
+    "DUPLICATE_ALIAS": 4,
+    "PRESERVE": 304,
+    "BLOCK": 182,
+    "PROCESS_SAFE": 857,
+    "LOCKED_APPROVED": 5
+  },
+  "ready_5_slot_products": 191,
+  "hold_product_count": 184,
+  "total_preserved_slots": 295,
+  "total_processing_slots": 660,
+  "process_localize_slots": 554,
+  "safe_derivative_slots": 106,
+  "hold_slots": 920,
+  "generation_plan_queue_image_count": 660,
+  "generation_plan_queue_product_count": 176,
+  "unknown_leak": 0,
+  "conflict_leak": 0,
+  "forbidden_leak": 0,
+  "duplicate_slot_assignment": 0,
+  "block_factual_selected": 0,
+  "locked_product_regeneration_count": 0,
+  "locked_product_guards": [
+    "42833435408",
+    "52915734564",
+    "57565745174",
+    "58015741169"
+  ],
+  "locked_approval_materialized_products": [
+    "42833435408"
+  ],
+  "locked_unmaterialized_hold_products": [
+    "52915734564",
+    "57565745174",
+    "58015741169"
+  ],
+  "generation_executed": false,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "v4c3_2_retested": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "generation_executed": false
+  }
+}
