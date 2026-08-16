@@ -1,0 +1,295 @@
+name: V4-C1 Source Turbo
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-source-turbo.yml"
+      - "_system/tests/v4c_source_turbo.ps1"
+      - "_system/tests/v4c_generate_shards.ps1"
+      - "_system/tests/v4c_aggregate_results.ps1"
+      - "_system/tests/v4c_validate_progress.ps1"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: v4c-source-turbo
+  cancel-in-progress: false
+
+env:
+  INVENTORY: _system/v4c/inventory/source_inventory.jsonl
+  PROGRESS: _system/v4c/progress/v4c_source_progress.jsonl
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  V4C_BASELINE_HEAD: 28d8eb1f024dd7ff17076b9f2fd69243164c7f6e
+
+jobs:
+  preflight:
+    runs-on: windows-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Free deterministic self-tests
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_generate_shards.ps1 -SelfTest
+          .\_system\tests\v4c_source_turbo.ps1 -SelfTest
+          .\_system\tests\v4c_aggregate_results.ps1 -SelfTest
+      - name: Generate 150-source smoke shards
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_generate_shards.ps1 `
+            -Mode Smoke `
+            -InventoryPath $env:INVENTORY `
+            -ProgressPath $env:PROGRESS `
+            -OutDir artifacts\smoke-plan `
+            -SmokeCount 150 `
+            -ShardSize 50
+      - name: Export smoke matrix
+        id: matrix
+        shell: powershell
+        run: |
+          $m = (Get-Content artifacts\smoke-plan\matrix.json -Raw).Trim()
+          $enc = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, ("matrix=" + $m + "`n"), $enc)
+          Write-Host "SMOKE_MATRIX=$m"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c-smoke-plan
+          path: artifacts/smoke-plan
+          if-no-files-found: error
+          retention-days: 7
+
+  smoke:
+    needs: preflight
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJson(needs.preflight.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c-smoke-plan
+          path: artifacts/smoke-plan
+      - name: Turbo smoke shard
+        shell: powershell
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force artifacts\smoke-results | Out-Null
+          .\_system\tests\v4c_source_turbo.ps1 `
+            -ShardPath ("artifacts\smoke-plan\shards\" + $env:SHARD + ".jsonl") `
+            -ProgressOut ("artifacts\smoke-results\" + $env:SHARD + ".progress.jsonl") `
+            -SummaryOut ("artifacts\smoke-results\" + $env:SHARD + ".summary.json") `
+            -MaxConcurrency 6 `
+            -MaxAttempts 3 `
+            -RetryDelaySeconds 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c-smoke-${{ matrix.shard }}
+          path: artifacts/smoke-results
+          if-no-files-found: error
+          retention-days: 7
+
+  smoke_aggregate:
+    needs: [preflight, smoke]
+    runs-on: windows-latest
+    outputs:
+      full_matrix: ${{ steps.full_matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c-smoke-plan
+          path: artifacts/smoke-plan
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: v4c-smoke-shard-*
+          path: artifacts/smoke-results
+          merge-multiple: true
+      - name: Aggregate smoke safely
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_aggregate_results.ps1 `
+            -InventoryPath $env:INVENTORY `
+            -BaseProgressPath artifacts\smoke-plan\seed_progress.jsonl `
+            -ShardResultRoot artifacts\smoke-results `
+            -OutputDir artifacts\smoke-aggregate `
+            -Phase Smoke
+      - name: Validate smoke invariants
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_validate_progress.ps1 `
+            -InventoryPath $env:INVENTORY `
+            -ProgressPath artifacts\smoke-aggregate\v4c_source_progress.jsonl `
+            -DuplicateMapPath artifacts\smoke-aggregate\duplicate_map.json `
+            -FailedPath artifacts\smoke-aggregate\failed_sources.json `
+            -SummaryPath artifacts\smoke-aggregate\aggregate_summary.json `
+            -OutputPath artifacts\smoke-aggregate\validation.json `
+            -Phase Smoke `
+            -ExpectedStableHead $env:STABLE_HEAD `
+            -V4CBaselineHead $env:V4C_BASELINE_HEAD
+      - name: Second execution must skip DONE and build full remaining queue
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_generate_shards.ps1 `
+            -Mode Full `
+            -InventoryPath $env:INVENTORY `
+            -ProgressPath artifacts\smoke-aggregate\v4c_source_progress.jsonl `
+            -OutDir artifacts\full-plan `
+            -ShardSize 150
+          $smokeDone = @{}
+          Get-Content artifacts\smoke-aggregate\v4c_source_progress.jsonl | ForEach-Object {
+            if ([string]::IsNullOrWhiteSpace($_)) { return }
+            $p = $_ | ConvertFrom-Json
+            if ($p.status -in @("DONE","SHA_DUPLICATE")) { $smokeDone[[int]$p.sequence] = $true }
+          }
+          $bad = New-Object System.Collections.Generic.List[int]
+          Get-ChildItem artifacts\full-plan\shards\*.jsonl | ForEach-Object {
+            Get-Content $_.FullName | ForEach-Object {
+              if ([string]::IsNullOrWhiteSpace($_)) { return }
+              $s = $_ | ConvertFrom-Json
+              if ($smokeDone.ContainsKey([int]$s.sequence)) { $bad.Add([int]$s.sequence) }
+            }
+          }
+          if ($bad.Count -gt 0) { throw ("Second-run DONE skip failed: " + ($bad -join ",")) }
+          Write-Host "SECOND_RUN_SKIP_DONE=true"
+      - name: Export full matrix
+        id: full_matrix
+        shell: powershell
+        run: |
+          $m = (Get-Content artifacts\full-plan\matrix.json -Raw).Trim()
+          $enc = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, ("matrix=" + $m + "`n"), $enc)
+          Write-Host "FULL_MATRIX=$m"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c-smoke-aggregate
+          path: artifacts/smoke-aggregate
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c-full-plan
+          path: artifacts/full-plan
+          if-no-files-found: error
+          retention-days: 7
+
+  full:
+    needs: smoke_aggregate
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: ${{ fromJson(needs.smoke_aggregate.outputs.full_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c-full-plan
+          path: artifacts/full-plan
+      - name: Turbo full shard
+        shell: powershell
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force artifacts\full-results | Out-Null
+          .\_system\tests\v4c_source_turbo.ps1 `
+            -ShardPath ("artifacts\full-plan\shards\" + $env:SHARD + ".jsonl") `
+            -ProgressOut ("artifacts\full-results\" + $env:SHARD + ".progress.jsonl") `
+            -SummaryOut ("artifacts\full-results\" + $env:SHARD + ".summary.json") `
+            -MaxConcurrency 6 `
+            -MaxAttempts 3 `
+            -RetryDelaySeconds 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c-full-${{ matrix.shard }}
+          path: artifacts/full-results
+          if-no-files-found: error
+          retention-days: 7
+
+  finalize:
+    needs: [smoke_aggregate, full]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c-smoke-aggregate
+          path: artifacts/smoke-aggregate
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: v4c-full-shard-*
+          path: artifacts/full-results
+          merge-multiple: true
+      - name: Aggregate all remaining source evidence
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_aggregate_results.ps1 `
+            -InventoryPath $env:INVENTORY `
+            -BaseProgressPath artifacts\smoke-aggregate\v4c_source_progress.jsonl `
+            -ShardResultRoot artifacts\full-results `
+            -OutputDir artifacts\final `
+            -Phase Final
+      - name: Validate final source progress
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_validate_progress.ps1 `
+            -InventoryPath $env:INVENTORY `
+            -ProgressPath artifacts\final\v4c_source_progress.jsonl `
+            -DuplicateMapPath artifacts\final\duplicate_map.json `
+            -FailedPath artifacts\final\failed_sources.json `
+            -SummaryPath artifacts\final\aggregate_summary.json `
+            -OutputPath artifacts\final\validation.json `
+            -Phase Final `
+            -ExpectedStableHead $env:STABLE_HEAD `
+            -V4CBaselineHead $env:V4C_BASELINE_HEAD
+      - name: Persist evidence ledger to experimental branch only
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Copy-Item artifacts\final\v4c_source_progress.jsonl _system\v4c\progress\v4c_source_progress.jsonl -Force
+          Copy-Item artifacts\final\source_evidence.jsonl _system\v4c\results\source_evidence.jsonl -Force
+          Copy-Item artifacts\final\duplicate_map.json _system\v4c\results\duplicate_map.json -Force
+          Copy-Item artifacts\final\failed_sources.json _system\v4c\results\failed_sources.json -Force
+          Copy-Item artifacts\final\semantic_evidence_queue.jsonl _system\v4c\results\semantic_evidence_queue.jsonl -Force
+          Copy-Item artifacts\final\aggregate_summary.json _system\v4c\results\aggregate_summary.json -Force
+          Copy-Item artifacts\final\validation.json _system\v4c\results\validation.json -Force
+          if (Test-Path _system\v4c\inventory\source_inventory.bootstrap.gz.b64) { Remove-Item _system\v4c\inventory\source_inventory.bootstrap.gz.b64 -Force }
+          if (Test-Path _system\v4c\inventory\source_inventory.bootstrap.parts) { Remove-Item _system\v4c\inventory\source_inventory.bootstrap.parts -Recurse -Force }
+          git config user.name "TinySnow V4-C1 Turbo"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/v4c
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host "No evidence changes to persist." } else { git commit -m "V4-C1 Turbo finalize source evidence [skip ci]"; git push origin HEAD:v4c-universal-product-engine }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c-turbo-final
+          path: artifacts/final
+          if-no-files-found: error
+          retention-days: 14
