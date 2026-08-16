@@ -76,7 +76,7 @@ jobs:
           & .\_system\tests\v4a3_five_image_planner_smoke.ps1
 
       - name: V4-B original-image preservation smoke
-        if: github.ref == 'refs/heads/v4b-original-image-localization'
+        if: github.ref == 'refs/heads/v4b-original-image-localization' || github.ref == 'refs/heads/tinysnow-tool-only'
         shell: powershell
         run: |
           & .\_system\tests\v4b_planner_smoke.ps1
@@ -89,7 +89,8 @@ jobs:
         shell: powershell
         run: |
           $short = $env:GITHUB_SHA.Substring(0,7)
-          if ($env:GITHUB_REF -eq 'refs/heads/v4b-original-image-localization') {
+          $isV4B = ($env:GITHUB_REF -eq 'refs/heads/v4b-original-image-localization') -or ($env:GITHUB_REF -eq 'refs/heads/tinysnow-tool-only')
+          if ($isV4B) {
             $package = "TinySnow_V4-B_OriginalImageLocalization_$short.zip"
             $stageName = 'TinySnow_V4-B_Distribution'
           }
@@ -142,7 +143,7 @@ jobs:
               '_system/start/layout_memory_v3.ps1','_system/start/group_validation_v3.ps1',
               '_system/start/v4a2_menu_ux.ps1','_system/config/factual_rules_v4a1.json','_system/config/taiwan_terms_v4a2.json'
             )
-            if ($env:GITHUB_REF -eq 'refs/heads/v4b-original-image-localization') {
+            if ($isV4B) {
               $required += @(
                 '_system/start/v4b_localization.ps1','_system/start/v4b_fill_to_five.ps1',
                 '_system/start/v4b_source_image_planner.ps1','_system/start/v4b_original_image_guard.ps1',
@@ -167,5 +168,5 @@ jobs:
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.ref == 'refs/heads/v4b-original-image-localization' && 'TinySnow-V4-B-OriginalImageLocalization' || 'TinySnow-V4-A.3-FiveImagePlanner' }}
+          name: ${{ (github.ref == 'refs/heads/v4b-original-image-localization' || github.ref == 'refs/heads/tinysnow-tool-only') && 'TinySnow-V4-B-OriginalImageLocalization' || 'TinySnow-V4-A.3-FiveImagePlanner' }}
           path: ${{ env.PACKAGE_NAME }}
