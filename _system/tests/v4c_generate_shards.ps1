@@ -127,17 +127,33 @@ function Get-LegacyCompleted {
             $seq = [int]$s.sequence
             $url = ([string]$s.url).Trim()
             if ([string]::IsNullOrWhiteSpace($url)) { throw "Legacy $batch contains blank URL" }
-            if ($urlMap.ContainsKey($url)) { throw "Legacy URL duplicated across completed batches: $url" }
-            $urlMap[$url] = [pscustomobject]@{ legacy_batch=$batch; legacy_sequence=$seq; legacy_commit=$byBatch[$batch].sha }
             $legacySequences += $seq
+            if ($urlMap.ContainsKey($url)) {
+                $meta = $urlMap[$url]
+                $meta.legacy_sequences += $seq
+                $meta.legacy_batches += $batch
+                $meta.legacy_commits += $byBatch[$batch].sha
+            } else {
+                $urlMap[$url] = [pscustomobject]@{
+                    legacy_sequence=$seq
+                    legacy_sequences=@($seq)
+                    legacy_batch=$batch
+                    legacy_batches=@($batch)
+                    legacy_commit=$byBatch[$batch].sha
+                    legacy_commits=@($byBatch[$batch].sha)
+                }
+            }
         }
     }
     $ordered = @($legacySequences | Sort-Object)
-    if ($ordered.Count -ne 900) { throw "Expected 900 legacy completed sources, found $($ordered.Count)" }
+    if ($ordered.Count -ne 900) { throw "Expected 900 legacy completed sequence records, found $($ordered.Count)" }
     for ($i=1; $i -le 900; $i++) {
         if ([int]$ordered[$i-1] -ne $i) { throw "Legacy sequence reconciliation failed at $i" }
     }
-    Write-Host "LEGACY_RECONCILED=900"
+    $legacyDuplicateOccurrences = 900 - $urlMap.Count
+    Write-Host "LEGACY_SEQUENCE_RECONCILED=900"
+    Write-Host "LEGACY_UNIQUE_URLS=$($urlMap.Count)"
+    Write-Host "LEGACY_DUPLICATE_OCCURRENCES=$legacyDuplicateOccurrences"
     return $urlMap
 }
 
@@ -213,7 +229,14 @@ foreach ($src in $orderedInv) {
     if ($legacy.ContainsKey($url)) {
         $meta=$legacy[$url]
         $sem=if([int]$meta.legacy_sequence -le 850){"REVIEWED"}else{"PENDING"}
-        $seed += (New-ProgressRecord $src "LEGACY_DONE" $sem @{legacy_batch=$meta.legacy_batch;legacy_sequence=[int]$meta.legacy_sequence;legacy_commit=$meta.legacy_commit})
+        $seed += (New-ProgressRecord $src "LEGACY_DONE" $sem @{
+            legacy_batch=$meta.legacy_batch
+            legacy_batches=$meta.legacy_batches
+            legacy_sequence=[int]$meta.legacy_sequence
+            legacy_sequences=$meta.legacy_sequences
+            legacy_commit=$meta.legacy_commit
+            legacy_commits=$meta.legacy_commits
+        })
         continue
     }
     if ($existing.ContainsKey($seq) -and $terminal -contains [string]$existing[$seq].status) {
@@ -228,6 +251,8 @@ foreach ($src in $orderedInv) {
     $candidates += $src
 }
 
+$legacyMatched=@($seed|Where-Object{$_.status -eq "LEGACY_DONE"}).Count
+if($legacyMatched -ne $legacy.Count){throw "Legacy unique URL inventory reconciliation failed: matched $legacyMatched of $($legacy.Count)"}
 $selected=if($Mode -eq "Smoke"){@($candidates|Select-Object -First $SmokeCount)}else{@($candidates)}
 if(Test-Path $OutDir){Remove-Item -Recurse -Force $OutDir}
 New-Item -ItemType Directory -Force -Path $OutDir|Out-Null
@@ -255,7 +280,9 @@ Write-Utf8NoBom (Join-Path $OutDir "duplicate_map.json") (($dupeObj|ConvertTo-Js
 $summary=[ordered]@{
     mode=$Mode
     inventory_count=$orderedInv.Count
-    legacy_completed_count=@($seed|Where-Object{$_.status -eq "LEGACY_DONE"}).Count
+    legacy_sequence_coverage=900
+    legacy_completed_count=$legacyMatched
+    legacy_duplicate_occurrences=(900-$legacyMatched)
     existing_terminal_count=@($seed|Where-Object{$terminal -contains $_.status -and $_.status -ne "LEGACY_DONE" -and $_.status -ne "URL_DUPLICATE"}).Count
     url_duplicate_count=$urlDupes.Count
     candidate_count=$candidates.Count
