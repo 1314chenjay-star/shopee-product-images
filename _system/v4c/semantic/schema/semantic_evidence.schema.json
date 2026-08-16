@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tinysnow.local/schema/v4c2-semantic-evidence.schema.json",
+  "title": "TinySnow V4-C2 Semantic Evidence",
+  "type": "object",
+  "required": ["schema_version","sequence","source_id","product_id","sha256","analysis_mode","semantic_status","provenance","context","visual_evidence","claim_gate","gate","flags"],
+  "properties": {
+    "schema_version": {"const": "v4c2.semantic-evidence.1"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "product_id": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "canonical_sequence": {"type": ["integer","null"], "minimum": 1},
+    "analysis_mode": {"enum": ["LOCAL_SEMANTIC","SHA_REUSE"]},
+    "semantic_status": {"enum": ["DONE","REUSED","BLOCKED"]},
+    "provenance": {"type":"object","required":["v4c1_baseline_head","source_status","sha_verified","source_pipeline_redownload"],"properties":{"v4c1_baseline_head":{"const":"a7447b792e65780bc95aa248b9e3a2fd0466f142"},"source_status":{"type":"string"},"sha_verified":{"type":"boolean"},"byte_count_v4c1":{"type":["integer","null"],"minimum":0},"byte_count_semantic":{"type":["integer","null"],"minimum":0},"semantic_image_fetch":{"type":"boolean"},"source_pipeline_redownload":{"const":false}},"additionalProperties":true},
+    "context": {"type":"object","required":["product_name","family","subcategory","risk_fields","context_semantics"],"properties":{"product_name":{"type":"string"},"shopee_category":{"type":["string","null"]},"family":{"type":"string"},"subcategory":{"type":"string"},"risk_fields":{"type":"array","items":{"type":"string"}},"context_semantics":{"const":"listing_context_unverified_until_visual_evidence"}},"additionalProperties":true},
+    "visual_evidence": {"type":"object","required":["image","classifier","ocr","visual_consistency"],"properties":{"image":{"type":"object","required":["decoded"],"properties":{"decoded":{"type":"boolean"},"format":{"type":["string","null"]},"width_px":{"type":["integer","null"],"minimum":1},"height_px":{"type":["integer","null"],"minimum":1}},"additionalProperties":true},"classifier":{"type":"object","required":["provider","model","local_only","topk"],"properties":{"provider":{"const":"torchvision"},"model":{"const":"mobilenet_v3_small_imagenet1k_v1"},"local_only":{"const":true},"topk":{"type":"array"}},"additionalProperties":true},"ocr":{"type":"object","required":["provider","local_only","text_count","texts"],"properties":{"provider":{"const":"rapidocr_onnxruntime"},"local_only":{"const":true},"text_count":{"type":"integer","minimum":0},"texts":{"type":"array"}},"additionalProperties":true},"visual_consistency":{"enum":["SUPPORTED","UNRESOLVED","CONFLICT","NOT_AVAILABLE"]}},"additionalProperties":true},
+    "claim_gate": {"type":"object","required":["title_claim_candidates","supported_claims","held_fields","blocked_fields"],"properties":{"title_claim_candidates":{"type":"array"},"supported_claims":{"type":"array"},"held_fields":{"type":"array","items":{"type":"string"}},"blocked_fields":{"type":"array","items":{"type":"string"}}},"additionalProperties":true},
+    "gate": {"type":"object","required":["status","reasons"],"properties":{"status":{"enum":["PASS","HOLD","BLOCK"]},"reasons":{"type":"array","items":{"type":"string"}}},"additionalProperties":true},
+    "reuse": {"type":["object","null"],"properties":{"canonical_sequence":{"type":"integer","minimum":1},"canonical_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"model_inference_reused":{"const":true},"semantic_image_fetch":{"const":false}},"additionalProperties":true},
+    "flags": {"type":"object","required":["image_generation_called","tiny_snow_api_called","paid_api_called","vision_api_called","local_model_only"],"properties":{"image_generation_called":{"const":false},"tiny_snow_api_called":{"const":false},"paid_api_called":{"const":false},"vision_api_called":{"const":false},"local_model_only":{"const":true}},"additionalProperties":true}
+  },
+  "additionalProperties": true
+}
