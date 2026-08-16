@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tinysnow.local/schema/v4c2-preservation.schema.json",
+  "title": "TinySnow V4-C2.0 Image Preservation",
+  "type": "object",
+  "required": ["schema_version","sequence","source_id","product_id","image_index","image_type","sha256","decision","localization_state","evidence","checkpoint","flags"],
+  "properties": {
+    "schema_version": {"const": "v4c2.0.image-preservation.1"},
+    "sequence": {"type":"integer","minimum":1},
+    "source_id": {"type":"string"},
+    "product_id": {"type":"string"},
+    "image_index": {"type":"integer","minimum":0},
+    "image_type": {"type":"string"},
+    "sha256": {"type":"string","pattern":"^[a-f0-9]{64}$"},
+    "decision": {"enum":["PRESERVE","SEMANTIC_REQUIRED","BLOCK"]},
+    "localization_state": {"enum":["HISTORY_CONFIRMED","TRADITIONAL_CONFIRMED","NO_CHINESE_TEXT","SIMPLIFIED_DETECTED","MIXED_SCRIPT","CHINESE_AMBIGUOUS","OCR_FAILED","SOURCE_FAILED"]},
+    "evidence": {
+      "type":"object",
+      "required":["method","ocr_text_count","traditional_signal_count","simplified_signal_count","chinese_char_count","sha_reuse_from_sequence"],
+      "properties": {
+        "method":{"enum":["SHA_HISTORY","LOCAL_OCR","SHA_REUSE"]},
+        "ocr_text_count":{"type":"integer","minimum":0},
+        "traditional_signal_count":{"type":"integer","minimum":0},
+        "simplified_signal_count":{"type":"integer","minimum":0},
+        "chinese_char_count":{"type":"integer","minimum":0},
+        "sha_reuse_from_sequence":{"type":["integer","null"],"minimum":1},
+        "texts":{"type":"array"}
+      },
+      "additionalProperties":true
+    },
+    "checkpoint":{"type":"object","required":["terminal","semantic_required"],"properties":{"terminal":{"const":true},"semantic_required":{"type":"boolean"}},"additionalProperties":true},
+    "flags":{"type":"object","required":["image_generation_called","tiny_snow_api_called","paid_api_called","source_pipeline_redownload"],"properties":{"image_generation_called":{"const":false},"tiny_snow_api_called":{"const":false},"paid_api_called":{"const":false},"source_pipeline_redownload":{"const":false}},"additionalProperties":true}
+  },
+  "additionalProperties":true
+}
