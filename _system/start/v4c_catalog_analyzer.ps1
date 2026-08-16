@@ -5,7 +5,6 @@
 . (Join-Path $PSScriptRoot 'v4c_product_evidence.ps1')
 . (Join-Path $PSScriptRoot 'v4c_category_router.ps1')
 . (Join-Path $PSScriptRoot 'v4c_structural_guard.ps1')
-. (Join-Path $PSScriptRoot 'v4c_product_body_overrides.ps1')
 . (Join-Path $PSScriptRoot 'v4c_image_decision.ps1')
 . (Join-Path $PSScriptRoot 'v4c_adaptive_five_planner.ps1')
 . (Join-Path $PSScriptRoot 'v4c_review_gate.ps1')
@@ -40,8 +39,9 @@ function Invoke-V4C0CatalogAnalysis($Products) {
     foreach ($product in @($Products)) {
         $analysis = New-V4CExcelOnlyAnalysis $product
         $baseResult = Invoke-V4C0Analysis $product $analysis
+        # Product-body correction has exactly one authority: v4c_structural_guard.ps1.
+        # Do not apply a second override layer after this point; duplicate rewrites make full-catalog routing unstable.
         $route = Get-V4CFinalCategoryRoute $product $baseResult.evidence
-        $route = Resolve-V4CProductBodyOverride $product $baseResult.evidence $route
         $decisions = @(Get-V4CImageDecisions $analysis $baseResult.evidence $route)
         $plan = New-V4CAdaptiveFivePlan $product $baseResult.evidence $route $decisions
         $gate = Get-V4CReviewGate $product $baseResult.evidence $route
