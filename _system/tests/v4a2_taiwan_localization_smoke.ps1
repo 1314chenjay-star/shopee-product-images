@@ -3,6 +3,10 @@ $ErrorActionPreference = 'Stop'
 
 $systemRoot = Split-Path $PSScriptRoot -Parent
 $startRoot = Join-Path $systemRoot 'start'
+. (Join-Path $startRoot 'api_v2.ps1')
+. (Join-Path $startRoot 'excel_reader.ps1')
+. (Join-Path $startRoot 'selection_v2.ps1')
+. (Join-Path $startRoot 'image_pipeline_v2.ps1')
 . (Join-Path $startRoot 'v4a1_guard.ps1')
 
 function Assert-True([bool]$Condition, [string]$Message) {
