@@ -1,0 +1,26 @@
+{
+  "schema_version": "v4c2.3.gap-summary.1",
+  "passed": true,
+  "total": 1378,
+  "canary_count": 100,
+  "remaining_after_canary": 1278,
+  "gap_counts": {
+    "SOURCE_CONFLICT": 50,
+    "MISSING_VISUAL_EVIDENCE": 1378
+  },
+  "action_counts": {
+    "USE_B001_B018_VISUAL": 221,
+    "FETCH_VISUAL": 1144,
+    "BLOCK_CONFLICT": 13
+  },
+  "evidence_already_reusable": 0,
+  "source_metadata_sha_reused": 1378,
+  "visual_fetch_required": 1144,
+  "b001_b018_artifacts_checked": 18,
+  "b001_b018_sequence_coverage": "1-900",
+  "v4c1_workflow_artifacts_checked": 2,
+  "inventory_rebuilt": false,
+  "known_sha_recomputed": false,
+  "historical_ocr_rerun": false,
+  "semantic_140_rerun": false
+}

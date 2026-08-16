@@ -1,0 +1,30 @@
+{
+  "schema_version": "v4c2.3.hydration-final-summary.1",
+  "passed": true,
+  "total": 1378,
+  "evidence_already_reusable": 0,
+  "visual_fetch_required": 1144,
+  "fetch_attempted": 1144,
+  "fetched": 1144,
+  "sha_mismatch_source_changed": 0,
+  "preserve": 217,
+  "needs_localization": 927,
+  "partial_safe": 901,
+  "hold": 247,
+  "block": 13,
+  "pass": 0,
+  "remaining": 0,
+  "semantic_actually_executed": 0,
+  "api_flags": {
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "paid_api_called": false,
+    "vision_api_called": false
+  },
+  "historical_retests": {
+    "v4c1": false,
+    "v4c2_0": false,
+    "v4c2_1": false,
+    "v4c2_2_gate": false
+  }
+}
