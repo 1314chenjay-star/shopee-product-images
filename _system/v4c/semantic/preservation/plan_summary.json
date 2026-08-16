@@ -1,0 +1,14 @@
+﻿{
+    "schema_version":  "v4c2.preservation-semantic-plan.1",
+    "preservation_gate_passed":  true,
+    "filtered_queue_count":  140,
+    "worker_count":  139,
+    "sha_reuse_count":  1,
+    "same_product_sha_reuse_only":  true,
+    "cross_product_sha_reuse_for_claim_gate":  false,
+    "source_pipeline_redownload":  false,
+    "image_generation_called":  false,
+    "tiny_snow_api_called":  false,
+    "paid_api_called":  false,
+    "vision_api_called":  false
+}

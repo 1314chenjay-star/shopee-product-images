@@ -1,0 +1,18 @@
+{
+  "schema_version": "v4c2.semantic-evidence.1",
+  "manifest_count": 139,
+  "checkpoint_existing_terminal": 0,
+  "checkpoint_skipped_this_run": 0,
+  "processed_this_run": 20,
+  "covered_after_run": 20,
+  "gate_pass_this_run": 0,
+  "gate_hold_this_run": 20,
+  "gate_block_this_run": 0,
+  "elapsed_seconds": 39.714,
+  "image_generation_called": false,
+  "tiny_snow_api_called": false,
+  "paid_api_called": false,
+  "vision_api_called": false,
+  "local_model_only": true,
+  "source_pipeline_redownload": false
+}

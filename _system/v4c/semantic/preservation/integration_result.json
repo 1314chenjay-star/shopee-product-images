@@ -1,0 +1,19 @@
+﻿{
+    "phase":  "PreservationGate+SemanticQueueIntegration",
+    "passed":  true,
+    "preservation_image_count":  167,
+    "semantic_queue_count":  140,
+    "mixed_partial_products":  17,
+    "preserved_images_routed_to_semantic":  0,
+    "blocked_images_routed_to_semantic":  0,
+    "stable_head":  "5d49f061e140813b3d229520e9e530f86b27b640",
+    "stable_head_unchanged":  true,
+    "v4c1_baseline_head":  "a7447b792e65780bc95aa248b9e3a2fd0466f142",
+    "v4c1_protected_files_unchanged":  true,
+    "v4c1_turbo_retested":  false,
+    "v4b_stable_retested":  false,
+    "image_generation_called":  false,
+    "tiny_snow_api_called":  false,
+    "paid_api_called":  false,
+    "source_pipeline_redownload":  false
+}

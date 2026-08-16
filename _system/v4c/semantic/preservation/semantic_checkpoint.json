@@ -1,0 +1,16 @@
+﻿{
+    "schema_version":  "v4c2.preservation-filtered-checkpoint.1",
+    "phase":  "PRESERVATION_FILTERED_COMPLETE",
+    "v4c1_baseline_head":  "a7447b792e65780bc95aa248b9e3a2fd0466f142",
+    "filtered_queue_count":  140,
+    "local_semantic_count":  139,
+    "sha_reuse_count":  1,
+    "terminal_count":  140,
+    "remaining_count":  0,
+    "progress_sha256":  "c48346e2db8a6b3f89f5dc342cc5b351de56077f201c1add8ce36a59420ae93c",
+    "image_generation_called":  false,
+    "tiny_snow_api_called":  false,
+    "paid_api_called":  false,
+    "vision_api_called":  false,
+    "source_pipeline_redownload":  false
+}

@@ -1,0 +1,19 @@
+﻿{
+    "schema_version":  "v4c2.preservation-filtered-summary.1",
+    "phase":  "PRESERVATION_FILTERED_COMPLETE",
+    "filtered_queue_count":  140,
+    "local_semantic_count":  139,
+    "sha_reuse_count":  1,
+    "gate_pass":  0,
+    "gate_hold":  140,
+    "gate_block":  0,
+    "terminal_count":  140,
+    "remaining_semantic":  0,
+    "same_product_sha_reuse_only":  true,
+    "image_generation_called":  false,
+    "tiny_snow_api_called":  false,
+    "paid_api_called":  false,
+    "vision_api_called":  false,
+    "local_model_only":  true,
+    "source_pipeline_redownload":  false
+}
