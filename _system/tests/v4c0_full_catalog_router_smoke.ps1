@@ -32,6 +32,20 @@ Assert-Route '50815605686' 'SUP 衝浪板專用劃槳 充氣船橡皮艇划水�
 Assert-Route '50915745061' '戶外沙灘球遊戲組 便攜式圓網運動遊戲 成人親子休閒活動' 'Sports & Outdoors/Outdoor Recreation' 'sports' 'outdoor_games' | Out-Null
 Assert-Route 'WATER-SAFE' '大浮力磯釣救生衣 海釣釣魚浮力背心 船用作業救生衣' 'Sports & Outdoors/Water Sports' 'sports' 'water_safety_gear' | Out-Null
 
+# Ambiguity regressions discovered only after the complete 375-product pass.
+# In Taiwan copy, billiards listings may contain "桌球桿"; Billiards category + cue nouns must beat table-tennis keyword matching.
+Assert-Route '57365605625' '中式美式撞球杆 10.5mm公桿通杆 黑八桌球一體桿 球廳專用小頭桿' 'Sports & Outdoors/Billiards' 'sports' 'billiards' | Out-Null
+Assert-Route '56115605586' '撞球桿 小頭中頭大頭 斯諾克黑八專用 手工製作桌球桿 10mm 11.5mm' 'Sports & Outdoors/Billiards' 'sports' 'billiards' | Out-Null
+Assert-Route '52365599928' '撞球桿 開球衝桿 胡跳木衝跳一體桿 短小跳球專用杆 桌球配件' 'Sports & Outdoors/Billiards' 'sports' 'billiards' | Out-Null
+Assert-Route '50565615202' '碳素中式黑八球杆 10.2MM小頭一體通桿 碳纖維斯諾克桌球杆' 'Sports & Outdoors/Billiards' 'sports' 'billiards' | Out-Null
+
+# Incidental accessory/protection words must not override the primary product body.
+Assert-Route '47465669144' '全碳素壁球拍 超輕一體壁球拍 成人專業訓練壁球拍 送壁球手膠護腕' 'Sports & Outdoors/Squash' 'sports' 'racket_sports' | Out-Null
+Assert-Route '58065693152' '泰拳踢靶 小腿訓練靶 低掃腿靶 散打格鬥訓練護具 成人搏擊陪練用品' 'Sports & Outdoors/Boxing/Punching Bags & Paddings' 'sports' 'combat_martial_arts' | Out-Null
+Assert-Route '50565689852' '跆拳道腳靶 成人踢腿訓練靶 散打泰拳格鬥練習靶 加厚防撞護具' 'Sports & Outdoors/Boxing/Punching Bags & Paddings' 'sports' 'combat_martial_arts' | Out-Null
+Assert-Route '49215708682' '拳擊手靶 反應速度訓練靶 跆拳道踢靶 泰拳散打陪練靶 MMA格鬥訓練器材 成人運動護具' 'Sports & Outdoors/Boxing/Punching Bags & Paddings' 'sports' 'combat_martial_arts' | Out-Null
+Assert-Route '41233382286' '專業棒球手套 加厚軟式手套 成人專用 十字檔工字檔 T網球擋' 'Sports & Outdoors/Baseball & Softball' 'sports' 'ball_sports' | Out-Null
+
 # Mixed catalog safety: generic outdoor wording still cannot turn home/garden into sports.
 Assert-Route '53415651688' '太陽能戶外庭院燈 拐杖造型地埋景觀燈 花園草坪LED裝飾燈' 'Home & Living/Garden' 'home_garden' 'lighting' | Out-Null
 Assert-Route '40983371866' '太陽能自動澆花器 免插電滴灌系統 陽台定時澆水器' 'Home & Living/Garden' 'home_garden' 'irrigation' | Out-Null
