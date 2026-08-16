@@ -1,0 +1,86 @@
+name: Coupang Existing Browser V1.8 Full Test
+
+on:
+  push:
+    branches:
+      - coupang-existing-browser-v1
+  workflow_dispatch:
+
+jobs:
+  full-test:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate manifest
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $manifest = Get-Content 'coupang_browser_extension/manifest.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($manifest.manifest_version -ne 3) { throw 'Manifest must be V3.' }
+          if ($manifest.version -ne '1.8.0') { throw 'Unexpected extension version.' }
+          if ($manifest.background.service_worker -ne 'background_v18_entry.js') { throw 'V1.8 entry worker not active.' }
+          if ($manifest.action.default_popup -ne 'popup_v18.html') { throw 'V1.8 popup not active.' }
+          foreach ($p in @('activeTab','tabs','scripting','debugger','downloads','storage','unlimitedStorage','alarms')) {
+            if ($manifest.permissions -notcontains $p) { throw "Missing permission: $p" }
+          }
+          Write-Host 'Manifest OK'
+
+      - name: JavaScript syntax check
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node --check coupang_browser_extension/background_v18.js
+          node --check coupang_browser_extension/background_v18_entry.js
+          node --check coupang_browser_extension/popup_v18.js
+
+      - name: V1.8 unit tests
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node _system/tests/coupang_browser_extension_v18_test.js
+
+      - name: Smart-route pagination monitor guard
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bg = Get-Content 'coupang_browser_extension/background_v18.js' -Raw -Encoding UTF8
+          $entry = Get-Content 'coupang_browser_extension/background_v18_entry.js' -Raw -Encoding UTF8
+          $popup = Get-Content 'coupang_browser_extension/popup_v18.js' -Raw -Encoding UTF8
+          foreach ($term in @('NAV_GROUPS','products','price','orders','returns','exchange','settlement','growth','insights','promotions','discoverRelevantRoutes','goToNextProductPage','productCompletion','MONITOR_ALARM','chrome.alarms','fullSync','quickSync','enableMonitor')) {
+            if (-not $bg.Contains($term) -and -not $entry.Contains($term) -and -not $popup.Contains($term)) { throw "Missing V1.8 primitive: $term" }
+          }
+          if (-not $entry.Contains("method: 'page_select'")) { throw 'Bottom-right/select pagination fallback missing.' }
+          if (-not $bg.Contains("rowCount>=expectedTotal")) { throw 'Expected-total completeness guard missing.' }
+          Write-Host 'Smart route, pagination and monitor guard OK'
+
+      - name: Credential-access guard
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $all = (Get-Content 'coupang_browser_extension/background_v18.js' -Raw -Encoding UTF8) + (Get-Content 'coupang_browser_extension/background_v18_entry.js' -Raw -Encoding UTF8)
+          foreach ($term in @('chrome.cookies','Network.getAllCookies','Network.getCookies','Network.setExtraHTTPHeaders')) {
+            if ($all.Contains($term)) { throw "Forbidden credential-access primitive present: $term" }
+          }
+          Write-Host 'Credential-access guard OK'
+
+      - name: Prepare single-layer release folder
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Existing_Browser_V1_8'
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
+          Copy-Item 'coupang_browser_extension' -Destination $out -Recurse -Force
+          if (Get-ChildItem -LiteralPath $out -Recurse -Filter '*.zip') { throw 'Nested ZIP detected.' }
+          if (-not (Test-Path (Join-Path $out 'coupang_browser_extension/manifest.json'))) { throw 'Manifest missing.' }
+          Write-Host 'Single-layer release folder OK'
+
+      - name: Upload verified single-layer build
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow_Coupang_Existing_Browser_V1_8_VERIFIED
+          path: ${{ runner.temp }}\TinySnow_Coupang_Existing_Browser_V1_8\*
+          if-no-files-found: error
+          include-hidden-files: true
