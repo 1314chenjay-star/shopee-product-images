@@ -67,7 +67,10 @@ jobs:
           foreach ($term in $required) {
             if (-not $bg.Contains($term) -and -not $popup.Contains($term)) { throw "V1.7 primitive missing: $term" }
           }
-          if (-not $popup.Contains('商品筆數')) { throw 'Popup product-count status missing.' }
+          $popupRequired = @('productStatusText','products.rowCount','products.pageCount','products.complete')
+          foreach ($term in $popupRequired) {
+            if (-not $popup.Contains($term)) { throw "Popup product-status primitive missing: $term" }
+          }
           Write-Host 'Route and pagination guard OK'
 
       - name: Credential-access guard
