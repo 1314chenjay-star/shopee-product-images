@@ -12,7 +12,7 @@ function Get-CoupangInstalledBrowsersV2 {
         $items += [pscustomobject]@{
             Browser = 'Edge'
             ProcessName = 'msedge'
-            Executable = $edgeExeCandidates[0]
+            Executable = [string]$edgeExeCandidates[0]
             UserData = $edgeUserData
         }
     }
@@ -27,12 +27,43 @@ function Get-CoupangInstalledBrowsersV2 {
         $items += [pscustomobject]@{
             Browser = 'Chrome'
             ProcessName = 'chrome'
-            Executable = $chromeExeCandidates[0]
+            Executable = [string]$chromeExeCandidates[0]
             UserData = $chromeUserData
         }
     }
 
     return @($items)
+}
+
+function Resolve-CoupangBrowserExecutableV3([object]$Meta) {
+    if ($Meta -and $Meta.executable) {
+        $saved = [string]$Meta.executable
+        if ($saved -and (Test-Path -LiteralPath $saved)) { return $saved }
+    }
+
+    $preferredBrowser = ''
+    if ($Meta -and $Meta.browser) { $preferredBrowser = [string]$Meta.browser }
+    $installed = @(Get-CoupangInstalledBrowsersV2)
+
+    if ($preferredBrowser) {
+        $match = @($installed | Where-Object { $_.Browser -eq $preferredBrowser })
+        if ($match.Count -gt 0 -and (Test-Path -LiteralPath ([string]$match[0].Executable))) {
+            return [string]$match[0].Executable
+        }
+    }
+
+    foreach ($browser in $installed) {
+        $candidate = [string]$browser.Executable
+        if ($candidate -and (Test-Path -LiteralPath $candidate)) { return $candidate }
+    }
+
+    try {
+        $fallback = Get-CoupangBrowserExecutableV1
+        if ($fallback -and (Test-Path -LiteralPath ([string]$fallback))) { return [string]$fallback }
+    }
+    catch {}
+
+    throw '找不到可用的 Microsoft Edge 或 Google Chrome。請確認瀏覽器仍安裝在這台電腦。'
 }
 
 function Get-CoupangProfileDisplayNameV2([string]$ProfilePath, [string]$Fallback) {
@@ -58,7 +89,7 @@ function Get-CoupangExistingProfilesV2 {
             $rows += [pscustomobject]@{
                 Browser = $browser.Browser
                 ProcessName = $browser.ProcessName
-                Executable = $browser.Executable
+                Executable = [string]$browser.Executable
                 UserData = $browser.UserData
                 ProfileDirectory = $dir.Name
                 ProfileName = Get-CoupangProfileDisplayNameV2 $dir.FullName $dir.Name
@@ -120,11 +151,12 @@ function Copy-CoupangBrowserProfileV2([object]$Profile) {
         throw ("複製瀏覽器 Profile 失敗，robocopy 代碼：{0}" -f $process.ExitCode)
     }
 
+    $resolvedExecutable = Resolve-CoupangBrowserExecutableV3 $Profile
     $meta = [pscustomobject]@{
-        browser = $Profile.Browser
-        executable = $Profile.Executable
-        profile_directory = $Profile.ProfileDirectory
-        profile_name = $Profile.ProfileName
+        browser = [string]$Profile.Browser
+        executable = [string]$resolvedExecutable
+        profile_directory = [string]$Profile.ProfileDirectory
+        profile_name = [string]$Profile.ProfileName
         imported_at = (Get-Date).ToString('o')
     }
     $meta | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $cloneRoot 'TinySnow_profile.json') -Encoding UTF8
@@ -150,7 +182,15 @@ function Start-CoupangImportedProfileV2 {
     $cloneRoot = Join-Path $workspace 'browser_profile_existing'
     $meta = Get-CoupangImportedProfileMetaV2
     if (-not $meta) { throw '尚未匯入現有瀏覽器登入狀態。請先選「使用目前 Edge/Chrome 已登入狀態」。' }
-    if (-not (Test-Path ([string]$meta.executable))) { throw '原瀏覽器程式已不存在，請重新匯入。' }
+
+    $executable = Resolve-CoupangBrowserExecutableV3 $meta
+
+    $metaPath = Join-Path $cloneRoot 'TinySnow_profile.json'
+    if ([string]$meta.executable -ne $executable) {
+        $meta.executable = $executable
+        $meta | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $metaPath -Encoding UTF8
+        Write-Host '已自動修復瀏覽器程式位置。' -ForegroundColor Cyan
+    }
 
     if (Wait-CoupangCdpV1 -TimeoutSeconds 1) {
         Write-Host 'TinySnow Coupang 瀏覽器已經在執行。' -ForegroundColor Green
@@ -165,7 +205,7 @@ function Start-CoupangImportedProfileV2 {
         '--new-window',
         'https://wing.coupang.com/'
     )
-    Start-Process -FilePath ([string]$meta.executable) -ArgumentList $args | Out-Null
+    Start-Process -FilePath $executable -ArgumentList $args | Out-Null
 
     if (-not (Wait-CoupangCdpV1 -TimeoutSeconds 20)) {
         throw '已啟動瀏覽器，但 TinySnow 無法連接本機控制埠 9333。'
