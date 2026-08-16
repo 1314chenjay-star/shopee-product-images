@@ -32,6 +32,12 @@ Assert-Route '28195530371' '桌球拍貼膠工具 滾膠棒 壓膠棍 球拍膠�
 # Table-tennis wording is context; the primary product body is a ball-storage container/bag.
 Assert-Route '28845515575' '桌球收納盒 乒乓球桶 多球訓練球罐 大容量桌球整理盒 防摔耐磨 運動訓練用品 球館教練專用' 'Sports & Outdoors/Table Tennis/Others' 'bags' 'sports_bag'
 
+# Basketball is design context; the primary product body is a necklace/jewelry item.
+Assert-Route '49865764122' '籃球項鍊 運動風吊墜 籃球迷紀念飾品 男生生日禮物 球類愛好者收藏小禮品' 'Sports & Outdoors/Sports & Outdoor Recreation Equipments/Basketball/Others' 'jewelry' 'jewelry'
+
+# A kicking target is combat training equipment, not wearable protective gear.
+Assert-Route '50565689852' '跆拳道腳靶 成人踢腿訓練靶 散打泰拳格鬥練習靶 加厚防撞護具 拳擊訓練器材 家庭運動用品' 'Sports & Outdoors/Sports & Outdoor Recreation Equipments/Boxing & Martial Arts/Punching Bags & Paddings' 'sports' 'combat_martial_arts'
+
 # Negative control: a product whose actual body is explicitly a vehicle purifier must remain auto.
 Assert-Route '42383385337' '太陽能車載淨化器 免插電自動運行 臭氧除味消毒機 車內除臭除菌裝置' 'Sports & Outdoors/Camping & Hiking/Others' 'auto' 'auto_accessory'
 
