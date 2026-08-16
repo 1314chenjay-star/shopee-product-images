@@ -1,0 +1,4 @@
+V4-B safety R2 live trigger
+Scope: 580 detail4 + 529 detail4 only
+Reason: suppress conflicting source quantities and source-seller promises
+Do not merge.

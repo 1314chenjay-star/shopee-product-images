@@ -1,0 +1,1 @@
+Trigger only the three remaining TinySnow slots for product 42833435408: detail2, detail3, detail4. R14 main and R13 detail1 are locked and must not be regenerated.

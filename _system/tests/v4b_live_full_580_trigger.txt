@@ -1,0 +1,3 @@
+V4-B full 580 end-to-end trigger
+Scope: real selected-product pipeline -> download -> analyze -> plan -> main + detail1-4 -> validate -> five outputs
+Do not merge.

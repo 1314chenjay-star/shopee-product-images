@@ -215,12 +215,18 @@ function Get-CheckpointV2([string]$ProductId) {
                 Add-Member -InputObject $checkpoint -NotePropertyName $name -NotePropertyValue $defaults[$name]
             }
         }
+        foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
+            $slotState = $checkpoint.states.$slot
+            if (-not ($slotState.PSObject.Properties.Name -contains 'layout_retries')) {
+                Add-Member -InputObject $slotState -NotePropertyName 'layout_retries' -NotePropertyValue 0
+            }
+        }
         return $checkpoint
     }
 
     $states = [ordered]@{}
     foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
-        $states[$slot] = [ordered]@{ status='pending'; retries=0; last_error='' }
+        $states[$slot] = [ordered]@{ status='pending'; retries=0; layout_retries=0; last_error='' }
     }
     $checkpoint = [pscustomobject]@{
         product_id = $ProductId
@@ -339,14 +345,112 @@ function Test-MainImageFitnessV2([string]$Path) {
     finally { $bitmap.Dispose() }
 }
 
+function Get-LayoutSimilarityThresholdV2 {
+    return 0.90
+}
+
+function Get-MaxLayoutRetriesV2 {
+    return 2
+}
+
+function Get-LayoutDirectionV2([string]$Slot, [int]$LayoutAttempt) {
+    $layouts = @{
+        main = @('非對稱封面式：大商品主體搭配醒目標題區', '中央商品加周圍短賣點', '斜向動態封面式')
+        detail1 = @('上下分區式：商品總覽與核心賣點分層', '中央商品加周圍資訊', '左右分欄式但不可沿用已完成圖片骨架')
+        detail2 = @('拆解式：配件或局部細節分散標註', '局部放大式：主體搭配不同位置的細節視窗', '多卡片資訊式：僅列原圖確認的結構或內含物')
+        detail3 = @('場景主畫面式：使用動作佔主要畫面', '步驟流程式：依可確認方式呈現操作順序', '上下分區式：情境與操作提示分開')
+        detail4 = @('規格資訊式：只使用可靠規格，否則改提醒資訊', '左右分欄式：商品與可靠選購資訊分開', '多卡片補充資訊式：不得猜測數字')
+    }
+    $choices = @($layouts[$Slot])
+    if ($choices.Count -eq 0) { $choices = @('上下分區式', '中央商品加周圍資訊', '左右分欄式') }
+    return [string]$choices[$LayoutAttempt % $choices.Count]
+}
+
+function Get-LayoutRetryPromptV2([string]$Slot, [int]$LayoutAttempt) {
+    $direction = Get-LayoutDirectionV2 $Slot $LayoutAttempt
+    if ($LayoutAttempt -eq 0) {
+        return ("`n本張指定版型：{0}。必須避開整組已完成圖片的商品位置、標題位置、資訊區、人物、場景與大色塊骨架。" -f $direction)
+    }
+    return ("`n版型去重重生：本次構圖不得沿用上一張。改用「{0}」，明顯改變商品位置、文字區位置、左右／上下結構、大色塊與畫面骨架；角色任務與事實規則仍須完全遵守。" -f $direction)
+}
+
+function Get-LayoutFingerprintV2([string]$Path) {
+    Add-Type -AssemblyName System.Drawing
+    $source = New-Object Drawing.Bitmap $Path
+    $small = New-Object Drawing.Bitmap 12,12
+    $graphics = [Drawing.Graphics]::FromImage($small)
+    try {
+        $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBilinear
+        $graphics.DrawImage($source, 0, 0, 12, 12)
+        $gray = @()
+        $histogram = @(0,0,0,0,0,0,0,0)
+        for ($y = 0; $y -lt 12; $y++) {
+            for ($x = 0; $x -lt 12; $x++) {
+                $pixel = $small.GetPixel($x, $y)
+                $value = [double](0.299 * $pixel.R + 0.587 * $pixel.G + 0.114 * $pixel.B)
+                $gray += $value
+                $bin = [Math]::Min(7, [int]($value / 32))
+                $histogram[$bin]++
+            }
+        }
+        $edges = @()
+        for ($y = 0; $y -lt 12; $y++) {
+            for ($x = 0; $x -lt 12; $x++) {
+                $index = $y * 12 + $x
+                $right = if ($x -lt 11) { [Math]::Abs($gray[$index] - $gray[$index + 1]) } else { 0 }
+                $down = if ($y -lt 11) { [Math]::Abs($gray[$index] - $gray[$index + 12]) } else { 0 }
+                $edges += [Math]::Min(255, $right + $down)
+            }
+        }
+        return [pscustomobject]@{ gray=@($gray); edges=@($edges); histogram=@($histogram) }
+    }
+    finally {
+        $graphics.Dispose()
+        $small.Dispose()
+        $source.Dispose()
+    }
+}
+
+function Get-LayoutSimilarityV2([string]$FirstPath, [string]$SecondPath) {
+    $first = Get-LayoutFingerprintV2 $FirstPath
+    $second = Get-LayoutFingerprintV2 $SecondPath
+    $grayDifference = 0.0
+    $edgeDifference = 0.0
+    for ($i = 0; $i -lt $first.gray.Count; $i++) {
+        $grayDifference += [Math]::Abs($first.gray[$i] - $second.gray[$i])
+        $edgeDifference += [Math]::Abs($first.edges[$i] - $second.edges[$i])
+    }
+    $graySimilarity = 1.0 - ($grayDifference / ($first.gray.Count * 255.0))
+    $edgeSimilarity = 1.0 - ($edgeDifference / ($first.edges.Count * 255.0))
+    $histogramDifference = 0.0
+    for ($i = 0; $i -lt 8; $i++) { $histogramDifference += [Math]::Abs($first.histogram[$i] - $second.histogram[$i]) }
+    $histogramSimilarity = 1.0 - ($histogramDifference / (2.0 * $first.gray.Count))
+    return [Math]::Max(0.0, [Math]::Min(1.0, 0.60 * $graySimilarity + 0.25 * $edgeSimilarity + 0.15 * $histogramSimilarity))
+}
+
+function Test-LayoutDiversityV2([string]$CandidatePath, [string[]]$ExistingPaths) {
+    $highest = 0.0
+    $matched = ''
+    foreach ($existingPath in @($ExistingPaths)) {
+        if (-not (Test-Path -LiteralPath $existingPath -PathType Leaf)) { continue }
+        $similarity = Get-LayoutSimilarityV2 $CandidatePath $existingPath
+        if ($similarity -gt $highest) { $highest = $similarity; $matched = $existingPath }
+    }
+    return [pscustomobject]@{
+        high_similarity = ($highest -ge (Get-LayoutSimilarityThresholdV2))
+        similarity = $highest
+        compared_path = $matched
+    }
+}
+
 function Get-CompactTransportPromptV2([string]$Slot, [string]$Name) {
-    $common = '只依商品名稱與參考圖可確認內容；商品外觀、顏色、數量、結構與可見配件必須忠實。禁止捏造尺寸、材質、功能、品牌、型號、認證、保固、贈品或數據；資訊不明就省略。文字使用自然台灣繁體中文，不用中國大陸電商詞。'
+    $common = '商品名稱僅供辨識；所有數字、尺寸、規格、材質、功能、品牌、型號、配件、贈品與內含物都只能使用參考圖清楚且一致支持的內容。商品外觀、顏色、數量與結構必須忠實；看不清、資料衝突或無法確認就省略，不得猜測。文字使用自然台灣繁體中文，不用中國大陸電商詞。'
     switch ($Slot) {
         'main' { $role = '製作1:1台灣蝦皮封面主圖。商品清楚完整約佔55%到75%，有一個醒目主標題與2到4個可驗證短賣點，背景有層次，手機縮圖可讀。' }
         'detail1' { $role = '製作1:1詳情圖，整理3到5個可確認核心賣點，不與主圖只換背景重複。' }
-        'detail2' { $role = '製作1:1詳情圖，呈現可確認的結構、配件與可見細節。' }
-        'detail3' { $role = '製作1:1詳情圖，呈現真實合理的使用方式與適用情境，不暗示未證實效果。' }
-        'detail4' { $role = '製作1:1詳情圖，整理可確認的適用對象、注意事項或選購重點；尺寸不能確認就不要畫尺寸圖。' }
+        'detail2' { $role = '製作1:1拆解或局部放大詳情圖，優先呈現原圖可確認的結構、配件、贈品與內含物；沒有就不得增加。' }
+        'detail3' { $role = '製作1:1場景或步驟詳情圖，呈現真實合理的使用動作與操作方式，不做靜態商品海報。' }
+        'detail4' { $role = '製作1:1規格或補充資訊圖，優先呈現原圖清楚支持的尺寸與規格；數值、單位或部位不能確認就不畫尺寸圖，改做提醒。' }
         default { $role = '製作1:1補充詳情圖，只呈現可確認內容。' }
     }
     return ('商品名稱僅供辨識：' + $Name + '。' + $role + $common)
@@ -405,16 +509,19 @@ function Start-SingleProductOptimizationV2($Config) {
     $errors = @()
     $generated = 0
     $hashes = @{}
+    $acceptedPaths = @()
     $started = Get-Date
 
     foreach ($slot in @('main','detail1','detail2','detail3','detail4')) {
         $target = Join-Path $finalDir ($productId + '_' + $slot + '.jpg')
+        $candidateTarget = $target + '.candidate'
         $state = $checkpoint.states.$slot
 
         if ($state.status -eq 'done' -and (Test-Path -LiteralPath $target)) {
             try {
                 $existing = Get-ImageInfoV2 $target
                 $hashes[$existing.hash] = $true
+                $acceptedPaths += $target
                 continue
             }
             catch { $state.status = 'pending' }
@@ -423,31 +530,103 @@ function Start-SingleProductOptimizationV2($Config) {
         $labels = @{ main='主圖生成中'; detail1='詳情圖1生成中'; detail2='詳情圖2生成中'; detail3='詳情圖3生成中'; detail4='詳情圖4生成中' }
         $state.status = 'generating'
         Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("正在生成 {0}" -f $slot)
-        $prompt = Get-PromptV2 $slot ([string]$product.product_name)
+        $basePrompt = Get-PromptV2 $slot ([string]$product.product_name)
         $sourceRefs = [string[]]@(Get-ReferencesForSlotV2 $analysis $slot $maximum)
         $refs = [string[]]@(Get-PreparedApiReferencesV2 $productId $sourceRefs)
-        $success = $false; $transportDegraded = $false; $lowQualityRejected = $false
-        for ($attempt = 1; $attempt -le 3; $attempt++) {
-            $temporary=$null; $attemptRefs=[string[]]@($refs); $attemptQuality='medium'
-            if($transportDegraded){ if($attempt -ge 3){$attemptRefs=[string[]]@($refs|Select-Object -First 1)}; if(-not $lowQualityRejected){$attemptQuality='low'} }
-            $attemptPrompt=$prompt; if($transportDegraded){$attemptPrompt=Get-CompactTransportPromptV2 $slot ([string]$product.product_name)}
-            if($slot -eq 'main' -and $attempt -gt 1 -and -not $transportDegraded){$attemptPrompt+="`n前一次主圖適配檢查未通過。請加大商品主體、加強明確主標題與2到4個可確認的短賣點，避免大片空白，務必做成比詳情圖更鮮明的電商封面。"}
-            $attemptStarted=Get-Date; Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 第 {1}/3 次｜{2}｜{3} 張壓縮參考圖" -f $slot,$attempt,$attemptQuality,@($attemptRefs).Count)
-            try {
-                $temporary=Invoke-ImageEditMultiV2 $Config $attemptRefs $attemptPrompt '1024x1024' $attemptQuality; $info=Convert-ToFinalJpegV2 $temporary $target; Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue; $temporary=$null
-                if($hashes.ContainsKey($info.hash)){Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue; throw '生成圖片與本商品先前成品完全重複。'}
-                if($slot -eq 'main'){Test-MainImageFitnessV2 $target}; $hashes[$info.hash]=$true; $state.status='done'; $state.last_error=''; $generated++; $success=$true; Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 已生成完成" -f $slot); break
-            } catch {
-                if($null-ne$temporary -and (Test-Path -LiteralPath $temporary)){Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}; Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
-                $elapsed=[int]((Get-Date)-$attemptStarted).TotalSeconds; $rawError=Protect-SecretTextV2 $_.Exception.Message ([string]$Config.api_key); $isTransport=Test-TransportFailureV2 $rawError; $timeoutHint=''
-                if($isTransport -and $elapsed -ge 105 -and $elapsed -le 150){$timeoutHint='；疑似上游同步約120秒超時'}
-                $state.retries=[int]$state.retries+1; $state.last_error=($rawError+"（耗時 ${elapsed} 秒${timeoutHint}）"); Save-CheckpointV2 $checkpoint
-                if($isTransport){$transportDegraded=$true}; if($attemptQuality -eq 'low' -and $rawError -match 'HTTP 400' -and $rawError -match '(quality|low|invalid|unsupported|不支持|不支援)'){$lowQualityRejected=$true}
-                $canRetry=Test-RetryableV2 $rawError; if($lowQualityRejected -and $attempt -lt 3){$canRetry=$true}
-                if($attempt -lt 3 -and $canRetry){ if($isTransport){$nextMode=if($attempt -eq 1){'下一次改用 low 並維持最多2張壓縮參考圖'}else{'下一次降為1張壓縮參考圖'}; Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("傳輸失敗，{0}。" -f $nextMode); Start-Sleep -Seconds 3}else{Start-Sleep -Seconds 5} } else {break}
+        $success = $false
+
+        for ($layoutAttempt = 0; $layoutAttempt -le (Get-MaxLayoutRetriesV2); $layoutAttempt++) {
+            $layoutRetryRequired = $false
+            $transportDegraded = $false
+            $lowQualityRejected = $false
+
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+                $temporary = $null
+                $attemptRefs = [string[]]@($refs)
+                $attemptQuality = 'medium'
+                if ($transportDegraded) {
+                    if ($attempt -ge 3) { $attemptRefs = [string[]]@($refs | Select-Object -First 1) }
+                    if (-not $lowQualityRejected) { $attemptQuality = 'low' }
+                }
+                $attemptPrompt = $basePrompt
+                if ($transportDegraded) { $attemptPrompt = Get-CompactTransportPromptV2 $slot ([string]$product.product_name) }
+                $attemptPrompt += Get-LayoutRetryPromptV2 $slot $layoutAttempt
+                if ($slot -eq 'main' -and $attempt -gt 1 -and -not $transportDegraded) {
+                    $attemptPrompt += "`n前一次主圖適配檢查未通過。請加大商品主體、加強明確主標題與2到4個可確認的短賣點，避免大片空白，務必做成比詳情圖更鮮明的電商封面。"
+                }
+
+                $attemptStarted = Get-Date
+                Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} transport 第 {1}/3 次｜layout {2}/{3}｜{4}｜{5} 張壓縮參考圖" -f $slot,$attempt,($layoutAttempt + 1),((Get-MaxLayoutRetriesV2) + 1),$attemptQuality,@($attemptRefs).Count)
+                try {
+                    Remove-Item -LiteralPath $candidateTarget -Force -ErrorAction SilentlyContinue
+                    $temporary = Invoke-ImageEditMultiV2 $Config $attemptRefs $attemptPrompt '1024x1024' $attemptQuality
+                    $info = Convert-ToFinalJpegV2 $temporary $candidateTarget
+                    Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
+                    $temporary = $null
+
+                    if ($hashes.ContainsKey($info.hash)) { throw '生成圖片與本商品先前成品完全重複。' }
+                    if ($slot -eq 'main') { Test-MainImageFitnessV2 $candidateTarget }
+                    if ($slot -ne 'main') {
+                        $diversity = Test-LayoutDiversityV2 $candidateTarget ([string[]]$acceptedPaths)
+                        if ($diversity.high_similarity) {
+                            $layoutRetryRequired = $true
+                            if ($layoutAttempt -lt (Get-MaxLayoutRetriesV2)) {
+                                $state.layout_retries = [int]$state.layout_retries + 1
+                            }
+                            $state.last_error = ("版型相似度 {0:P1} 高於門檻 {1:P0}，將只重生 {2}" -f $diversity.similarity,(Get-LayoutSimilarityThresholdV2),$slot)
+                            Save-CheckpointV2 $checkpoint
+                            Remove-Item -LiteralPath $candidateTarget -Force -ErrorAction SilentlyContinue
+                            break
+                        }
+                    }
+
+                    Move-Item -LiteralPath $candidateTarget -Destination $target -Force
+                    $hashes[$info.hash] = $true
+                    $acceptedPaths += $target
+                    $state.status = 'done'
+                    $state.last_error = ''
+                    $generated++
+                    $success = $true
+                    Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 已生成完成" -f $slot)
+                    break
+                }
+                catch {
+                    if ($null -ne $temporary -and (Test-Path -LiteralPath $temporary)) { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
+                    Remove-Item -LiteralPath $candidateTarget -Force -ErrorAction SilentlyContinue
+                    $elapsed = [int]((Get-Date) - $attemptStarted).TotalSeconds
+                    $rawError = Protect-SecretTextV2 $_.Exception.Message ([string]$Config.api_key)
+                    $isTransport = Test-TransportFailureV2 $rawError
+                    $timeoutHint = ''
+                    if ($isTransport -and $elapsed -ge 105 -and $elapsed -le 150) { $timeoutHint = '；疑似上游同步約120秒超時' }
+                    $state.retries = [int]$state.retries + 1
+                    $state.last_error = ($rawError + "（耗時 ${elapsed} 秒${timeoutHint}）")
+                    Save-CheckpointV2 $checkpoint
+                    if ($isTransport) { $transportDegraded = $true }
+                    if ($attemptQuality -eq 'low' -and $rawError -match 'HTTP 400' -and $rawError -match '(quality|low|invalid|unsupported|不支持|不支援)') { $lowQualityRejected = $true }
+                    $canRetry = Test-RetryableV2 $rawError
+                    if ($lowQualityRejected -and $attempt -lt 3) { $canRetry = $true }
+                    if ($attempt -lt 3 -and $canRetry) {
+                        if ($isTransport) {
+                            $nextMode = if ($attempt -eq 1) { '下一次改用 low 並維持最多2張壓縮參考圖' } else { '下一次降為1張壓縮參考圖' }
+                            Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("傳輸失敗，{0}。" -f $nextMode)
+                            Start-Sleep -Seconds 3
+                        }
+                        else { Start-Sleep -Seconds 5 }
+                    }
+                    else { break }
+                }
             }
+
+            if ($success) { break }
+            if ($layoutRetryRequired -and $layoutAttempt -lt (Get-MaxLayoutRetriesV2)) {
+                Set-CheckpointActivityV2 $checkpoint $labels[$slot] ("{0} 版型過度相似，改用下一種構圖；transport retry 計數保持獨立" -f $slot)
+                continue
+            }
+            if ($layoutRetryRequired) { $state.last_error = '版型重生 2 次後仍高於相似度門檻。' }
+            break
         }
 
+        Remove-Item -LiteralPath $candidateTarget -Force -ErrorAction SilentlyContinue
         if (-not $success) {
             $state.status = 'failed'
             $errors += ($slot + '：' + [string]$state.last_error)

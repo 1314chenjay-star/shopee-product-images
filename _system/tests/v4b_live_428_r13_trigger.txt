@@ -1,0 +1,1 @@
+Trigger exactly one TinySnow image edit for product 42833435408 detail1 after 9/9 source review and static gates.

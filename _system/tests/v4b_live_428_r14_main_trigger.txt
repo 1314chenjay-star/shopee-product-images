@@ -1,0 +1,1 @@
+Trigger exactly one TinySnow main image for 42833435408 after detail1 R13 visual pass. Do not regenerate detail1.

@@ -1,0 +1,49 @@
+name: V4-B TinySnow Safety R4
+
+on:
+  push:
+    branches:
+      - v4b-original-image-localization
+
+jobs:
+  live-safety-r4:
+    if: github.event.head_commit.message == 'RUN-V4B-LIVE-SAFETY-R4'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Normalize PowerShell encoding
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\start\encoding_fix.ps1
+
+      - name: V4-B planner smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4b_planner_smoke.ps1
+
+      - name: V4-B conflict text-shield smoke
+        shell: powershell
+        run: |
+          & .\_system\tests\v4b_source_conflict_smoke.ps1
+
+      - name: TinySnow 580 + 529 safety R4
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+          V4B_SAFETY_ROUND: R4
+          V4B_SAFETY_SLUG: r4
+          V4B_ARTIFACT_NAME: TinySnow-V4-B-Safety-R4
+        run: |
+          & .\_system\tests\v4b_live_safety_r2.ps1
+
+      - name: Upload V4-B safety R4 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-V4-B-Safety-R4
+          path: _system/live_e2e_output_v4b_safety_r4/
+          if-no-files-found: ignore

@@ -1,0 +1,4 @@
+V4-B verified overlay R6 live trigger
+Scope: 58015741169 detail4 + 52915734564 detail4
+TinySnow renders text-free visuals; Windows overlays verified Taiwan text.
+Do not merge.

@@ -1,0 +1,32 @@
+name: V4-B Source Review 428
+
+on:
+  push:
+    branches:
+      - v4b-original-image-localization
+
+jobs:
+  source-review-428:
+    if: github.event.head_commit.message == 'RUN-V4B-SOURCE-REVIEW-428'
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Normalize PowerShell encoding
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          & .\_system\start\encoding_fix.ps1
+
+      - name: Download and plan 428 sources without TinySnow
+        shell: powershell
+        run: |
+          & .\_system\tests\v4b_source_review_428.ps1
+
+      - name: Upload all 428 originals
+        uses: actions/upload-artifact@v4
+        with:
+          name: V4-B-428-All-Originals
+          path: _system/source_review_v4b_428/

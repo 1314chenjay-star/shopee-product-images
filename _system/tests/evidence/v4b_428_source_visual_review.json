@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "product_id": "42833435408",
+  "review_scope": "all 9 Shopee CDN originals recovered from mass_update_media_info_1708743129_20260813140028.xlsx",
+  "source_review_run_id": "31917384949",
+  "source_review_artifact_id": "9255311958",
+  "human_visual_review_completed": true,
+  "tiny_snow_generation_used_for_source_review": false,
+  "common_visual_facts": [
+    "籃球短褲／運動短褲商品系列",
+    "假兩件／雙層結構：外層短褲搭配較長內層",
+    "彈性腰頭視覺",
+    "腰部抽繩",
+    "下擺條紋裝飾"
+  ],
+  "variant_visual_facts_not_global": [
+    "黑色與白色外層款式",
+    "主圖縮圖另顯示粉色外層款式",
+    "火焰印花有粉色、黑色、白色差異",
+    "部分款式為火焰＋字樣印花",
+    "部分款式為無火焰的字樣印花",
+    "BRRO/SILIN 類可見字樣僅出現在部分款式，不得當作全商品品牌"
+  ],
+  "source_marketing_text_seen_on_source_00": [
+    "雙層網眼",
+    "雙層內襯",
+    "速乾透氣",
+    "彈力腰頭",
+    "潮流印花",
+    "多色可選"
+  ],
+  "marketing_text_policy": "來源主圖文案可作來源層證據，但未經結構化共同事實確認者不得自動提升為所有 variant 的 deterministic common fact。",
+  "pocket_review": {
+    "visible_pocket_opening_found": false,
+    "policy": "九張來源均未清楚顯示可驗證口袋開口，因此生成不得新增可見口袋；這不等於宣稱商品物理上絕對沒有隱藏口袋。"
+  },
+  "not_verified": [
+    "任何尺寸數值或尺寸表",
+    "材質成分",
+    "品牌歸屬",
+    "配件／贈品",
+    "認證",
+    "醫療／安全／性能承諾",
+    "隱藏口袋是否存在"
+  ],
+  "per_source": [
+    {"index":0,"observation":"商品主視覺：白／黑雙層短褲、粉色火焰字樣印花；含台灣繁體行銷文案與多款縮圖。"},
+    {"index":1,"observation":"白／黑雙層短褲並列，粉色火焰字樣印花；腰部抽繩；未見可驗證口袋開口。"},
+    {"index":2,"observation":"白／黑雙層短褲並列，黑／白火焰字樣印花；腰部抽繩；未見可驗證口袋開口。"},
+    {"index":3,"observation":"白色外層、白色較長內層，粉色火焰字樣印花；黑色抽繩；未見可驗證口袋開口。"},
+    {"index":4,"observation":"黑色雙層款，粉色火焰字樣印花；淺色抽繩；未見可驗證口袋開口。"},
+    {"index":5,"observation":"白色雙層款，黑色火焰字樣印花；黑色抽繩；未見可驗證口袋開口。"},
+    {"index":6,"observation":"黑色雙層款，白色火焰字樣印花；淺色抽繩；未見可驗證口袋開口。"},
+    {"index":7,"observation":"白色雙層款，粉色字樣印花、無火焰；黑色抽繩；未見可驗證口袋開口。"},
+    {"index":8,"observation":"黑色雙層款，白色字樣印花、無火焰；淺色抽繩；未見可驗證口袋開口。"}
+  ],
+  "next_gate": "Run exactly one focused 428 live slot, compare selected original and output visually, and stop on any changed product structure, new pocket, altered/unverified surface text, invented size/material/function/brand, or variant generalization."
+}
