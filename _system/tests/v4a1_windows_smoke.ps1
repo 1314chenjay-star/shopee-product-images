@@ -64,9 +64,16 @@ $v4bSourceGuard = ($prompt580 -match '結構化共同已驗證資訊僅供交叉
     ($prompt580 -match '原圖沒有的人物、手、使用場景、商品零件、配件、贈品、顏色、材質、尺寸、數量、功能、認證、功效或安全承諾，一律不得新增') -and
     ($prompt580 -match '看不清楚、被遮住、語意不確定或來源彼此衝突的文字不要猜')
 if (-not ($legacyAllowlist -or $v4bSourceGuard)) { throw 'Prompt factual source guard missing.' }
+
 $compact580 = Get-CompactTransportPromptV2 'detail4' $p580
-if (($compact580 -notmatch '未列入已驗證事實就禁止生成') -and ($compact580 -notmatch '成品唯一允許的可辨識文字')) { throw 'Compact prompt allowlist rule missing.' }
-if ($compact580 -notmatch '200公分') { throw 'detail4 compact prompt should expose exact Taiwan equivalent 200公分.' }
+$legacyCompact = (($compact580 -match '未列入已驗證事實就禁止生成') -or ($compact580 -match '成品唯一允許的可辨識文字'))
+$v4bCompact = ($compact580 -match '保留原圖清楚存在的商品與商品屬性') -and
+    ($compact580 -match '看不清就省略，不猜測') -and
+    ($compact580 -match '原圖沒有的人物、場景、零件、功能、材質、尺寸、數量、配件、贈品、認證、功效與安全承諾都禁止新增') -and
+    ($compact580 -match '品牌、型號、SKU與數值不得改義')
+if (-not ($legacyCompact -or $v4bCompact)) { throw 'Compact prompt factual source guard missing.' }
+if ($legacyCompact -and $compact580 -notmatch '200公分') { throw 'Legacy detail4 compact prompt should expose exact Taiwan equivalent 200公分.' }
+if ($v4bCompact -and $compact580 -match '(?<!公)2米') { throw 'V4-B compact prompt leaked Mainland length unit 2米.' }
 
 $risk = Test-FactualContentV4A1 '32cm 尼龍 不傷膝 提升爆發力 SGS' $p580
 if (-not $risk.factual_risk -or [bool]$risk.image_text_ocr_verified) { throw 'Known-text factual guard failed or falsely claimed OCR.' }
@@ -78,4 +85,4 @@ $guardText = Get-Content -LiteralPath (Join-Path $startRoot 'v4a1_guard.ps1') -R
 $rulesText = Get-Content -LiteralPath (Join-Path $systemRoot 'config\factual_rules_v4a1.json') -Raw -Encoding UTF8
 if ($guardText.Contains([char]0xFFFD) -or $rulesText.Contains([char]0xFFFD)) { throw 'U+FFFD replacement character found.' }
 
-Write-Host '[PASS] V4-A.1 direct factual guard: source facts preserved, Taiwan display localization, real Shopee headers, ordered images, variant facts, parser edge cases, prompt allowlist/source guard, and R3 identity all passed.' -ForegroundColor Green
+Write-Host '[PASS] V4-A.1 direct factual guard: source facts preserved, Taiwan display localization, real Shopee headers, ordered images, variant facts, parser edge cases, prompt/compact source guards, and R3 identity all passed.' -ForegroundColor Green
