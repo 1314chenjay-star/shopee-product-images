@@ -1,6 +1,7 @@
 # TinySnow V4-C0
 # Sports-first universal category router.
 # Product structure wins over sport-context words. Generic words like "戶外" alone never imply sports/camping.
+# Full-catalog regression rule: bundled bags/covers must not override the actual product body.
 
 function Test-V4CAnyKeyword([string]$Text, [string[]]$Keywords) {
     if ([string]::IsNullOrWhiteSpace($Text)) { return $false }
@@ -21,38 +22,92 @@ function New-V4CRoute([string]$Family, [string]$Subfamily, [double]$Confidence, 
     }
 }
 
+function Test-V4CPrimaryBagProduct([string]$Title) {
+    if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
+    $clean = $Title.Trim()
+    $headLength = [Math]::Min(24, $clean.Length)
+    $head = $clean.Substring(0, $headLength)
+
+    # 「桌球拍套裝」通常是「球拍套裝 / racket set」，不是「拍套 / racket cover」。
+    $head = $head.Replace('拍套裝','')
+
+    if ($clean.StartsWith('桌球拍套 ') -or $clean.StartsWith('乒乓球拍套 ') -or $clean.StartsWith('球拍套 ') -or $clean.StartsWith('拍套 ')) {
+        return $true
+    }
+
+    return Test-V4CAnyKeyword $head @(
+        '包包','背包','後背包','后背包','雙肩包','双肩包','腰包','手提包','旅行袋',
+        '球拍包','球拍袋','收納包','收纳包','收納袋','收纳袋','收納小包','收纳小包',
+        '防水袋','運動包','运动包','裝備包','装备包','桌球包','羽球包','網球包','网球包',
+        '游泳包','斜挎包','斜背包'
+    )
+}
+
 function Get-V4CCategoryRoute($Product, $Evidence) {
     $title = [string](Get-V4CProperty $Evidence 'title' (Get-V4CProperty $Product 'name' ''))
     $category = [string](Get-V4CProperty $Evidence 'raw_category' (Get-V4CProperty $Product 'category' ''))
     $text = ($title + ' ' + $category)
-    $sportContext = Test-V4CAnyKeyword $text @('運動','运动','Sports','籃球','篮球','排球','足球','棒球','壘球','垒球','羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','跑步','健身','瑜伽','露營','露营','登山','游泳','自行車','自行车','騎行','骑行')
+    $sportContext = Test-V4CAnyKeyword $text @(
+        '運動','运动','Sports','籃球','篮球','排球','足球','棒球','壘球','垒球','羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球',
+        '跑步','健身','瑜伽','露營','露营','登山','游泳','自行車','自行车','騎行','骑行',
+        '撞球','台球','斯諾克','斯诺克','拳擊','拳击','泰拳','散打','MMA','格鬥','格斗','跆拳道','武術','武术','太極','太极',
+        '衝浪','冲浪','SUP','槳板','桨板','皮划艇','划槳','划桨','釣魚','钓鱼','路亞','路亚','海釣','海钓','磯釣','矶钓',
+        '高爾夫','高尔夫','Golf','求生','野外生存','圓網','圆网'
+    )
 
-    # Structural/product-form routes outrank context words.
-    if (Test-V4CAnyKeyword $title @('護膝','护膝','護腕','护腕','護肘','护肘','護踝','护踝','護具','护具','頭盔','头盔')) {
+    # High-risk structural routes first.
+    if (Test-V4CAnyKeyword $title @('救生衣','救生背心','浮力背心','助浮衣','救生馬甲','救生马甲','浮力衣')) {
+        return New-V4CRoute 'sports' 'water_safety_gear' 0.98 @('size','buoyancy_rating','certification','material','closure','load_or_weight_range','safety_claims') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $title @('護膝','护膝','護腕','护腕','護肘','护肘','護踝','护踝','護具','护具','頭盔','头盔','護齒','护齿','牙套','拳擊手套','拳击手套','拳套','格鬥手套','格斗手套','搏擊手套','搏击手套','纏手帶','缠手带')) {
         return New-V4CRoute 'sports' 'protective_gear' 0.97 @('size','material','support_level','protection_claims','medical_claims','certification') 'sports_deep'
     }
-    if (Test-V4CAnyKeyword $title @('短褲','短裤','長褲','长裤','上衣','外套','背心','T恤','t恤','裙','泳衣','衣服','運動服','运动服','球衣','褲子','裤子','襪子','袜子')) {
+    if (Test-V4CAnyKeyword $title @('短褲','短裤','長褲','长裤','太極褲','太极裤','武術褲','武术裤','練功褲','练功裤','上衣','外套','背心','T恤','t恤','裙','泳衣','衣服','運動服','运动服','球衣','褲子','裤子','襪子','袜子','太極服','太极服','武術服','武术服','練功服','练功服','南拳服','拳擊短褲','拳击短裤')) {
         $sub = if ($sportContext) { 'sports_apparel' } else { 'apparel' }
         $priority = if ($sportContext) { 'sports_deep' } else { 'standard' }
         return New-V4CRoute 'apparel' $sub 0.95 @('pockets','zipper','lining','fit','sleeve','hem','print','size','material','color_variant') $priority
     }
-    if (Test-V4CAnyKeyword $title @('球鞋','跑鞋','運動鞋','运动鞋','登山鞋','拖鞋','涼鞋','凉鞋','靴子','鞋子')) {
+    if (Test-V4CAnyKeyword $title @('球鞋','跑鞋','運動鞋','运动鞋','登山鞋','太極鞋','太极鞋','武術鞋','武术鞋','拳擊鞋','拳击鞋','拖鞋','涼鞋','凉鞋','靴子','鞋子')) {
         $sub = if ($sportContext) { 'sports_footwear' } else { 'footwear' }
         $priority = if ($sportContext) { 'sports_deep' } else { 'standard' }
         return New-V4CRoute 'shoes' $sub 0.94 @('size','material','sole','closure','compatibility','waterproof_claims') $priority
     }
-    if (Test-V4CAnyKeyword $title @('包包','背包','後背包','后背包','腰包','手提包','旅行袋','球袋','拍套')) {
+
+    # A bag route is allowed only when the bag/container is the primary product noun near the start.
+    # Incidental "附收納袋 / 含球袋 / 附拍套" must never turn a racket, ball, mat, net, etc. into a bag.
+    if (Test-V4CPrimaryBagProduct $title) {
         $sub = if ($sportContext) { 'sports_bag' } else { 'bags' }
         $priority = if ($sportContext) { 'sports_deep' } else { 'standard' }
-        return New-V4CRoute 'bags' $sub 0.94 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating') $priority
+        return New-V4CRoute 'bags' $sub 0.95 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating','waterproof_claims') $priority
     }
 
-    # Explicit sports/outdoor equipment routes. Generic "戶外" is intentionally NOT sufficient.
+    # Explicit sports equipment routes.
     if (Test-V4CAnyKeyword $text @('羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','球拍')) {
         return New-V4CRoute 'sports' 'racket_sports' 0.95 @('racket_type','material','weight','grip','string','size','bundle_count','accessories') 'sports_deep'
     }
     if (Test-V4CAnyKeyword $text @('籃球','篮球','排球','足球','棒球','壘球','垒球','橄欖球','橄榄球','球類','球类')) {
         return New-V4CRoute 'sports' 'ball_sports' 0.96 @('size','material','ball_type','surface_pattern','bundle_count','accessories','certification') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $text @('撞球','台球','斯諾克','斯诺克','黑八','球桿','球杆','巧克粉','巧粉','皮頭','皮头','架桿','架杆')) {
+        return New-V4CRoute 'sports' 'billiards' 0.97 @('cue_type','tip_size','length','material','weight','accessories','bundle_count','surface_text') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $text @('拳擊','拳击','泰拳','散打','MMA','格鬥','格斗','搏擊','搏击','跆拳道','武術','武术','太極','太极','三節棍','三节棍','手靶','腳靶','脚靶')) {
+        return New-V4CRoute 'sports' 'combat_martial_arts' 0.96 @('size','material','weight','protection_claims','training_use','accessories','bundle_count','safety_claims') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $text @('衝浪','冲浪','SUP','槳板','桨板','皮划艇','划槳','划桨','充氣船','充气船','橡皮艇','腳繩','脚绳','船槳','船桨')) {
+        return New-V4CRoute 'sports' 'water_sports' 0.95 @('dimensions','material','load_rating','buoyancy_claims','compatibility','accessories','bundle_count','safety_claims') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $text @('釣魚','钓鱼','路亞','路亚','海釣','海钓','磯釣','矶钓','垂釣','垂钓')) {
+        return New-V4CRoute 'sports' 'fishing' 0.94 @('size','material','waterproof_claims','protection_claims','accessories','bundle_count') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $text @('求生','生存裝備','生存装备','野外生存','傘繩','伞绳','打火石')) {
+        return New-V4CRoute 'sports' 'outdoor_survival' 0.94 @('material','dimensions','tool_count','safety_claims','accessories','bundle_count') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $text @('圓網','圆网','沙灘球遊戲','沙滩球游戏','roundnet','Spikeball')) {
+        return New-V4CRoute 'sports' 'outdoor_games' 0.95 @('dimensions','material','bundle_contents','ball_count','accessories','age_claims') 'sports_deep'
+    }
+    if (Test-V4CAnyKeyword $text @('高爾夫','高尔夫','Golf','golf')) {
+        return New-V4CRoute 'sports' 'golf' 0.95 @('club_or_training_type','dimensions','material','weight','compatibility','bundle_count','accessories') 'sports_deep'
     }
     if (Test-V4CAnyKeyword $text @('啞鈴','哑铃','壺鈴','壶铃','彈力帶','弹力带','瑜伽','健身','訓練器','训练器','拉力器','跳繩','跳绳','槓鈴','杠铃')) {
         return New-V4CRoute 'sports' 'fitness_training' 0.94 @('weight','resistance','load_rating','material','dimensions','bundle_count','accessories','usage_claims') 'sports_deep'
