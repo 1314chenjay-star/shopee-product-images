@@ -5,10 +5,11 @@ on:
     branches:
       - v4c-universal-product-engine
     paths:
-      - "_system/v4c/preservation/PRESERVATION_GATE_LOCK.json"
+      - ".github/workflows/v4c-preservation-integration.yml"
+      - "_system/v4c/semantic/preservation/INTEGRATION_TRIGGER.txt"
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 concurrency:
@@ -18,6 +19,14 @@ concurrency:
 env:
   V4C1_BASELINE_HEAD: a7447b792e65780bc95aa248b9e3a2fd0466f142
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  FILTERED_QUEUE: _system/v4c/preservation/results/preservation_semantic_queue.jsonl
+  GATE_LOCK: _system/v4c/preservation/PRESERVATION_GATE_LOCK.json
+  DUPLICATE_MAP: _system/v4c/results/duplicate_map.json
+  SOURCE_EVIDENCE: _system/v4c/results/source_evidence.jsonl
+  PRODUCT_CONTEXT_BOOTSTRAP: _system/v4c/semantic/bootstrap/product_context.jsonl.gz.b64
+  PRODUCT_CONTEXT: artifacts/bootstrap/product_context.jsonl
+  PRODUCT_CONTEXT_SHA256: d7e2158c4a147ae58665985e491aed658cafdc9760e6ddad72d984053bc8c111
+  REQUIREMENTS: _system/v4c/semantic/requirements.txt
 
 jobs:
   integration:
@@ -26,15 +35,191 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Parse only new bridge PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($p in @(
+            '.\_system\tests\v4c_semantic_queue_bridge_plan.ps1',
+            '.\_system\tests\v4c_semantic_queue_bridge_aggregate.ps1',
+            '.\_system\tests\v4c_semantic_queue_bridge_validate.ps1'
+          )) {
+            $null = [scriptblock]::Create((Get-Content $p -Raw -Encoding UTF8))
+            Write-Host "PS51_PARSE_OK=$p"
+          }
+          Write-Host 'V4C1_RETESTED=false'
+          Write-Host 'PRESERVATION_SMOKE_RETESTED=false'
+          Write-Host 'V4B_RETESTED=false'
       - name: Preservation Gate to Semantic Queue interface only
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $null = [scriptblock]::Create((Get-Content .\_system\tests\v4c_preservation_semantic_integration.ps1 -Raw -Encoding UTF8))
-          .\_system\tests\v4c_preservation_semantic_integration.ps1 -OutputPath artifacts\preservation-semantic-integration.json -V4C1BaselineHead $env:V4C1_BASELINE_HEAD -ExpectedStableHead $env:STABLE_HEAD
+          .\_system\tests\v4c_preservation_semantic_integration.ps1 `
+            -OutputPath artifacts\preservation-semantic-integration.json `
+            -V4C1BaselineHead $env:V4C1_BASELINE_HEAD `
+            -ExpectedStableHead $env:STABLE_HEAD
+      - name: Plan canonical filtered semantic work and safe SHA reuse
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\_system\tests\v4c_semantic_queue_bridge_plan.ps1 `
+            -QueuePath $env:FILTERED_QUEUE `
+            -DuplicateMapPath $env:DUPLICATE_MAP `
+            -GateLockPath $env:GATE_LOCK `
+            -OutputDir artifacts\preservation-semantic-plan
       - uses: actions/upload-artifact@v4
         with:
-          name: v4c2-preservation-semantic-integration
-          path: artifacts/preservation-semantic-integration.json
+          name: v4c2-preservation-semantic-plan
+          path: |
+            artifacts/preservation-semantic-integration.json
+            artifacts/preservation-semantic-plan
           if-no-files-found: error
           retention-days: 14
+
+  semantic_filtered_queue:
+    needs: integration
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c2-preservation-semantic-plan
+          path: artifacts
+      - name: Expand frozen product context only
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\_system\tests\v4c_semantic_expand_bootstrap.ps1 `
+            -Base64Path $env:PRODUCT_CONTEXT_BOOTSTRAP `
+            -OutputPath $env:PRODUCT_CONTEXT `
+            -ExpectedSha256 $env:PRODUCT_CONTEXT_SHA256
+          Write-Host 'SOURCE_PIPELINE_REDOWNLOAD=false'
+          Write-Host 'PRESERVATION_SMOKE_RETESTED=false'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: _system/v4c/semantic/requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/torch/hub/checkpoints
+          key: v4c2-semantic-torch-mobilenet-v3-small-v1
+      - name: Install local-only semantic dependencies
+        shell: powershell
+        run: |
+          python -m pip install --disable-pip-version-check -r $env:REQUIREMENTS
+          python -m py_compile .\_system\tests\v4c_semantic_worker.py .\_system\tests\v4c_semantic_worker_v2.py
+          Write-Host 'IMAGE_GENERATION_CALLED=false'
+          Write-Host 'TINY_SNOW_API_CALLED=false'
+          Write-Host 'PAID_API_CALLED=false'
+          Write-Host 'VISION_API_CALLED=false'
+      - name: Process filtered semantic queue with checkpoint resume
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force artifacts\semantic-work | Out-Null
+          $manifest = 'artifacts\preservation-semantic-plan\worker_manifest.jsonl'
+          $progress = 'artifacts\semantic-work\semantic_progress.jsonl'
+          $cache = 'artifacts\semantic-cache'
+          python .\_system\tests\v4c_semantic_worker_v2.py `
+            --manifest $manifest `
+            --context $env:PRODUCT_CONTEXT `
+            --progress $progress `
+            --summary artifacts\semantic-work\seed_summary.json `
+            --cache-dir $cache `
+            --max-items 20
+          $seed = Get-Content artifacts\semantic-work\seed_summary.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ([int]$seed.processed_this_run -ne 20 -or [int]$seed.covered_after_run -ne 20) { throw 'New-interface checkpoint seed did not process exactly 20 canonical items' }
+          python .\_system\tests\v4c_semantic_worker_v2.py `
+            --manifest $manifest `
+            --context $env:PRODUCT_CONTEXT `
+            --progress $progress `
+            --summary artifacts\semantic-work\resume_summary.json `
+            --cache-dir $cache
+          $resume = Get-Content artifacts\semantic-work\resume_summary.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          $workerCount = @(Get-Content $manifest -Encoding UTF8 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count
+          if ([int]$resume.checkpoint_skipped_this_run -lt 20) { throw 'Checkpoint resume did not skip the first 20 terminal items' }
+          if ([int]$resume.covered_after_run -ne $workerCount) { throw "Filtered canonical queue incomplete: $($resume.covered_after_run) / $workerCount" }
+          Write-Host 'NEW_INTERFACE_CHECKPOINT_RESUME=true'
+          Write-Host "CANONICAL_SEMANTIC_COVERED=$workerCount"
+          Write-Host 'SOURCE_PIPELINE_REDOWNLOAD=false'
+      - name: Aggregate safe SHA reuse and HOLD/BLOCK gates
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\_system\tests\v4c_semantic_queue_bridge_aggregate.ps1 `
+            -QueuePath $env:FILTERED_QUEUE `
+            -WorkerProgressPath artifacts\semantic-work\semantic_progress.jsonl `
+            -WorkerManifestPath artifacts\preservation-semantic-plan\worker_manifest.jsonl `
+            -ReuseManifestPath artifacts\preservation-semantic-plan\sha_reuse_manifest.jsonl `
+            -SourceEvidencePath $env:SOURCE_EVIDENCE `
+            -OutputDir artifacts\preservation-semantic-final
+      - name: Validate new Preservation Gate to Semantic Queue interface
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\_system\tests\v4c_semantic_queue_bridge_validate.ps1 `
+            -IntegrationResultPath artifacts\preservation-semantic-integration.json `
+            -GateLockPath $env:GATE_LOCK `
+            -QueuePath $env:FILTERED_QUEUE `
+            -ProgressPath artifacts\preservation-semantic-final\semantic_progress.jsonl `
+            -PlanSummaryPath artifacts\preservation-semantic-plan\plan_summary.json `
+            -SummaryPath artifacts\preservation-semantic-final\semantic_summary.json `
+            -OutputPath artifacts\preservation-semantic-final\validation.json `
+            -ExpectedStableHead $env:STABLE_HEAD `
+            -V4C1BaselineHead $env:V4C1_BASELINE_HEAD
+      - name: Package filtered semantic checkpoint and evidence
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force artifacts\persist | Out-Null
+          Copy-Item artifacts\preservation-semantic-integration.json artifacts\persist\integration_result.json -Force
+          Copy-Item artifacts\preservation-semantic-plan\plan_summary.json artifacts\persist\plan_summary.json -Force
+          Copy-Item artifacts\semantic-work\seed_summary.json artifacts\persist\worker_seed_summary.json -Force
+          Copy-Item artifacts\semantic-work\resume_summary.json artifacts\persist\worker_resume_summary.json -Force
+          Copy-Item artifacts\preservation-semantic-final\* artifacts\persist\ -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-preservation-filtered-semantic-final
+          path: artifacts/persist
+          if-no-files-found: error
+          retention-days: 14
+
+  persist:
+    needs: semantic_filtered_queue
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c2-preservation-filtered-semantic-final
+          path: artifacts/persist
+      - name: Persist only V4-C2 preservation-filtered semantic evidence
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dest = '_system\v4c\semantic\preservation'
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          Copy-Item artifacts\persist\* $dest\ -Force
+          git config user.name 'TinySnow V4-C2 Semantic'
+          git config user.email 'actions@users.noreply.github.com'
+          git add _system/v4c/semantic/preservation
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host 'No new filtered semantic evidence to persist.'
+          } else {
+            git commit -m 'V4-C2 persist preservation-filtered semantic evidence [skip ci]'
+            git push origin HEAD:v4c-universal-product-engine
+          }
+          Write-Host 'V4C1_RETESTED=false'
+          Write-Host 'PRESERVATION_SMOKE_RETESTED=false'
+          Write-Host 'V4B_RETESTED=false'
+          Write-Host 'SOURCE_PIPELINE_REDOWNLOAD=false'
+          Write-Host 'IMAGE_GENERATION_CALLED=false'
+          Write-Host 'TINY_SNOW_API_CALLED=false'
+          Write-Host 'PAID_API_CALLED=false'
+          Write-Host 'VISION_API_CALLED=false'
