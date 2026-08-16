@@ -1,7 +1,7 @@
 {
-  "memory_schema_version": "tinysnow.memory.v1.0.0",
+  "memory_schema_version": "tinysnow.memory.v1.1.0",
   "migration_version": 1,
-  "policy": "RISK_MEMORY_IS_GUARD_ONLY_NEVER_FACTUAL_EVIDENCE",
+  "policy": "CATEGORY_RISK_GUARD_ONLY_NEVER_FACTUAL_EVIDENCE",
   "profiles": [
     {
       "profile_id": "apparel",
@@ -18,7 +18,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "bags",
@@ -34,7 +35,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "footwear",
@@ -50,7 +52,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "outdoor",
@@ -66,7 +69,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "sports",
@@ -82,7 +86,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "fitness",
@@ -99,7 +104,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "camping",
@@ -117,7 +123,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "water_sports_safety",
@@ -133,7 +140,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "home",
@@ -149,7 +157,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "pet",
@@ -165,7 +174,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     },
     {
       "profile_id": "general_merchandise",
@@ -182,7 +192,8 @@
       "may_supply_product_fact": false,
       "created_at": "2026-08-16T23:00:56Z",
       "updated_at": "2026-08-16T23:00:56Z",
-      "source_stage": "V4-C4.2"
+      "source_stage": "V4-C4.2",
+      "memory_scope": "CATEGORY_RISK"
     }
   ]
 }

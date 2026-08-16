@@ -1,5 +1,5 @@
 {
-  "memory_schema_version": "tinysnow.memory.v1.0.0",
+  "memory_schema_version": "tinysnow.memory.v1.1.0",
   "migration_version": 1,
   "unlock_policy": "EXPLICIT_HUMAN_UNLOCK_ONLY",
   "products": [

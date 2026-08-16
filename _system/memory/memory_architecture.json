@@ -1,0 +1,59 @@
+{
+  "memory_schema_version": "tinysnow.memory.v1.1.0",
+  "sqlite_schema_version": 2,
+  "runtime": "SQLITE_LAZY_IDENTITY_FIRST",
+  "jsonl_role": [
+    "AUDIT",
+    "GIT_VERSION_CONTROL",
+    "BACKUP",
+    "MIGRATION_EXPORT"
+  ],
+  "sqlite_role": "CANONICAL_RUNTIME_QUERY_STORE",
+  "image_binary_storage": "FORBIDDEN_IN_SQLITE",
+  "journal_mode": "WAL",
+  "synchronous": "FULL",
+  "busy_timeout_ms": 5000,
+  "transaction_strategy": "BEGIN_IMMEDIATE_SINGLE_CANONICAL_WRITER_BATCH_COMMIT",
+  "reader_strategy": "READ_ONLY_QUERY_ONLY_INDEXED",
+  "hot_memory_views": [
+    "active_verified_facts",
+    "active_approved_outputs",
+    "active_layout_templates",
+    "active_regression_cases"
+  ],
+  "cold_history_policy": "RETAIN_INDEXED_EXCLUDE_FROM_DEFAULT_ACTIVE_LOOKUP",
+  "generation_context_policy": "MINIMAL_IDENTITY_BOUND_PROVENANCE_REQUIRED",
+  "memory_scope_policy": {
+    "GLOBAL_RISK": "GUARD_ONLY",
+    "CATEGORY_RISK": "GUARD_ONLY",
+    "CATEGORY_TEMPLATE": "LAYOUT_ONLY",
+    "PRODUCT": "FACT_ALLOWED_WITH_PROVENANCE",
+    "VARIANT": "FACT_ALLOWED_WITH_EXACT_SCOPE",
+    "IMAGE": "FACT_ALLOWED_WITH_EXACT_SOURCE",
+    "SLOT": "FACT_ALLOWED_WITH_EXACT_SLOT"
+  },
+  "new_product_intake": [
+    "SOURCE_INVENTORY",
+    "SHA256",
+    "IDENTITY_FIRST_MEMORY_LOOKUP",
+    "EVIDENCE",
+    "PRESERVATION",
+    "FACTUAL_GATE",
+    "VARIANT_GATE",
+    "FIVE_SLOT_PLANNER",
+    "CONTEXT_RESOLVER",
+    "GENERATION_PAYLOAD",
+    "GENERATION",
+    "POST_GENERATION_QA",
+    "HUMAN_APPROVAL",
+    "MEMORY_COMMIT"
+  ],
+  "memory_commit_protocol": [
+    "GENERATED",
+    "AUTO_QA",
+    "FACTUAL_QA",
+    "VISUAL_QA",
+    "HUMAN_APPROVAL",
+    "MEMORY_COMMIT"
+  ]
+}

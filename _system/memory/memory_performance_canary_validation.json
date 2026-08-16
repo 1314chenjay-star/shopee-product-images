@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "synthetic_product_stages": [
+    1000,
+    10000
+  ],
+  "stage_1000_products": 1000,
+  "stage_10000_products": 10000,
+  "startup_requires_jsonl_parse": false,
+  "runtime_lookup_store": "SQLITE_ONLY",
+  "exact_sha_lookup_uses_index": true,
+  "product_lookup_uses_index": true,
+  "single_product_lookup_full_table_scan": false,
+  "incremental_insert_rebuilt_database": false,
+  "lookup_peak_memory_bytes": 10614,
+  "memory_usage_bounded": true,
+  "crash_rollback_pass": true,
+  "duplicate_write_protection_pass": true,
+  "sqlite_integrity_pass": true,
+  "journal_mode_wal": true,
+  "busy_timeout_configured": true,
+  "single_writer_transaction": "BEGIN_IMMEDIATE",
+  "safe_concurrent_readers": "WAL_READ_ONLY",
+  "generation_executed": false,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "factual_gate_reexecuted": false,
+    "v4c1_retested": false,
+    "v4c2_retested": false,
+    "v4c3_retested": false,
+    "v4c3_1_retested": false,
+    "v4c3_2_retested": false,
+    "v4c4_0_retested": false,
+    "v4c4_1_retested": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "generation_executed": false
+  },
+  "query_plan_exact": [
+    "3 0 46 SEARCH approved_output_memory USING INDEX idx_output_identity (product_id=? AND source_sha256=? AND variant_scope_key=? AND canonical_slot=? AND active=? AND superseded=? AND revoked=?)"
+  ],
+  "query_plan_product": [
+    "3 0 59 SEARCH edit_feedback_memory USING INDEX idx_feedback_product (product_id=? AND do_not_repeat=? AND active=?)"
+  ]
+}
