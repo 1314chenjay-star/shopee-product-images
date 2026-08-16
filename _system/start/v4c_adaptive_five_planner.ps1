@@ -17,6 +17,14 @@ function Get-V4CSlotRoles($Route, $Evidence) {
             'racket_sports' { $roles = @('product_main','frame_grip_structure','verified_spec_or_detail','authentic_usage_or_variant','accessory_or_safe_detail') }
             'fitness_training' { $roles = @('product_main','structure_detail','verified_resistance_or_weight','authentic_usage','accessory_or_safe_detail') }
             'protective_gear' { $roles = @('product_main','wearing_structure','verified_size_or_detail','authentic_usage','safe_product_detail') }
+            'water_safety_gear' { $roles = @('product_main','closure_and_structure','verified_safety_spec_or_detail','authentic_usage','safe_product_detail') }
+            'billiards' { $roles = @('product_main','cue_or_product_structure','verified_spec_or_detail','authentic_usage_or_variant','accessory_or_safe_detail') }
+            'combat_martial_arts' { $roles = @('product_main','training_or_protection_structure','verified_spec_or_detail','authentic_usage','safe_product_detail') }
+            'water_sports' { $roles = @('product_main','structure_detail','verified_dimensions_or_detail','authentic_usage','accessory_or_safe_detail') }
+            'fishing' { $roles = @('product_main','structure_detail','verified_spec_or_detail','authentic_usage','accessory_or_safe_detail') }
+            'outdoor_survival' { $roles = @('product_main','structure_detail','verified_feature_or_detail','authentic_usage','accessory_or_safe_detail') }
+            'outdoor_games' { $roles = @('product_main','game_structure','verified_bundle_or_detail','authentic_usage','accessory_or_safe_detail') }
+            'golf' { $roles = @('product_main','structure_detail','verified_spec_or_detail','authentic_usage','accessory_or_safe_detail') }
             'outdoor_camping' { $roles = @('product_main','structure_detail','verified_dimensions_or_detail','authentic_usage','accessory_or_safe_detail') }
             'swimming' { $roles = @('product_main','structure_detail','verified_spec_or_detail','authentic_usage','safe_product_detail') }
             'cycling' { $roles = @('product_main','mounting_structure','verified_compatibility_or_detail','authentic_usage','safe_product_detail') }
@@ -29,9 +37,15 @@ function Get-V4CSlotRoles($Route, $Evidence) {
     elseif ($family -eq 'home_storage' -or $family -eq 'furniture') { $roles = @('product_main','structure_detail','verified_dimensions_or_detail','authentic_usage','installation_or_safe_detail') }
     elseif ($family -eq 'pet') { $roles = @('product_main','structure_detail','verified_size_or_detail','authentic_usage','safe_product_detail') }
 
-    # Remove implications that are unsupported by verified facts. A slot still exists but becomes a safe detail slot.
+    # A role name containing "verified_" is only legal when some structured verified fact exists.
+    # Raw title/description/variant text is evidence to inspect, never automatic permission to print a claim.
+    $verifiedFactCount = [int](Get-V4CProperty $Evidence 'verified_fact_count' 0)
     for ($i = 0; $i -lt $roles.Count; $i++) {
         $role = [string]$roles[$i]
+        if ($role -match 'verified_' -and $verifiedFactCount -le 0) {
+            $roles[$i] = 'safe_product_detail'
+            continue
+        }
         if ($role -match 'dimensions' -and -not (Test-V4CHasVerifiedFact $Evidence 'dimensions')) { $roles[$i] = 'safe_product_detail' }
         if ($role -match 'size' -and -not (Test-V4CHasVerifiedFact $Evidence 'sizes')) { $roles[$i] = 'safe_product_detail' }
         if ($role -match 'resistance' -and -not (Test-V4CHasVerifiedFact $Evidence 'resistance_levels') -and -not (Test-V4CHasVerifiedFact $Evidence 'features')) { $roles[$i] = 'safe_product_detail' }
