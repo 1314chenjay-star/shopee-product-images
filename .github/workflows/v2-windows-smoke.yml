@@ -81,6 +81,7 @@ jobs:
         run: |
           & .\_system\tests\v4b_planner_smoke.ps1
           & .\_system\tests\v4b_source_conflict_smoke.ps1
+          & .\_system\tests\v4b_428_apparel_guard_smoke.ps1
           & .\_system\tests\v4b_verified_overlay_smoke.ps1
           & .\_system\tests\v4b_report_metadata_smoke.ps1
 
