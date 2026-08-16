@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c0-free-smoke.yml"
+      - "_system/tests/v4c0_*smoke.ps1"
+      - "_system/start/v4c_*.ps1"
   workflow_dispatch:
 
 jobs:
