@@ -1,0 +1,15 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TinySnow Coupang V1.8</title><link rel="stylesheet" href="popup.css"></head><body><main>
+<h1>TinySnow｜Coupang V1.8</h1><p class="sub">智能選頁、商品全分頁、自動監控。直接使用目前已登入的 Chrome / Edge。</p>
+<div id="status" class="status">讀取狀態中…</div>
+<button id="focusWing">1. 切到已登入的 WING</button>
+<button id="fullSync" class="primary">2. 首次／手動全量同步</button>
+<button id="quickSync">3. 只做快速同步</button>
+<button id="enableMonitor" class="primary">4. 開啟自動監控（推薦）</button>
+<button id="disableMonitor">5. 關閉自動監控</button>
+<button id="stop">6. 停止目前採集</button>
+<button id="exportData" class="primary">7. 匯出最新分析包 JSON</button>
+<details><summary>進階／維護</summary><button id="clearData" class="danger">清空本機採集資料</button></details>
+<p class="note">V1.8 不再固定只跑 6 個頁面。它會展開「商品、價格、訂購/配送、結算、賣家成長、商業洞察、促銷」等與營運分析相關區塊，只選擇可讀取的資料頁；客戶管理、我的店鋪、賣家信息、公告、Coupang API、設定/新增類頁面會跳過。</p>
+<p class="note">商品列表會優先找右下角數字頁碼（2、3、4…）或下一頁控制。只要後台顯示總數，例如 9854，沒有抓滿 9854 就不允許顯示「完整：是」。</p>
+<p class="note">自動監控模式：Chrome 開著且 WING 登入有效時，每 6 小時自動跑一次；距離上次完整商品同步超過 24 小時時會做全量商品分頁。電腦睡眠時不會喚醒。</p>
+<p id="message" class="message"></p></main><script src="popup_v18.js"></script></body></html>
