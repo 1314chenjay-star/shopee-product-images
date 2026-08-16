@@ -20,12 +20,12 @@ function Write-Utf8NoBom([string]$Path, [string]$Text) {
 
 function Read-JsonLines([string]$Path) {
     $items = @()
-    if (-not (Test-Path $Path)) { return ,$items }
+    if (-not (Test-Path $Path)) { return $items }
     foreach ($line in [System.IO.File]::ReadAllLines($Path, $Utf8NoBom)) {
         if ([string]::IsNullOrWhiteSpace($line)) { continue }
         $items += ($line | ConvertFrom-Json)
     }
-    return ,$items
+    return $items
 }
 
 function Ensure-Inventory([string]$Path) {
@@ -88,9 +88,7 @@ function Get-LegacyCompleted {
         }
     }
 
-    if ($byBatch.Count -ne 18) {
-        throw "Expected legacy B001-B018 manifests, found $($byBatch.Count)"
-    }
+    if ($byBatch.Count -ne 18) { throw "Expected legacy B001-B018 manifests, found $($byBatch.Count)" }
 
     $urlMap = @{}
     $legacySequences = New-Object System.Collections.Generic.List[int]
@@ -101,19 +99,13 @@ function Get-LegacyCompleted {
             $url = ([string]$s.url).Trim()
             if ([string]::IsNullOrWhiteSpace($url)) { throw "Legacy $batch contains blank URL" }
             if ($urlMap.ContainsKey($url)) { throw "Legacy URL duplicated across completed batches: $url" }
-            $urlMap[$url] = [pscustomobject]@{
-                legacy_batch = $batch
-                legacy_sequence = $seq
-                legacy_commit = $byBatch[$batch].sha
-            }
+            $urlMap[$url] = [pscustomobject]@{ legacy_batch=$batch; legacy_sequence=$seq; legacy_commit=$byBatch[$batch].sha }
             $legacySequences.Add($seq)
         }
     }
     $ordered = @($legacySequences | Sort-Object)
     if ($ordered.Count -ne 900) { throw "Expected 900 legacy completed sources, found $($ordered.Count)" }
-    for ($i=1; $i -le 900; $i++) {
-        if ($ordered[$i-1] -ne $i) { throw "Legacy sequence reconciliation failed at $i" }
-    }
+    for ($i=1; $i -le 900; $i++) { if ($ordered[$i-1] -ne $i) { throw "Legacy sequence reconciliation failed at $i" } }
     return $urlMap
 }
 
@@ -121,163 +113,70 @@ function Latest-ProgressMap([object[]]$Progress) {
     $map = @{}
     foreach ($p in $Progress) {
         if (-not ($p.PSObject.Properties.Name -contains "sequence")) { continue }
-        $seq = [int]$p.sequence
-        $map[$seq] = $p
+        $map[[int]$p.sequence] = $p
     }
     return $map
 }
 
 function New-ProgressRecord($src, [string]$Status, [string]$SemanticStatus, $Extra) {
     $h = [ordered]@{
-        sequence = [int]$src.sequence
-        source_id = [string]$src.source_id
-        product_id = [string]$src.product_id
-        image_index = $src.image_index
-        image_type = [string]$src.image_type
-        url = [string]$src.url
-        status = $Status
-        semantic_status = $SemanticStatus
-        image_generation_called = $false
-        tiny_snow_api_called = $false
-        paid_api_called = $false
+        sequence=[int]$src.sequence; source_id=[string]$src.source_id; product_id=[string]$src.product_id
+        image_index=$src.image_index; image_type=[string]$src.image_type; url=[string]$src.url
+        status=$Status; semantic_status=$SemanticStatus
+        image_generation_called=$false; tiny_snow_api_called=$false; paid_api_called=$false
     }
-    if ($Extra) {
-        foreach ($k in $Extra.Keys) { $h[$k] = $Extra[$k] }
-    }
+    if ($Extra) { foreach ($k in $Extra.Keys) { $h[$k] = $Extra[$k] } }
     return [pscustomobject]$h
 }
 
 function Invoke-SelfTest {
-    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("v4c-shard-selftest-" + [Guid]::NewGuid().ToString("N"))
-    New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-    try {
-        $inv = @(
-            [pscustomobject]@{sequence=1;source_id="T1";product_id="P1";image_index=0;image_type="main";url="https://example.invalid/a";source_action="TEST"},
-            [pscustomobject]@{sequence=2;source_id="T2";product_id="P1";image_index=1;image_type="detail";url="https://example.invalid/a";source_action="TEST"},
-            [pscustomobject]@{sequence=3;source_id="T3";product_id="P2";image_index=0;image_type="main";url="https://example.invalid/b";source_action="TEST"}
-        )
-        $urlSeen=@{}; $queued=New-Object System.Collections.Generic.List[object]; $dupes=New-Object System.Collections.Generic.List[object]
-        foreach($s in $inv) {
-            if($urlSeen.ContainsKey($s.url)) {
-                $dupes.Add([pscustomobject]@{sequence=$s.sequence;canonical_sequence=$urlSeen[$s.url]})
-            } else {
-                $urlSeen[$s.url]=[int]$s.sequence
-                $queued.Add($s)
-            }
-        }
-        $result=[ordered]@{
-            passed = ($queued.Count -eq 2 -and $dupes.Count -eq 1)
-            url_duplicate_not_refetched = ($dupes.Count -eq 1)
-            unique_queued = $queued.Count
-            duplicate_count = $dupes.Count
-            image_generation_called = $false
-            tiny_snow_api_called = $false
-            paid_api_called = $false
-        }
-        $out = Join-Path $tmp "selftest.json"
-        Write-Utf8NoBom $out (($result | ConvertTo-Json -Depth 8) + "`n")
-        if (-not $result.passed) { throw "v4c_generate_shards self-test failed" }
-        Write-Host "SELFTEST_RESULT=$($result | ConvertTo-Json -Compress)"
-    } finally {
-        if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
-    }
+    $inv = @(
+        [pscustomobject]@{sequence=1;url="https://example.invalid/a"},
+        [pscustomobject]@{sequence=2;url="https://example.invalid/a"},
+        [pscustomobject]@{sequence=3;url="https://example.invalid/b"}
+    )
+    $seen=@{}; $queued=0; $dupes=0
+    foreach($s in $inv){ if($seen.ContainsKey($s.url)){$dupes++}else{$seen[$s.url]=[int]$s.sequence;$queued++} }
+    $passed=($queued -eq 2 -and $dupes -eq 1)
+    $result=[ordered]@{passed=$passed;url_duplicate_not_refetched=($dupes -eq 1);unique_queued=$queued;duplicate_count=$dupes;image_generation_called=$false;tiny_snow_api_called=$false;paid_api_called=$false}
+    Write-Host "SELFTEST_RESULT=$($result|ConvertTo-Json -Compress)"
+    if(-not $passed){throw "v4c_generate_shards self-test failed"}
 }
 
 if ($SelfTest) { Invoke-SelfTest; exit 0 }
-
 Ensure-Inventory $InventoryPath
 $inventory = @(Read-JsonLines $InventoryPath)
 if ($inventory.Count -eq 0) { throw "Inventory is empty" }
 $orderedInv = @($inventory | Sort-Object {[int]$_.sequence})
-for ($i=1; $i -le $orderedInv.Count; $i++) {
-    if ([int]$orderedInv[$i-1].sequence -ne $i) { throw "Inventory sequence gap/duplicate at expected $i" }
-}
+for ($i=1; $i -le $orderedInv.Count; $i++) { if ([int]$orderedInv[$i-1].sequence -ne $i) { throw "Inventory sequence gap/duplicate at expected $i" } }
 $legacy = Get-LegacyCompleted
 $existing = Latest-ProgressMap @(Read-JsonLines $ProgressPath)
 $terminal = @("LEGACY_DONE","DONE","SHA_DUPLICATE","URL_DUPLICATE")
-$urlCanonical = @{}
-$seed = New-Object System.Collections.Generic.List[object]
-$candidates = New-Object System.Collections.Generic.List[object]
-$urlDupes = New-Object System.Collections.Generic.List[object]
-
+$urlCanonical=@{}; $seed=New-Object System.Collections.Generic.List[object]; $candidates=New-Object System.Collections.Generic.List[object]; $urlDupes=New-Object System.Collections.Generic.List[object]
 foreach ($src in $orderedInv) {
-    $seq = [int]$src.sequence
-    $url = ([string]$src.url).Trim()
+    $seq=[int]$src.sequence; $url=([string]$src.url).Trim()
     if ([string]::IsNullOrWhiteSpace($url)) { throw "Blank source URL at inventory sequence $seq" }
-
     if ($urlCanonical.ContainsKey($url)) {
-        $canonicalSeq = [int]$urlCanonical[$url]
-        $rec = New-ProgressRecord $src "URL_DUPLICATE" "SKIP_DUPLICATE" @{ canonical_sequence=$canonicalSeq }
-        $seed.Add($rec)
-        $urlDupes.Add([pscustomobject]@{sequence=$seq;url=$url;canonical_sequence=$canonicalSeq})
-        continue
+        $canonicalSeq=[int]$urlCanonical[$url]
+        $seed.Add((New-ProgressRecord $src "URL_DUPLICATE" "SKIP_DUPLICATE" @{canonical_sequence=$canonicalSeq}))
+        $urlDupes.Add([pscustomobject]@{sequence=$seq;url=$url;canonical_sequence=$canonicalSeq}); continue
     }
-    $urlCanonical[$url] = $seq
-
+    $urlCanonical[$url]=$seq
     if ($legacy.ContainsKey($url)) {
-        $meta = $legacy[$url]
-        $sem = if ([int]$meta.legacy_sequence -le 850) { "REVIEWED" } else { "PENDING" }
-        $rec = New-ProgressRecord $src "LEGACY_DONE" $sem @{
-            legacy_batch=$meta.legacy_batch
-            legacy_sequence=[int]$meta.legacy_sequence
-            legacy_commit=$meta.legacy_commit
-        }
-        $seed.Add($rec)
-        continue
+        $meta=$legacy[$url]; $sem=if([int]$meta.legacy_sequence -le 850){"REVIEWED"}else{"PENDING"}
+        $seed.Add((New-ProgressRecord $src "LEGACY_DONE" $sem @{legacy_batch=$meta.legacy_batch;legacy_sequence=[int]$meta.legacy_sequence;legacy_commit=$meta.legacy_commit})); continue
     }
-
-    if ($existing.ContainsKey($seq) -and $terminal -contains [string]$existing[$seq].status) {
-        $seed.Add($existing[$seq])
-        continue
-    }
-
-    if ($existing.ContainsKey($seq) -and [string]$existing[$seq].status -eq "FAILED") {
-        $seed.Add($existing[$seq])
-    } else {
-        $seed.Add((New-ProgressRecord $src "PENDING" "PENDING" @{}))
-    }
+    if ($existing.ContainsKey($seq) -and $terminal -contains [string]$existing[$seq].status) { $seed.Add($existing[$seq]); continue }
+    if ($existing.ContainsKey($seq) -and [string]$existing[$seq].status -eq "FAILED") { $seed.Add($existing[$seq]) } else { $seed.Add((New-ProgressRecord $src "PENDING" "PENDING" @{})) }
     $candidates.Add($src)
 }
-
-$selected = if ($Mode -eq "Smoke") { @($candidates | Select-Object -First $SmokeCount) } else { @($candidates) }
-
-if (Test-Path $OutDir) { Remove-Item -Recurse -Force $OutDir }
-New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-$shardDir = Join-Path $OutDir "shards"
-New-Item -ItemType Directory -Force -Path $shardDir | Out-Null
-
-$seedText = (($seed | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 12 }) -join "`n")
-if ($seed.Count -gt 0) { $seedText += "`n" }
-Write-Utf8NoBom (Join-Path $OutDir "seed_progress.jsonl") $seedText
-
-$shardNames = New-Object System.Collections.Generic.List[string]
-$idx=0
-for ($offset=0; $offset -lt $selected.Count; $offset += $ShardSize) {
-    $idx++
-    $name = "shard-{0:D3}" -f $idx
-    $shardNames.Add($name)
-    $chunk = @($selected | Select-Object -Skip $offset -First $ShardSize)
-    $text = (($chunk | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 8 }) -join "`n") + "`n"
-    Write-Utf8NoBom (Join-Path $shardDir ($name + ".jsonl")) $text
-}
-
-$matrix = [ordered]@{ shard=@($shardNames) }
-Write-Utf8NoBom (Join-Path $OutDir "matrix.json") (($matrix | ConvertTo-Json -Compress -Depth 5) + "`n")
-$dupeObj = [ordered]@{ url_duplicates=@($urlDupes); sha256_duplicates=@() }
-Write-Utf8NoBom (Join-Path $OutDir "duplicate_map.json") (($dupeObj | ConvertTo-Json -Depth 12) + "`n")
-$summary = [ordered]@{
-    mode=$Mode
-    inventory_count=$orderedInv.Count
-    legacy_completed_count=@($seed | Where-Object {$_.status -eq "LEGACY_DONE"}).Count
-    existing_terminal_count=@($seed | Where-Object {$terminal -contains $_.status -and $_.status -ne "LEGACY_DONE" -and $_.status -ne "URL_DUPLICATE"}).Count
-    url_duplicate_count=$urlDupes.Count
-    candidate_count=$candidates.Count
-    selected_count=$selected.Count
-    shard_count=$shardNames.Count
-    shard_size=$ShardSize
-    image_generation_called=$false
-    tiny_snow_api_called=$false
-    paid_api_called=$false
-}
-Write-Utf8NoBom (Join-Path $OutDir "plan_summary.json") (($summary | ConvertTo-Json -Depth 8) + "`n")
-Write-Host "PLAN_SUMMARY=$($summary | ConvertTo-Json -Compress)"
+$selected=if($Mode -eq "Smoke"){@($candidates|Select-Object -First $SmokeCount)}else{@($candidates)}
+if(Test-Path $OutDir){Remove-Item -Recurse -Force $OutDir};New-Item -ItemType Directory -Force -Path $OutDir|Out-Null
+$shardDir=Join-Path $OutDir "shards";New-Item -ItemType Directory -Force -Path $shardDir|Out-Null
+$seedText=(($seed|ForEach-Object{$_|ConvertTo-Json -Compress -Depth 12}) -join "`n");if($seed.Count -gt 0){$seedText+="`n"};Write-Utf8NoBom (Join-Path $OutDir "seed_progress.jsonl") $seedText
+$shardNames=New-Object System.Collections.Generic.List[string];$idx=0
+for($offset=0;$offset -lt $selected.Count;$offset+=$ShardSize){$idx++;$name="shard-{0:D3}" -f $idx;$shardNames.Add($name);$chunk=@($selected|Select-Object -Skip $offset -First $ShardSize);$text=(($chunk|ForEach-Object{$_|ConvertTo-Json -Compress -Depth 8}) -join "`n")+"`n";Write-Utf8NoBom (Join-Path $shardDir ($name+".jsonl")) $text}
+$matrix=[ordered]@{shard=@($shardNames)};Write-Utf8NoBom (Join-Path $OutDir "matrix.json") (($matrix|ConvertTo-Json -Compress -Depth 5)+"`n")
+$dupeObj=[ordered]@{url_duplicates=@($urlDupes);sha256_duplicates=@()};Write-Utf8NoBom (Join-Path $OutDir "duplicate_map.json") (($dupeObj|ConvertTo-Json -Depth 12)+"`n")
+$summary=[ordered]@{mode=$Mode;inventory_count=$orderedInv.Count;legacy_completed_count=@($seed|Where-Object{$_.status -eq "LEGACY_DONE"}).Count;existing_terminal_count=@($seed|Where-Object{$terminal -contains $_.status -and $_.status -ne "LEGACY_DONE" -and $_.status -ne "URL_DUPLICATE"}).Count;url_duplicate_count=$urlDupes.Count;candidate_count=$candidates.Count;selected_count=$selected.Count;shard_count=$shardNames.Count;shard_size=$ShardSize;image_generation_called=$false;tiny_snow_api_called=$false;paid_api_called=$false}
+Write-Utf8NoBom (Join-Path $OutDir "plan_summary.json") (($summary|ConvertTo-Json -Depth 8)+"`n");Write-Host "PLAN_SUMMARY=$($summary|ConvertTo-Json -Compress)"
