@@ -48,7 +48,7 @@ $failureCount = 0
 try {
     foreach ($row in $rows) {
         $seq = [int]$row.sequence
-        $pid = [string]$row.product_id
+        $productId = [string]$row.product_id
         $pos = [int]$row.source_position
         $url = [string]$row.source_url
         $bytes = $null
@@ -73,20 +73,20 @@ try {
         if ($null -eq $bytes) {
             $failureCount++
             $downloadRows += [pscustomobject]@{
-                sequence=$seq; product_id=$pid; source_position=$pos; source_url=$url; status='FAILED';
+                sequence=$seq; product_id=$productId; source_position=$pos; source_url=$url; status='FAILED';
                 file=''; bytes=0; content_type=$contentType; sha256=''; error=$lastError
             }
             continue
         }
 
         $ext = Get-ImageExtension $bytes $contentType
-        $fileName = $seq.ToString('0000') + '_' + $pid + '_p' + $pos.ToString('00') + $ext
+        $fileName = $seq.ToString('0000') + '_' + $productId + '_p' + $pos.ToString('00') + $ext
         $target = Join-Path $outDir $fileName
         [IO.File]::WriteAllBytes($target, $bytes)
         $sha = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
         $successCount++
         $downloadRows += [pscustomobject]@{
-            sequence=$seq; product_id=$pid; source_position=$pos; source_url=$url; status='OK';
+            sequence=$seq; product_id=$productId; source_position=$pos; source_url=$url; status='OK';
             file=$fileName; bytes=$bytes.Length; content_type=$contentType; sha256=$sha; error=''
         }
     }
