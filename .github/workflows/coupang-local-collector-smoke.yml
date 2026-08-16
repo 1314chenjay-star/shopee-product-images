@@ -1,0 +1,64 @@
+name: Coupang Local Collector V1 Smoke
+
+on:
+  push:
+    branches:
+      - coupang-local-collector-v1
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PowerShell 5.1 syntax check
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            '_system/start/coupang_local_collector.ps1',
+            '_system/start/menu_beginner.ps1'
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error ("{0}: {1}" -f $file, $_.Message) }
+              throw "PowerShell syntax check failed: $file"
+            }
+            Write-Host "Syntax OK: $file"
+          }
+
+      - name: Collector load smoke
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . "$PWD/_system/start/coupang_local_collector.ps1"
+          $workspace = Get-CoupangWorkspaceV1
+          if (-not (Test-Path $workspace)) { throw 'Coupang workspace was not created.' }
+          if (-not (Get-Command Show-CoupangCollectorMenuV1 -ErrorAction SilentlyContinue)) { throw 'Collector menu function is missing.' }
+          Write-Host "Collector load OK: $workspace"
+
+      - name: Package test build
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Local_Collector_V1'
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
+          Get-ChildItem -Force | Where-Object { $_.Name -ne '.git' } | ForEach-Object {
+            Copy-Item $_.FullName -Destination $out -Recurse -Force
+          }
+          $zip = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Local_Collector_V1.zip'
+          Compress-Archive -Path (Join-Path $out '*') -DestinationPath $zip -CompressionLevel Optimal
+          Write-Host "Package: $zip"
+
+      - name: Upload test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow_Coupang_Local_Collector_V1
+          path: ${{ runner.temp }}\TinySnow_Coupang_Local_Collector_V1.zip
+          if-no-files-found: error
