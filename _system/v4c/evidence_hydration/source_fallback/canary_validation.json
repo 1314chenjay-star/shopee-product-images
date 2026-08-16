@@ -1,0 +1,11 @@
+{
+  "schema_version": "v4c2.5.validation.1",
+  "phase": "CANARY",
+  "passed": true,
+  "target": 40,
+  "fetch_success": 40,
+  "fetch_failed": 0,
+  "sha_matched": 40,
+  "sha_mismatch": 0,
+  "checkpoint_resume": true
+}

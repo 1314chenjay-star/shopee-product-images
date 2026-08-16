@@ -1,0 +1,58 @@
+{
+  "schema_version": "v4c2.5.final-summary.1",
+  "passed": true,
+  "target": 187,
+  "targeted_source_fetch_planned": 184,
+  "fetch_success": 184,
+  "fetch_failed": 0,
+  "sha_matched": 184,
+  "sha_mismatch": 0,
+  "preserve": 57,
+  "needs_localization": 130,
+  "partial_safe": 117,
+  "hold_remaining": 13,
+  "block_source_changed": 0,
+  "found_hold_resolution": {
+    "target": 3,
+    "upgraded_partial_safe": 0,
+    "retained_hold": 3,
+    "details": [
+      {
+        "sequence": 41,
+        "prior_hold_reason": "NO_VERIFIED_SOURCE_CLAIMS_FROM_EXISTING_OCR",
+        "resolution": "RETAIN_HOLD_NO_VERIFIED_SOURCE",
+        "terminal_status": "HOLD"
+      },
+      {
+        "sequence": 312,
+        "prior_hold_reason": "NO_VERIFIED_SOURCE_CLAIMS_FROM_EXISTING_OCR",
+        "resolution": "RETAIN_HOLD_NO_VERIFIED_SOURCE",
+        "terminal_status": "HOLD"
+      },
+      {
+        "sequence": 320,
+        "prior_hold_reason": "NO_VERIFIED_SOURCE_CLAIMS_FROM_EXISTING_OCR",
+        "resolution": "RETAIN_HOLD_NO_VERIFIED_SOURCE",
+        "terminal_status": "HOLD"
+      }
+    ]
+  },
+  "api_flags": {
+    "targeted_source_fetch_called": true,
+    "artifact_search_called": false,
+    "artifact_download_called": false,
+    "new_missing_evidence_ocr_executed": true,
+    "completed_ocr_rerun": false,
+    "semantic_inference_executed": false,
+    "completed_semantic_rerun": false,
+    "image_generation_called": false,
+    "tiny_snow_api_called": false,
+    "paid_api_called": false,
+    "vision_api_called": false,
+    "rerun_1378": false,
+    "source_refetch_1144": false,
+    "inventory_rebuilt": false,
+    "old_gate_modified": false,
+    "original_13_block_touched": false
+  }
+}

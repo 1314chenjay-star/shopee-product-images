@@ -1,0 +1,29 @@
+{
+  "schema_version": "v4c2.5.found-hold-summary.1",
+  "target": 3,
+  "upgraded_partial_safe": 0,
+  "retained_hold": 3,
+  "details": [
+    {
+      "sequence": 41,
+      "prior_hold_reason": "NO_VERIFIED_SOURCE_CLAIMS_FROM_EXISTING_OCR",
+      "resolution": "RETAIN_HOLD_NO_VERIFIED_SOURCE",
+      "terminal_status": "HOLD"
+    },
+    {
+      "sequence": 312,
+      "prior_hold_reason": "NO_VERIFIED_SOURCE_CLAIMS_FROM_EXISTING_OCR",
+      "resolution": "RETAIN_HOLD_NO_VERIFIED_SOURCE",
+      "terminal_status": "HOLD"
+    },
+    {
+      "sequence": 320,
+      "prior_hold_reason": "NO_VERIFIED_SOURCE_CLAIMS_FROM_EXISTING_OCR",
+      "resolution": "RETAIN_HOLD_NO_VERIFIED_SOURCE",
+      "terminal_status": "HOLD"
+    }
+  ],
+  "artifact_download_called": false,
+  "ocr_rerun": false,
+  "semantic_inference_executed": false
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "v4c2.5.validation.1",
+  "phase": "FINAL",
+  "passed": true,
+  "target": 187,
+  "fetch_success": 184,
+  "fetch_failed": 0,
+  "sha_matched": 184,
+  "sha_mismatch": 0,
+  "found_hold_target": 3,
+  "found_hold_upgraded": 0,
+  "found_hold_retained": 3,
+  "original_13_block_touched": false,
+  "rerun_1378": false,
+  "source_refetch_1144": false,
+  "completed_ocr_rerun": false,
+  "semantic_rerun": false,
+  "inventory_rebuilt": false
+}
