@@ -1,0 +1,203 @@
+name: V4-C2.2 Progressive Preservation Claim Full Bridge
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-progressive-claim-full.yml"
+      - "_system/tests/v4c_progressive_claim_full.py"
+      - "_system/tests/v4c_progressive_claim_validate.py"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: v4c2-progressive-preservation-claim-full
+  cancel-in-progress: false
+
+env:
+  BASE_HEAD: 7252c42345c7d5463067c4da33102975a0364fdc
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  FUTURE_QUEUE: _system/v4c/claim_gate/bridge/unfiltered_semantic_claim_gate_queue.jsonl
+  SOURCE_EVIDENCE: _system/v4c/results/source_evidence.jsonl
+  OLD_PRESERVATION: _system/v4c/preservation/results/image_preservation.jsonl
+  OLD_SEMANTIC: _system/v4c/semantic/preservation/semantic_evidence.jsonl
+  PRODUCT_CONTEXT: _system/v4c/semantic/bootstrap/product_context.jsonl.gz.b64
+
+jobs:
+  progressive_canary_then_full:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify all completed stages remain frozen
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'HEAD is not descended from V4-C2.1 frozen HEAD' }
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          $frozen = @(
+            '_system/v4c/results/source_evidence.jsonl',
+            '_system/v4c/results/semantic_evidence_queue.jsonl',
+            '_system/v4c/results/duplicate_map.json',
+            '_system/v4c/preservation/results/image_preservation.jsonl',
+            '_system/v4c/preservation/results/preservation_semantic_queue.jsonl',
+            '_system/v4c/preservation/PRESERVATION_GATE_LOCK.json',
+            '_system/v4c/semantic/preservation/semantic_evidence.jsonl',
+            '_system/v4c/semantic/preservation/semantic_progress.jsonl',
+            '_system/v4c/semantic/preservation/semantic_summary.json',
+            '_system/v4c/claim_gate/calibration/calibration_summary.json',
+            '_system/v4c/claim_gate/bridge/bridge_summary.json',
+            '_system/v4c/claim_gate/bridge/unfiltered_semantic_claim_gate_queue.jsonl',
+            '_system/start/api_v2.ps1'
+          )
+          git diff --quiet $env:BASE_HEAD -- $frozen
+          if ($LASTEXITCODE -ne 0) { throw 'A frozen completed-stage file changed after V4-C2.1' }
+          Write-Host 'V4C1_RETESTED=false'
+          Write-Host 'V4C2_0_SMOKE_RETESTED=false'
+          Write-Host 'V4C2_1_CALIBRATION_RETESTED=false'
+          Write-Host 'SEMANTIC_140_RETESTED=false'
+          Write-Host 'V4B_RETESTED=false'
+          Write-Host 'STABLE_HEAD_UNCHANGED=true'
+
+      - name: Prove new V4-C2.2 route has no network OCR inference path
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @('_system/tests/v4c_progressive_claim_full.py','_system/tests/v4c_progressive_claim_validate.py')
+          foreach ($f in $files) {
+            $t = (Get-Content $f -Raw -Encoding UTF8).ToLowerInvariant()
+            foreach ($token in @('urlopen(','requests.get(','http.client','import socket','rapidocr','torch.','pil.image','openai')) {
+              if ($t.Contains($token)) { throw "Forbidden new runtime dependency '$token' in $f" }
+            }
+          }
+          Write-Host 'SOURCE_DOWNLOAD_CODE_PATH=false'
+          Write-Host 'OCR_CODE_PATH=false'
+          Write-Host 'SEMANTIC_INFERENCE_CODE_PATH=false'
+          Write-Host 'VISION_API_CODE_PATH=false'
+
+      - name: V4-C2.2 deterministic self-test
+        shell: powershell
+        run: |
+          python _system\tests\v4c_progressive_claim_full.py self-test
+
+      - name: Build new 250-record canary from frozen 1378 queue
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force artifacts\progressive | Out-Null
+          python _system\tests\v4c_progressive_claim_full.py plan `
+            --queue $env:FUTURE_QUEUE `
+            --canary-out artifacts\progressive\canary_manifest.jsonl `
+            --summary artifacts\progressive\plan_summary.json `
+            --canary-size 250
+
+      - name: Canary checkpoint seed first 50
+        shell: powershell
+        run: |
+          python _system\tests\v4c_progressive_claim_full.py process `
+            --manifest artifacts\progressive\canary_manifest.jsonl `
+            --source-evidence $env:SOURCE_EVIDENCE `
+            --old-preservation $env:OLD_PRESERVATION `
+            --old-semantic $env:OLD_SEMANTIC `
+            --product-context $env:PRODUCT_CONTEXT `
+            --progress artifacts\progressive\progress.jsonl `
+            --summary artifacts\progressive\canary_seed_summary.json `
+            --target-total 50
+
+      - name: Canary resume same checkpoint to 250
+        shell: powershell
+        run: |
+          python _system\tests\v4c_progressive_claim_full.py process `
+            --manifest artifacts\progressive\canary_manifest.jsonl `
+            --source-evidence $env:SOURCE_EVIDENCE `
+            --old-preservation $env:OLD_PRESERVATION `
+            --old-semantic $env:OLD_SEMANTIC `
+            --product-context $env:PRODUCT_CONTEXT `
+            --progress artifacts\progressive\progress.jsonl `
+            --summary artifacts\progressive\canary_resume_summary.json `
+            --target-total 250
+
+      - name: Validate canary before full continuation
+        shell: powershell
+        run: |
+          python _system\tests\v4c_progressive_claim_validate.py `
+            --mode canary `
+            --manifest artifacts\progressive\canary_manifest.jsonl `
+            --progress artifacts\progressive\progress.jsonl `
+            --expected 250 `
+            --old-preservation $env:OLD_PRESERVATION `
+            --old-semantic $env:OLD_SEMANTIC `
+            --seed-summary artifacts\progressive\canary_seed_summary.json `
+            --resume-summary artifacts\progressive\canary_resume_summary.json `
+            --output artifacts\progressive\canary_validation.json
+
+      - name: Canary PASS - continue same checkpoint through all 1378
+        shell: powershell
+        run: |
+          python _system\tests\v4c_progressive_claim_full.py process `
+            --manifest $env:FUTURE_QUEUE `
+            --source-evidence $env:SOURCE_EVIDENCE `
+            --old-preservation $env:OLD_PRESERVATION `
+            --old-semantic $env:OLD_SEMANTIC `
+            --product-context $env:PRODUCT_CONTEXT `
+            --progress artifacts\progressive\progress.jsonl `
+            --summary artifacts\progressive\full_resume_summary.json `
+            --target-total 1378
+
+      - name: Full input output reconciliation
+        shell: powershell
+        run: |
+          python _system\tests\v4c_progressive_claim_validate.py `
+            --mode full `
+            --manifest $env:FUTURE_QUEUE `
+            --progress artifacts\progressive\progress.jsonl `
+            --expected 1378 `
+            --old-preservation $env:OLD_PRESERVATION `
+            --old-semantic $env:OLD_SEMANTIC `
+            --output artifacts\progressive\full_validation.json
+          Copy-Item artifacts\progressive\full_validation.json artifacts\progressive\final_summary.json -Force
+
+      - name: Recheck stable HEAD after full bridge
+        shell: powershell
+        run: |
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed after run: $stableHead" }
+          Write-Host "STABLE_HEAD=$stableHead"
+          Write-Host 'STABLE_HEAD_UNCHANGED=true'
+          Write-Host 'SOURCE_DOWNLOAD_CALLED=false'
+          Write-Host 'OCR_RERUN=false'
+          Write-Host 'IMAGE_GENERATION_CALLED=false'
+          Write-Host 'TINY_SNOW_API_CALLED=false'
+          Write-Host 'PAID_API_CALLED=false'
+          Write-Host 'VISION_API_CALLED=false'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-2-progressive-preservation-claim-full
+          path: artifacts/progressive
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Persist only new V4-C2.2 outputs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dst = '_system\v4c\progressive_claim'
+          New-Item -ItemType Directory -Force $dst | Out-Null
+          Copy-Item artifacts\progressive\* $dst -Force
+          git config user.name 'TinySnow V4-C2.2 Progressive'
+          git config user.email 'actions@users.noreply.github.com'
+          git add _system/v4c/progressive_claim
+          if (git diff --cached --quiet) { Write-Host 'PERSIST_NO_CHANGES=true'; exit 0 }
+          git commit -m 'V4-C2.2 persist progressive Preservation claim bridge [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
