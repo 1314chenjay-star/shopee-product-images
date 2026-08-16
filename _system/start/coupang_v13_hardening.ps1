@@ -1,9 +1,9 @@
 ﻿$ErrorActionPreference = 'Stop'
 
-# V1.3 overrides two browser-discovery functions from earlier builds.
+# V1.3 overrides browser discovery and CDP input handling from earlier builds.
 # Important PowerShell detail: when a pipeline returns exactly one string,
 # indexing [0] can otherwise return only the first character of that string.
-# Wrapping the pipeline result in @() guarantees a real array of paths.
+# Wrapping pipeline results in @() guarantees a real array of paths.
 
 function Get-CoupangBrowserExecutableV1 {
     $candidates = @(
@@ -95,4 +95,61 @@ function Resolve-CoupangBrowserExecutableV3([object]$Meta) {
     }
 
     throw '找不到可用的 Microsoft Edge 或 Google Chrome。請確認瀏覽器仍安裝在這台電腦。'
+}
+
+function Invoke-CdpCommandV1 {
+    param(
+        [Parameter(Mandatory=$true)][object]$WebSocketUrl,
+        [Parameter(Mandatory=$true)][string]$Method,
+        [hashtable]$Params = @{}
+    )
+
+    $wsCandidates = @($WebSocketUrl)
+    if ($wsCandidates.Count -eq 0) { throw '缺少瀏覽器 WebSocket 控制網址。' }
+    $wsText = [string]$wsCandidates[0]
+    if (-not $wsText -or $wsText -notmatch '^wss?://') {
+        throw '瀏覽器 WebSocket 控制網址格式無效。'
+    }
+
+    $ws = New-Object System.Net.WebSockets.ClientWebSocket
+    $token = [Threading.CancellationToken]::None
+    $uri = [Uri]$wsText
+    $ws.ConnectAsync($uri, $token).GetAwaiter().GetResult()
+
+    try {
+        $id = Get-Random -Minimum 1000 -Maximum 999999
+        $payload = @{ id = $id; method = $Method; params = $Params } | ConvertTo-Json -Depth 30 -Compress
+        $bytes = [Text.Encoding]::UTF8.GetBytes($payload)
+        $sendSegment = New-Object 'System.ArraySegment[byte]' -ArgumentList (,$bytes)
+        $ws.SendAsync($sendSegment, [Net.WebSockets.WebSocketMessageType]::Text, $true, $token).GetAwaiter().GetResult()
+
+        while ($true) {
+            $buffer = New-Object byte[] 65536
+            $stream = New-Object IO.MemoryStream
+            do {
+                $receiveSegment = New-Object 'System.ArraySegment[byte]' -ArgumentList (,$buffer)
+                $result = $ws.ReceiveAsync($receiveSegment, $token).GetAwaiter().GetResult()
+                if ($result.MessageType -eq [Net.WebSockets.WebSocketMessageType]::Close) {
+                    throw '瀏覽器控制連線被關閉。'
+                }
+                $stream.Write($buffer, 0, $result.Count)
+            } while (-not $result.EndOfMessage)
+
+            $text = [Text.Encoding]::UTF8.GetString($stream.ToArray())
+            $message = $text | ConvertFrom-Json
+            if ($message.id -eq $id) {
+                if ($message.error) { throw ("CDP 錯誤：{0}" -f ($message.error | ConvertTo-Json -Compress)) }
+                return $message.result
+            }
+        }
+    }
+    finally {
+        try {
+            if ($ws.State -eq [Net.WebSockets.WebSocketState]::Open) {
+                $ws.CloseAsync([Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'done', $token).GetAwaiter().GetResult()
+            }
+        }
+        catch {}
+        $ws.Dispose()
+    }
 }
