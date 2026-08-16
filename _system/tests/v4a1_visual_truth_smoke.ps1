@@ -22,12 +22,24 @@ if (@($product.verified_facts.verified_dimensions) -notcontains '2米') { throw 
 
 $mainPrompt = Get-PromptV2 'main' $product
 $compactPrompt = Get-CompactTransportPromptV2 'main' $product
-foreach ($needle in @('視覺數量限制','禁止用多個重複商品單位','以單一代表性商品外觀為主')) {
-    if ($mainPrompt -notmatch [regex]::Escape($needle)) { throw ('Main prompt visual guard missing: ' + $needle) }
-}
-foreach ($needle in @('禁止用多個重複商品單位','以單一代表性商品外觀為主')) {
-    if ($compactPrompt -notmatch [regex]::Escape($needle)) { throw ('Compact prompt visual guard missing: ' + $needle) }
-}
+
+$legacyMainVisualGuard = ($mainPrompt -match '視覺數量限制') -and
+    ($mainPrompt -match '禁止用多個重複商品單位') -and
+    ($mainPrompt -match '以單一代表性商品外觀為主')
+$legacyCompactVisualGuard = ($compactPrompt -match '禁止用多個重複商品單位') -and
+    ($compactPrompt -match '以單一代表性商品外觀為主')
+
+$v4bMainVisualGuard = ($mainPrompt -match '本商品有多規格') -and
+    ($mainPrompt -match '不得把單一規格內容改寫成所有規格共同具備') -and
+    ($mainPrompt -match '數量／套組數有差異') -and
+    ($mainPrompt -match '不要翻譯、重建或改寫成通用賣點')
+$v4bCompactVisualGuard = ($compactPrompt -match '本商品有多規格') -and
+    ($compactPrompt -match '不得把單一規格內容改寫成所有規格共同具備') -and
+    ($compactPrompt -match '數量／套組數有差異') -and
+    ($compactPrompt -match '不要翻譯、重建或改寫成通用賣點')
+
+if (-not ($legacyMainVisualGuard -or $v4bMainVisualGuard)) { throw 'Main prompt multi-variant visual/source guard missing.' }
+if (-not ($legacyCompactVisualGuard -or $v4bCompactVisualGuard)) { throw 'Compact prompt multi-variant visual/source guard missing.' }
 
 foreach ($value in @('2公尺','30磅','腰帶','黑色')) {
     if ($mainPrompt -notmatch [regex]::Escape($value)) { throw ('Localized/common verified fact missing: ' + $value) }
@@ -35,4 +47,4 @@ foreach ($value in @('2公尺','30磅','腰帶','黑色')) {
 if ($mainPrompt -match '(?<!公)2米') { throw 'Main prompt leaked Mainland length wording 2米.' }
 if ($mainPrompt -match '一組' -or $mainPrompt -match '5組' -or $mainPrompt -match '五套') { throw 'Variant-specific quantity leaked into prompt.' }
 
-Write-Host '[PASS] V4-A.2 visual quantity truth guard: source facts remain unchanged while full/compact prompts use Taiwan-localized common facts and neutral multi-variant visuals.' -ForegroundColor Green
+Write-Host '[PASS] Visual quantity/source truth guard: source facts remain unchanged, common facts are localized, and multi-variant quantities cannot be generalized or rebuilt as common claims.' -ForegroundColor Green
