@@ -65,10 +65,10 @@ jobs:
           @(
             'TinySnow Coupang Existing Browser V1.5',
             '',
-            '只需要解壓一次。',
-            '解壓後打開 coupang_browser_extension\README_安裝使用.txt。',
-            '請把擴充功能安裝在「原本已登入 Coupang」的同一個 Chrome/Edge Profile。'
-          ) | Set-Content -LiteralPath (Join-Path $out '先看我.txt') -Encoding UTF8
+            'Extract this download once only.',
+            'Open coupang_browser_extension and read the installation guide.',
+            'Install the unpacked extension in the SAME Chrome/Edge profile that is already signed in to Coupang.'
+          ) | Set-Content -LiteralPath (Join-Path $out 'README_FIRST.txt') -Encoding UTF8
           if (Get-ChildItem -LiteralPath $out -Recurse -Filter '*.zip') { throw 'Nested ZIP detected.' }
           if (-not (Test-Path (Join-Path $out 'coupang_browser_extension\manifest.json'))) { throw 'Extension manifest missing from package.' }
           Write-Host "Single-layer package folder OK: $out"
