@@ -1,0 +1,252 @@
+name: V4-C2 Semantic Evidence Engine
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-semantic-engine.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: v4c2-semantic-evidence
+  cancel-in-progress: false
+
+env:
+  V4C1_BASELINE_HEAD: a7447b792e65780bc95aa248b9e3a2fd0466f142
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  SEMANTIC_QUEUE: _system/v4c/results/semantic_evidence_queue.jsonl
+  PRODUCT_CONTEXT_BOOTSTRAP: _system/v4c/semantic/bootstrap/product_context.jsonl.gz.b64
+  SMOKE_MANIFEST_BOOTSTRAP: _system/v4c/semantic/bootstrap/semantic_smoke_manifest.jsonl.gz.b64
+  PRODUCT_CONTEXT: artifacts/bootstrap/product_context.jsonl
+  SMOKE_MANIFEST: artifacts/bootstrap/semantic_smoke_manifest.jsonl
+  PRODUCT_CONTEXT_SHA256: d7e2158c4a147ae58665985e491aed658cafdc9760e6ddad72d984053bc8c111
+  SMOKE_MANIFEST_SHA256: 48a2405ecf7d1d7b7a2a0034cbbdee0f8f7aa4d52f5e0f7eb13118a45f1e0c66
+  DUPLICATE_MAP: _system/v4c/results/duplicate_map.json
+  SOURCE_EVIDENCE: _system/v4c/results/source_evidence.jsonl
+  REQUIREMENTS: _system/v4c/semantic/requirements.txt
+
+jobs:
+  preflight:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Expand verified semantic context bootstrap
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_semantic_expand_bootstrap.ps1 -Base64Path $env:PRODUCT_CONTEXT_BOOTSTRAP -OutputPath $env:PRODUCT_CONTEXT -ExpectedSha256 $env:PRODUCT_CONTEXT_SHA256
+          .\_system\tests\v4c_semantic_expand_bootstrap.ps1 -Base64Path $env:SMOKE_MANIFEST_BOOTSTRAP -OutputPath $env:SMOKE_MANIFEST -ExpectedSha256 $env:SMOKE_MANIFEST_SHA256
+      - name: Verify frozen V4-C1 baseline and stable branch
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          git merge-base --is-ancestor $env:V4C1_BASELINE_HEAD HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Current branch is not descended from V4-C1 baseline" }
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          $protected = @('_system/v4c/inventory/source_inventory.jsonl','_system/v4c/progress/v4c_source_progress.jsonl','_system/v4c/results/source_evidence.jsonl','_system/v4c/results/duplicate_map.json','_system/v4c/results/failed_sources.json','_system/v4c/results/semantic_evidence_queue.jsonl','_system/v4c/results/aggregate_summary.json','_system/v4c/results/validation.json','_system/start/api_v2.ps1')
+          git diff --quiet $env:V4C1_BASELINE_HEAD -- $protected
+          if ($LASTEXITCODE -ne 0) { throw "V4-C1 protected files changed after baseline" }
+          Write-Host "V4C1_BASELINE=$env:V4C1_BASELINE_HEAD"
+          Write-Host "STABLE_HEAD=$stableHead"
+          Write-Host "V4C1_PROTECTED_FILES_UNCHANGED=true"
+          Write-Host "SOURCE_PIPELINE_REDOWNLOAD=false"
+          Write-Host "IMAGE_GENERATION_CALLED=false"
+      - name: Validate 160-image stratified smoke plan
+        shell: powershell
+        run: |
+          .\_system\tests\v4c_semantic_plan.ps1 -Mode Smoke -QueuePath $env:SEMANTIC_QUEUE -SmokeManifestPath $env:SMOKE_MANIFEST -ContextPath $env:PRODUCT_CONTEXT -OutDir artifacts\semantic-smoke-plan
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-semantic-smoke-plan
+          path: artifacts/semantic-smoke-plan
+          if-no-files-found: error
+          retention-days: 14
+
+  smoke:
+    needs: preflight
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Expand verified semantic context bootstrap
+        shell: powershell
+        run: |
+          .\_system\tests\v4c_semantic_expand_bootstrap.ps1 -Base64Path $env:PRODUCT_CONTEXT_BOOTSTRAP -OutputPath $env:PRODUCT_CONTEXT -ExpectedSha256 $env:PRODUCT_CONTEXT_SHA256
+          .\_system\tests\v4c_semantic_expand_bootstrap.ps1 -Base64Path $env:SMOKE_MANIFEST_BOOTSTRAP -OutputPath $env:SMOKE_MANIFEST -ExpectedSha256 $env:SMOKE_MANIFEST_SHA256
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: ${{ env.REQUIREMENTS }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/torch
+          key: v4c2-mobilenet-v3-small-imagenet1k-v1
+      - name: Install free local semantic dependencies
+        shell: powershell
+        run: python -m pip install --disable-pip-version-check -r $env:REQUIREMENTS
+      - name: Deterministic HOLD and BLOCK gate self-test
+        shell: powershell
+        run: python .\_system\tests\v4c_semantic_worker.py --self-test
+      - name: Smoke checkpoint seed - first 20 images
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force artifacts\smoke-work | Out-Null
+          python .\_system\tests\v4c_semantic_worker.py --manifest $env:SMOKE_MANIFEST --context $env:PRODUCT_CONTEXT --progress artifacts\smoke-work\semantic_progress.jsonl --summary artifacts\smoke-work\partial_summary.json --cache-dir artifacts\smoke-cache --max-items 20
+      - name: Resume same checkpoint - skip DONE and finish 160
+        shell: powershell
+        run: |
+          python .\_system\tests\v4c_semantic_worker.py --manifest $env:SMOKE_MANIFEST --context $env:PRODUCT_CONTEXT --progress artifacts\smoke-work\semantic_progress.jsonl --summary artifacts\smoke-work\resume_summary.json --cache-dir artifacts\smoke-cache
+          $resume = Get-Content artifacts\smoke-work\resume_summary.json -Raw | ConvertFrom-Json
+          if ([int]$resume.checkpoint_skipped_this_run -lt 20) { throw "Checkpoint did not skip first 20 terminal records" }
+          if ([int]$resume.covered_after_run -ne 160) { throw "Smoke checkpoint reconciliation failed" }
+          Write-Host "CHECKPOINT_RESUME_OBSERVED=true"
+      - name: Aggregate smoke and prove SHA reuse 13 to 7
+        shell: powershell
+        run: .\_system\tests\v4c_semantic_aggregate.ps1 -Phase Smoke -QueuePath $env:SEMANTIC_QUEUE -SourceEvidencePath $env:SOURCE_EVIDENCE -DuplicateMapPath $env:DUPLICATE_MAP -SeedProgressPath artifacts\smoke-work\semantic_progress.jsonl -OutputDir artifacts\smoke-aggregate
+      - name: Validate semantic smoke invariants
+        shell: powershell
+        run: .\_system\tests\v4c_semantic_validate.ps1 -Phase Smoke -ProgressPath artifacts\smoke-aggregate\semantic_progress.jsonl -SummaryPath artifacts\smoke-aggregate\semantic_summary.json -QueuePath $env:SEMANTIC_QUEUE -SmokeManifestPath $env:SMOKE_MANIFEST -WorkerResumeSummaryPath artifacts\smoke-work\resume_summary.json -OutputPath artifacts\smoke-aggregate\validation.json -ExpectedStableHead $env:STABLE_HEAD -V4C1BaselineHead $env:V4C1_BASELINE_HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-semantic-smoke
+          path: |
+            artifacts/smoke-work
+            artifacts/smoke-aggregate
+          if-no-files-found: error
+          retention-days: 14
+
+  full_plan:
+    needs: smoke
+    runs-on: windows-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Expand verified semantic product context
+        shell: powershell
+        run: .\_system\tests\v4c_semantic_expand_bootstrap.ps1 -Base64Path $env:PRODUCT_CONTEXT_BOOTSTRAP -OutputPath $env:PRODUCT_CONTEXT -ExpectedSha256 $env:PRODUCT_CONTEXT_SHA256
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c2-semantic-smoke
+          path: artifacts/smoke-artifact
+      - name: Build remaining 1384 queue without rerunning smoke DONE
+        shell: powershell
+        run: .\_system\tests\v4c_semantic_plan.ps1 -Mode Full -QueuePath $env:SEMANTIC_QUEUE -ContextPath $env:PRODUCT_CONTEXT -SeedProgressPath artifacts\smoke-artifact\smoke-aggregate\semantic_progress.jsonl -OutDir artifacts\full-plan -ShardCount 4
+      - name: Export semantic full matrix
+        id: matrix
+        shell: powershell
+        run: |
+          $m = (Get-Content artifacts\full-plan\matrix.json -Raw).Trim()
+          $enc = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, ("matrix=" + $m + "`n"), $enc)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-semantic-full-plan
+          path: artifacts/full-plan
+          if-no-files-found: error
+          retention-days: 14
+
+  full:
+    needs: full_plan
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJson(needs.full_plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Expand verified semantic product context
+        shell: powershell
+        run: .\_system\tests\v4c_semantic_expand_bootstrap.ps1 -Base64Path $env:PRODUCT_CONTEXT_BOOTSTRAP -OutputPath $env:PRODUCT_CONTEXT -ExpectedSha256 $env:PRODUCT_CONTEXT_SHA256
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: ${{ env.REQUIREMENTS }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/torch
+          key: v4c2-mobilenet-v3-small-imagenet1k-v1
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c2-semantic-full-plan
+          path: artifacts/full-plan
+      - name: Install free local semantic dependencies
+        shell: powershell
+        run: python -m pip install --disable-pip-version-check -r $env:REQUIREMENTS
+      - name: Local semantic shard
+        shell: powershell
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          New-Item -ItemType Directory -Force artifacts\full-results | Out-Null
+          python .\_system\tests\v4c_semantic_worker.py --manifest ("artifacts\full-plan\shards\" + $env:SHARD + ".jsonl") --context $env:PRODUCT_CONTEXT --progress ("artifacts\full-results\" + $env:SHARD + ".progress.jsonl") --summary ("artifacts\full-results\" + $env:SHARD + ".summary.json") --cache-dir ("artifacts\cache-" + $env:SHARD)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-semantic-${{ matrix.shard }}
+          path: artifacts/full-results
+          if-no-files-found: error
+          retention-days: 14
+
+  finalize:
+    needs: [smoke, full_plan, full]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: v4c2-semantic-smoke
+          path: artifacts/smoke-artifact
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: v4c2-semantic-semantic-*
+          path: artifacts/full-results
+          merge-multiple: true
+      - name: Aggregate all 1544 semantic pending plus four SHA reuses
+        shell: powershell
+        run: .\_system\tests\v4c_semantic_aggregate.ps1 -Phase Final -QueuePath $env:SEMANTIC_QUEUE -SourceEvidencePath $env:SOURCE_EVIDENCE -DuplicateMapPath $env:DUPLICATE_MAP -SeedProgressPath artifacts\smoke-artifact\smoke-aggregate\semantic_progress.jsonl -ShardResultRoot artifacts\full-results -OutputDir artifacts\final
+      - name: Validate final semantic coverage and frozen V4-C1 evidence
+        shell: powershell
+        run: .\_system\tests\v4c_semantic_validate.ps1 -Phase Final -ProgressPath artifacts\final\semantic_progress.jsonl -SummaryPath artifacts\final\semantic_summary.json -QueuePath $env:SEMANTIC_QUEUE -OutputPath artifacts\final\validation.json -ExpectedStableHead $env:STABLE_HEAD -V4C1BaselineHead $env:V4C1_BASELINE_HEAD
+      - name: Persist V4-C2 semantic ledger only on experimental branch
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force _system\v4c\semantic\progress | Out-Null
+          New-Item -ItemType Directory -Force _system\v4c\semantic\results | Out-Null
+          Copy-Item artifacts\final\semantic_progress.jsonl _system\v4c\semantic\progress\semantic_progress.jsonl -Force
+          Copy-Item artifacts\final\semantic_checkpoint.json _system\v4c\semantic\progress\semantic_checkpoint.json -Force
+          Copy-Item artifacts\final\semantic_evidence.jsonl _system\v4c\semantic\results\semantic_evidence.jsonl -Force
+          Copy-Item artifacts\final\semantic_pass.jsonl _system\v4c\semantic\results\semantic_pass.jsonl -Force
+          Copy-Item artifacts\final\semantic_hold.jsonl _system\v4c\semantic\results\semantic_hold.jsonl -Force
+          Copy-Item artifacts\final\semantic_block.jsonl _system\v4c\semantic\results\semantic_block.jsonl -Force
+          Copy-Item artifacts\final\remaining_semantic_queue.jsonl _system\v4c\semantic\results\remaining_semantic_queue.jsonl -Force
+          Copy-Item artifacts\final\semantic_summary.json _system\v4c\semantic\results\semantic_summary.json -Force
+          Copy-Item artifacts\final\validation.json _system\v4c\semantic\results\validation.json -Force
+          git config user.name "TinySnow V4-C2 Semantic"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/v4c/semantic
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) { git commit -m "V4-C2 finalize semantic evidence [skip ci]"; git push origin HEAD:v4c-universal-product-engine }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v4c2-semantic-final
+          path: artifacts/final
+          if-no-files-found: error
+          retention-days: 14
