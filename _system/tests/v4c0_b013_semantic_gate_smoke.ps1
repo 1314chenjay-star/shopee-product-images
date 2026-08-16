@@ -67,9 +67,9 @@ Assert-True ((@($simpleBoard.variant_constraints) -join ' ') -match 'single_cata
 
 $roller = Get-V4CSemanticProductGate $current '45265569613'
 Assert-True ($roller.can_enter_v4b -eq $false) 'foam-roller listing with staged three-device set must stay blocked.'
-Assert-True ($roller.semantic_verdict -eq 'BLOCK_SOURCE_CATALALOG_CONFLICT_AND_BUNDLE_VERIFICATION_REQUIRED') 'foam roller must use bundle verification block.'
+Assert-True ($roller.semantic_verdict -eq 'BLOCK_SOURCE_CATALOG_CONFLICT_AND_BUNDLE_VERIFICATION_REQUIRED') 'foam roller must use bundle verification block.'
 Assert-True ((@($roller.blocked_claim_keys) -join ' ') -match 'three_piece_bundle_commonality') 'three-piece bundle must not be inferred.'
-Assert-True ((@($roller.variant_constraints) -join ' ') -match 'three_product_leg_massage kit') 'source/title identity mismatch must remain explicit.'
+Assert-True ((@($roller.variant_constraints) -join ' ') -match 'three_product leg_massage kit') 'source/title identity mismatch must remain explicit.'
 
 $pulldown = Get-V4CSemanticProductGate $current '45515572777'
 Assert-True ($pulldown.can_enter_v4b -eq $false) '14-option pulldown trainer must stay blocked.'
