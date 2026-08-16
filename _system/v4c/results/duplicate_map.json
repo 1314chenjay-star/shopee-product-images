@@ -4,6 +4,11 @@
                        ],
     "sha256_duplicates":  [
                               {
+                                  "sequence":  13,
+                                  "sha256":  "90533d2709454e4c5a78a115dc9afe4f097d23516f737fdc7e427ae607329648",
+                                  "canonical_sequence":  7
+                              },
+                              {
                                   "sequence":  1469,
                                   "sha256":  "00f1d296ab2f6b1b95bec9cb46954353269de669e549325a831bef014f87eebc",
                                   "canonical_sequence":  1468
