@@ -20,11 +20,25 @@ if($inv.Count -ne 2394){throw "Inventory count expected 2394, got $($inv.Count)"
 for($i=1;$i -le $inv.Count;$i++){if([int]$inv[$i-1].sequence -ne $i){throw "Inventory sequence gap at $i"};if([int]$progress[$i-1].sequence -ne $i){throw "Progress sequence gap at $i"}}
 $seqUnique=@($progress|Group-Object sequence|Where-Object{$_.Count -ne 1});if($seqUnique.Count -gt 0){throw "Duplicate/missing progress sequence records detected"}
 $dup=Get-Content -Raw -Encoding UTF8 $DuplicateMapPath|ConvertFrom-Json;$failedRaw=Get-Content -Raw -Encoding UTF8 $FailedPath;$failed=@();if(-not[string]::IsNullOrWhiteSpace($failedRaw)){$parsed=$failedRaw|ConvertFrom-Json;if($parsed -is [System.Array]){$failed=@($parsed)}elseif($null -ne $parsed){$failed=@($parsed)}};$summary=Get-Content -Raw -Encoding UTF8 $SummaryPath|ConvertFrom-Json
-$legacyCount=@($progress|Where-Object{$_.status -eq "LEGACY_DONE"}).Count;if($legacyCount -ne 900){throw "Legacy completed preservation failed: expected 900 got $legacyCount"}
+
+$legacyRecords=@($progress|Where-Object{$_.status -eq "LEGACY_DONE"})
+$legacySequences=@()
+foreach($p in $legacyRecords){
+    if($p.PSObject.Properties.Name -contains "legacy_sequences"){$legacySequences += @($p.legacy_sequences|ForEach-Object{[int]$_})}
+    elseif($p.PSObject.Properties.Name -contains "legacy_sequence"){$legacySequences += [int]$p.legacy_sequence}
+    else{throw "LEGACY_DONE record missing legacy sequence evidence at inventory sequence $($p.sequence)"}
+}
+$legacyOrdered=@($legacySequences|Sort-Object)
+if($legacyOrdered.Count -ne 900){throw "Legacy sequence coverage failed: expected 900 got $($legacyOrdered.Count)"}
+for($i=1;$i -le 900;$i++){if([int]$legacyOrdered[$i-1] -ne $i){throw "Legacy sequence coverage gap/duplicate at historical sequence $i"}}
+$legacyCount=$legacyRecords.Count
+$legacyDuplicateOccurrences=900-$legacyCount
+if($legacyDuplicateOccurrences -lt 0){throw "Legacy unique source count exceeds sequence coverage"}
+
 $badFlags=@($progress|Where-Object{$_.image_generation_called -ne $false -or $_.tiny_snow_api_called -ne $false -or $_.paid_api_called -ne $false});if($badFlags.Count -gt 0){throw "Forbidden API/generation flag detected"}
 $shaBad=@($progress|Where-Object{$_.status -eq "SHA_DUPLICATE" -and $_.semantic_status -eq "PENDING"});if($shaBad.Count -gt 0){throw "SHA duplicate independently queued for semantic analysis"}
 $remoteLine=@(& git ls-remote origin "refs/heads/tinysnow-tool-only");if($LASTEXITCODE -ne 0 -or $remoteLine.Count -eq 0){throw "Could not verify stable remote HEAD"};$stableHead=($remoteLine[0] -split "\s+")[0];if($stableHead -ne $ExpectedStableHead){throw "Stable HEAD changed: $stableHead expected $ExpectedStableHead"}
 & git diff --quiet $V4CBaselineHead HEAD -- "_system/start/api_v2.ps1";if($LASTEXITCODE -ne 0){throw "_system/start/api_v2.ps1 changed relative to V4-C baseline"}
 $terminal=@($progress|Where-Object{$_.status -in @("LEGACY_DONE","DONE","URL_DUPLICATE","SHA_DUPLICATE","FAILED")}).Count;$pendingDownload=@($progress|Where-Object{$_.status -eq "PENDING"}).Count;if($Phase -eq "Final" -and $pendingDownload -ne 0){throw "Final phase still has PENDING downloads: $pendingDownload"}
-$result=[ordered]@{phase=$Phase;passed=$true;inventory_count=$inv.Count;progress_count=$progress.Count;sequence_no_gaps=$true;input_output_reconciliation=$true;legacy_done=$legacyCount;terminal_count=$terminal;pending_download=$pendingDownload;url_duplicate_count=@($dup.url_duplicates).Count;sha256_duplicate_count=@($dup.sha256_duplicates).Count;failed_count=$failed.Count;semantic_pending=[int]$summary.semantic_pending;hold=[int]$summary.hold;block=[int]$summary.block;stable_head=$stableHead;stable_head_unchanged=$true;api_v2_unchanged=$true;image_generation_called=$false;tiny_snow_api_called=$false;paid_api_called=$false}
+$result=[ordered]@{phase=$Phase;passed=$true;inventory_count=$inv.Count;progress_count=$progress.Count;sequence_no_gaps=$true;input_output_reconciliation=$true;legacy_unique_done=$legacyCount;legacy_sequence_coverage=900;legacy_duplicate_occurrences=$legacyDuplicateOccurrences;terminal_count=$terminal;pending_download=$pendingDownload;url_duplicate_count=@($dup.url_duplicates).Count;sha256_duplicate_count=@($dup.sha256_duplicates).Count;failed_count=$failed.Count;semantic_pending=[int]$summary.semantic_pending;hold=[int]$summary.hold;block=[int]$summary.block;stable_head=$stableHead;stable_head_unchanged=$true;api_v2_unchanged=$true;image_generation_called=$false;tiny_snow_api_called=$false;paid_api_called=$false}
 Write-Text $OutputPath (($result|ConvertTo-Json -Depth 8)+"`n");Write-Host "VALIDATION_RESULT=$($result|ConvertTo-Json -Compress)"
