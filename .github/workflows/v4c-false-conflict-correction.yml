@@ -1,0 +1,212 @@
+name: V4-C3.2 False-Conflict Correction and Scoped Product Eligibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - ".github/workflows/v4c-false-conflict-correction.yml"
+      - "_system/tests/v4c_false_conflict_correction.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v4c3-2-false-conflict-correction
+  cancel-in-progress: true
+
+env:
+  BASE_HEAD: ba56802b769d40d900e6a454ae280d07fdbc385c
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  IMAGE_GATE: _system/v4c/factual_gate/image_gate.jsonl
+  PRODUCT_GATE: _system/v4c/factual_gate/product_gate.jsonl
+  SUMMARY: _system/v4c/factual_gate/summary.json
+  VALIDATION: _system/v4c/factual_gate/validation.json
+  AUDIT: _system/v4c/factual_gate/audit/conflict_audit.jsonl
+  AUDIT_SUMMARY: _system/v4c/factual_gate/audit/conflict_root_cause_summary.json
+  OUT_DIR: _system/v4c/factual_gate/correction_v4c3_2
+
+jobs:
+  correction:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify frozen V4-C3.1 baseline and stable HEAD
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'HEAD is not descended from frozen V4-C3.1 HEAD' }
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          $frozen = @(
+            '_system/v4c/factual_gate/image_gate.jsonl',
+            '_system/v4c/factual_gate/product_gate.jsonl',
+            '_system/v4c/factual_gate/summary.json',
+            '_system/v4c/factual_gate/validation.json',
+            '_system/v4c/factual_gate/V4_C3_FACTUAL_GATE_LOCK.json',
+            '_system/v4c/factual_gate/audit/conflict_root_cause_summary.json',
+            '_system/v4c/factual_gate/audit/conflict_audit.jsonl',
+            '_system/v4c/factual_gate/audit/product_block_reason_summary.json',
+            '_system/v4c/factual_gate/audit/eligible_partial_block_analysis.json',
+            '_system/v4c/factual_gate/audit/audit_validation.json',
+            '_system/v4c/factual_gate/audit/V4_C3_1_CONFLICT_AUDIT_LOCK.json',
+            '_system/tests/v4c_factual_gate.py',
+            '_system/tests/v4c_factual_conflict_audit.py'
+          )
+          foreach ($p in $frozen) {
+            git diff --quiet $env:BASE_HEAD -- $p
+            if ($LASTEXITCODE -ne 0) { throw "Frozen V4-C3/V4-C3.1 input changed: $p" }
+          }
+          Write-Host 'V4C2_RETESTED=false'
+          Write-Host 'V4C3_RETESTED=false'
+          Write-Host 'V4C3_1_RETESTED=false'
+          Write-Host 'SOURCE_DOWNLOAD=false'
+          Write-Host 'ARTIFACT_DOWNLOAD=false'
+          Write-Host 'OCR=false'
+          Write-Host 'SEMANTIC=false'
+          Write-Host 'PRESERVATION_RERUN=false'
+          Write-Host 'IMAGE_GENERATION=false'
+
+      - name: Compile only new V4-C3.2 overlay
+        shell: powershell
+        run: |
+          python -m py_compile _system\tests\v4c_false_conflict_correction.py
+
+      - name: Build affected set and 120-record Canary
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force artifacts\v4c3_2 | Out-Null
+          python _system\tests\v4c_false_conflict_correction.py plan `
+            --images $env:IMAGE_GATE `
+            --products $env:PRODUCT_GATE `
+            --audit $env:AUDIT `
+            --summary $env:SUMMARY `
+            --audit-summary $env:AUDIT_SUMMARY `
+            --affected-out artifacts\v4c3_2\affected.jsonl `
+            --canary-out artifacts\v4c3_2\canary_120.jsonl `
+            --plan-summary artifacts\v4c3_2\plan_summary.json
+
+      - name: Run 120-record correction Canary
+        shell: powershell
+        run: |
+          python _system\tests\v4c_false_conflict_correction.py canary `
+            --canary artifacts\v4c3_2\canary_120.jsonl `
+            --images $env:IMAGE_GATE `
+            --audit $env:AUDIT `
+            --summary $env:SUMMARY `
+            --audit-summary $env:AUDIT_SUMMARY `
+            --output artifacts\v4c3_2\canary_validation.json
+          $c = Get-Content artifacts\v4c3_2\canary_validation.json -Raw | ConvertFrom-Json
+          if (-not $c.passed) { throw 'V4-C3.2 Canary did not PASS' }
+          if ([int]$c.input -ne 120) { throw 'V4-C3.2 Canary is not exactly 120 records' }
+          if (-not $c.sibling_block_propagation_removed) { throw 'Sibling BLOCK propagation still enabled' }
+          if (-not $c.unknown_never_safe -or -not $c.conflict_never_safe -or -not $c.forbidden_never_safe) { throw 'Safe-payload isolation failed' }
+          if (-not $c.variant_isolation_preserved) { throw 'Variant isolation regressed' }
+          if (-not $c.identity_critical_conflicts_block_product) { throw 'Identity-critical product block guard failed' }
+
+      - name: Apply correction overlay to full affected set after Canary PASS
+        shell: powershell
+        run: |
+          python _system\tests\v4c_false_conflict_correction.py full `
+            --images $env:IMAGE_GATE `
+            --products $env:PRODUCT_GATE `
+            --audit $env:AUDIT `
+            --affected artifacts\v4c3_2\affected.jsonl `
+            --overlay-out artifacts\v4c3_2\correction_overlay.jsonl `
+            --images-out artifacts\v4c3_2\corrected_image_gate.jsonl `
+            --products-out artifacts\v4c3_2\corrected_product_gate.jsonl `
+            --queue-out artifacts\v4c3_2\corrected_generation_queue.jsonl `
+            --summary-out artifacts\v4c3_2\summary.json
+
+      - name: Final safety and queue reconciliation
+        shell: powershell
+        run: |
+          python _system\tests\v4c_false_conflict_correction.py validate `
+            --images artifacts\v4c3_2\corrected_image_gate.jsonl `
+            --products artifacts\v4c3_2\corrected_product_gate.jsonl `
+            --queue artifacts\v4c3_2\corrected_generation_queue.jsonl `
+            --overlay artifacts\v4c3_2\correction_overlay.jsonl `
+            --summary artifacts\v4c3_2\summary.json `
+            --output artifacts\v4c3_2\validation.json
+          $s = Get-Content artifacts\v4c3_2\summary.json -Raw | ConvertFrom-Json
+          if ([int]$s.original_conflicts -ne 7125) { throw 'Original conflict baseline changed' }
+          if ([int]$s.safely_corrected_false_conflicts -ne 6569) { throw 'Safe correction count changed' }
+          if ([int]$s.remaining_true_image_conflicts -ne 606) { throw 'True image conflicts were relaxed' }
+          if ([int]$s.remaining_true_product_conflicts -ne 202) { throw 'True product conflicts were relaxed' }
+          if ([int]$s.unknown_leaked_to_safe_facts -ne 0 -or [int]$s.conflict_leaked_to_safe_facts -ne 0 -or [int]$s.forbidden_leaked_to_safe_facts -ne 0) { throw 'Unsafe fact leaked to generation-safe payload' }
+          if ($s.generation_queue_executed) { throw 'Generation queue was executed' }
+
+      - name: Recheck frozen inputs and stable HEAD before persistence
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stableLine = git ls-remote origin refs/heads/tinysnow-tool-only
+          $stableHead = ($stableLine -split '\s+')[0]
+          if ($stableHead -ne $env:STABLE_HEAD) { throw "Stable HEAD changed: $stableHead" }
+          git diff --quiet -- $env:IMAGE_GATE $env:PRODUCT_GATE $env:SUMMARY $env:VALIDATION $env:AUDIT $env:AUDIT_SUMMARY
+          if ($LASTEXITCODE -ne 0) { throw 'Frozen V4-C3/V4-C3.1 inputs mutated during correction' }
+
+      - name: Persist V4-C3.2 overlay only
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force $env:OUT_DIR | Out-Null
+          Copy-Item artifacts\v4c3_2\plan_summary.json "$env:OUT_DIR\plan_summary.json" -Force
+          Copy-Item artifacts\v4c3_2\canary_validation.json "$env:OUT_DIR\canary_validation.json" -Force
+          Copy-Item artifacts\v4c3_2\correction_overlay.jsonl "$env:OUT_DIR\correction_overlay.jsonl" -Force
+          Copy-Item artifacts\v4c3_2\corrected_image_gate.jsonl "$env:OUT_DIR\corrected_image_gate.jsonl" -Force
+          Copy-Item artifacts\v4c3_2\corrected_product_gate.jsonl "$env:OUT_DIR\corrected_product_gate.jsonl" -Force
+          Copy-Item artifacts\v4c3_2\corrected_generation_queue.jsonl "$env:OUT_DIR\corrected_generation_queue.jsonl" -Force
+          Copy-Item artifacts\v4c3_2\summary.json "$env:OUT_DIR\summary.json" -Force
+          Copy-Item artifacts\v4c3_2\validation.json "$env:OUT_DIR\validation.json" -Force
+          $s = Get-Content artifacts\v4c3_2\summary.json -Raw | ConvertFrom-Json
+          $lock = [ordered]@{
+            schema_version = 'v4c3.2.false-conflict-correction-lock.1'
+            passed = $true
+            workflow_run = "$env:GITHUB_RUN_ID"
+            base_head = $env:BASE_HEAD
+            stable_head = $env:STABLE_HEAD
+            original_conflicts = [int]$s.original_conflicts
+            safely_corrected_false_conflicts = [int]$s.safely_corrected_false_conflicts
+            remaining_true_image_conflicts = [int]$s.remaining_true_image_conflicts
+            remaining_true_product_conflicts = [int]$s.remaining_true_product_conflicts
+            eligible_safe = [int]$s.eligibility_counts.ELIGIBLE_SAFE
+            eligible_partial = [int]$s.eligibility_counts.ELIGIBLE_PARTIAL
+            hold_factual = [int]$s.eligibility_counts.HOLD_FACTUAL
+            block_factual = [int]$s.eligibility_counts.BLOCK_FACTUAL
+            downstream_product_count = [int]$s.products_with_at_least_one_downstream_eligible_image
+            generation_queue_count = [int]$s.generation_queue_count
+            generation_queue_product_count = [int]$s.generation_queue_product_count
+            identity_critical_unresolved_conflicts = [int]$s.identity_critical_unresolved_conflicts
+            unknown_leak = [int]$s.unknown_leaked_to_safe_facts
+            conflict_leak = [int]$s.conflict_leaked_to_safe_facts
+            forbidden_leak = [int]$s.forbidden_leaked_to_safe_facts
+            generation_queue_executed = $false
+            source_download_called = $false
+            artifact_download_called = $false
+            ocr_executed = $false
+            semantic_inference_executed = $false
+            preservation_reexecuted = $false
+            image_generation_called = $false
+            tiny_snow_api_called = $false
+            vision_api_called = $false
+            paid_api_called = $false
+            v4c2_retested = $false
+            v4c3_retested = $false
+            v4c3_1_retested = $false
+          }
+          $lock | ConvertTo-Json -Depth 8 | Set-Content "$env:OUT_DIR\V4_C3_2_CORRECTION_LOCK.json" -Encoding UTF8
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $env:OUT_DIR
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { throw 'No V4-C3.2 outputs to persist' }
+          git commit -m "V4-C3.2 persist false-conflict correction [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
