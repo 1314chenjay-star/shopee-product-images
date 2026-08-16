@@ -1,0 +1,82 @@
+name: Coupang Existing Browser V1.5 Full Test
+
+on:
+  push:
+    branches:
+      - coupang-existing-browser-v1
+  workflow_dispatch:
+
+jobs:
+  full-test:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate manifest
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $manifest = Get-Content 'coupang_browser_extension/manifest.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($manifest.manifest_version -ne 3) { throw 'Manifest must be V3.' }
+          if ($manifest.version -ne '1.5.0') { throw 'Unexpected extension version.' }
+          $required = @('activeTab','tabs','scripting','debugger','downloads','storage','unlimitedStorage')
+          foreach ($p in $required) {
+            if ($manifest.permissions -notcontains $p) { throw "Missing permission: $p" }
+          }
+          foreach ($host in $manifest.host_permissions) {
+            if ($host -notmatch '^https://.*coupang(cd?n)?\.com/') { throw "Unexpected host permission: $host" }
+          }
+          Write-Host 'Manifest OK'
+
+      - name: JavaScript syntax check
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node --check coupang_browser_extension/background.js
+          node --check coupang_browser_extension/popup.js
+
+      - name: Security and redaction unit tests
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node _system/tests/coupang_browser_extension_v15_test.js
+
+      - name: Static credential-access guard
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bg = Get-Content 'coupang_browser_extension/background.js' -Raw -Encoding UTF8
+          $forbidden = @('chrome.cookies','Network.getAllCookies','Network.getCookies','Network.getRequestPostData','Network.setExtraHTTPHeaders')
+          foreach ($term in $forbidden) {
+            if ($bg.Contains($term)) { throw "Forbidden credential-access primitive present: $term" }
+          }
+          if (-not $bg.Contains("https://wing.coupang.com/tenants/sfl-portal/delivery/management")) { throw 'Direct WING URL missing.' }
+          Write-Host 'Credential-access guard OK'
+
+      - name: Prepare single-layer release folder
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Existing_Browser_V1_5'
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
+          Copy-Item 'coupang_browser_extension' -Destination $out -Recurse -Force
+          @(
+            'TinySnow Coupang Existing Browser V1.5',
+            '',
+            '只需要解壓一次。',
+            '解壓後打開 coupang_browser_extension\README_安裝使用.txt。',
+            '請把擴充功能安裝在「原本已登入 Coupang」的同一個 Chrome/Edge Profile。'
+          ) | Set-Content -LiteralPath (Join-Path $out '先看我.txt') -Encoding UTF8
+          if (Get-ChildItem -LiteralPath $out -Recurse -Filter '*.zip') { throw 'Nested ZIP detected.' }
+          if (-not (Test-Path (Join-Path $out 'coupang_browser_extension\manifest.json'))) { throw 'Extension manifest missing from package.' }
+          Write-Host "Single-layer package folder OK: $out"
+
+      - name: Upload verified single-layer build
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow_Coupang_Existing_Browser_V1_5_VERIFIED
+          path: ${{ runner.temp }}\TinySnow_Coupang_Existing_Browser_V1_5\*
+          if-no-files-found: error
+          include-hidden-files: true
