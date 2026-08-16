@@ -26,6 +26,7 @@ function Get-V4CSlotRoles($Route, $Evidence) {
             'outdoor_games' { $roles = @('product_main','game_structure','verified_bundle_or_detail','authentic_usage','accessory_or_safe_detail') }
             'golf' { $roles = @('product_main','structure_detail','verified_spec_or_detail','authentic_usage','accessory_or_safe_detail') }
             'outdoor_camping' { $roles = @('product_main','structure_detail','verified_dimensions_or_detail','authentic_usage','accessory_or_safe_detail') }
+            'sports_towel' { $roles = @('product_main','weave_edge_or_structure','safe_product_detail','authentic_usage','variant_or_safe_detail') }
             'swimming' { $roles = @('product_main','structure_detail','verified_spec_or_detail','authentic_usage','safe_product_detail') }
             'cycling' { $roles = @('product_main','mounting_structure','verified_compatibility_or_detail','authentic_usage','safe_product_detail') }
         }
