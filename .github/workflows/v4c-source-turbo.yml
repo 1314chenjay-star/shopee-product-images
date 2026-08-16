@@ -7,6 +7,7 @@ on:
       - v4c-universal-product-engine
     paths:
       - ".github/workflows/v4c-source-turbo.yml"
+      - "_system/tests/v4c_expand_inventory.ps1"
       - "_system/tests/v4c_source_turbo.ps1"
       - "_system/tests/v4c_generate_shards.ps1"
       - "_system/tests/v4c_aggregate_results.ps1"
@@ -35,6 +36,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Expand verified source inventory
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_expand_inventory.ps1 -InventoryPath $env:INVENTORY
       - name: Free deterministic self-tests
         shell: powershell
         run: |
@@ -113,6 +119,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Expand verified source inventory
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_expand_inventory.ps1 -InventoryPath $env:INVENTORY
       - uses: actions/download-artifact@v4
         with:
           name: v4c-smoke-plan
@@ -236,6 +247,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Expand verified source inventory
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\_system\tests\v4c_expand_inventory.ps1 -InventoryPath $env:INVENTORY
       - uses: actions/download-artifact@v4
         with:
           name: v4c-smoke-aggregate
