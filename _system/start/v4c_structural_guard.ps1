@@ -37,6 +37,20 @@ function Test-V4CPrimaryRacketCaseBody([string]$Title) {
     return ($clean -match '^(?:.{0,6})?(桌球拍保護套|桌球拍保护套|乒乓球拍保護套|乒乓球拍保护套|球拍保護套|球拍保护套|球拍盒|拍盒|球拍袋|球拍包|拍套|球桿包|球杆包|撞球桿包|撞球杆包)')
 }
 
+function Test-V4CPrimarySportsTowelBody([string]$Title) {
+    if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
+    $clean = $Title.Trim()
+    return ($clean -match '^(?:.{0,8})?(運動吸汗毛巾|运动吸汗毛巾|運動毛巾|运动毛巾|健身毛巾|跑步毛巾|擦汗巾|吸汗巾|毛巾)')
+}
+
+function Test-V4CPrimaryCampingWaterContainer([string]$Title, [string]$Category) {
+    if ([string]::IsNullOrWhiteSpace($Title)) { return $false }
+    $clean = $Title.Trim()
+    $body = ($clean -match '^(?:.{0,6})?(戶外折疊水桶|户外折叠水桶|折疊水桶|折叠水桶|伸縮水桶|伸缩水桶|儲水桶|储水桶|露營水桶|露营水桶|折疊儲水桶|折叠储水桶)')
+    if (-not $body) { return $false }
+    return Test-V4CAnyKeyword ($clean + ' ' + $Category) @('露營','露营','Camping','野營','野营','戶外','户外')
+}
+
 function Resolve-V4CStructuralRoute($Product, $Evidence, $CurrentRoute) {
     $title = [string](Get-V4CProperty $Evidence 'title' (Get-V4CProperty $Product 'name' ''))
     $category = [string](Get-V4CProperty $Evidence 'raw_category' (Get-V4CProperty $Product 'category' ''))
@@ -60,6 +74,16 @@ function Resolve-V4CStructuralRoute($Product, $Evidence, $CurrentRoute) {
         $bagSub = if ($sport) { 'sports_bag' } else { 'bags' }
         $bagPriority = if ($sport) { 'sports_deep' } else { 'standard' }
         return New-V4CRoute 'bags' $bagSub 0.97 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating','waterproof_claims') $bagPriority
+    }
+
+    # Secondary car-use wording must not turn a sports towel into an auto accessory.
+    if ((Test-V4CPrimarySportsTowelBody $title) -and $sport) {
+        return New-V4CRoute 'sports' 'sports_towel' 0.97 @('dimensions','material','absorbency_claims','quick_dry_claims','cooling_claims','bundle_count','color_variant') 'sports_deep'
+    }
+
+    # A camping folding water bucket remains outdoor/camping even if the title also says 車載/车载.
+    if (Test-V4CPrimaryCampingWaterContainer $title $category) {
+        return New-V4CRoute 'sports' 'outdoor_camping' 0.97 @('capacity','dimensions','material','leakproof_claims','food_contact_claims','temperature_rating','accessories','bundle_count') 'sports_deep'
     }
 
     return $CurrentRoute
