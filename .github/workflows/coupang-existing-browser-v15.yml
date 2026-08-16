@@ -1,4 +1,4 @@
-name: Coupang Existing Browser V1.5 Full Test
+name: Coupang Existing Browser V1.6 Full Test
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $manifest = Get-Content 'coupang_browser_extension/manifest.json' -Raw -Encoding UTF8 | ConvertFrom-Json
           if ($manifest.manifest_version -ne 3) { throw 'Manifest must be V3.' }
-          if ($manifest.version -ne '1.5.0') { throw 'Unexpected extension version.' }
+          if ($manifest.version -ne '1.6.0') { throw 'Unexpected extension version.' }
           $required = @('activeTab','tabs','scripting','debugger','downloads','storage','unlimitedStorage')
           foreach ($p in $required) {
             if ($manifest.permissions -notcontains $p) { throw "Missing permission: $p" }
@@ -37,13 +37,26 @@ jobs:
           node --check coupang_browser_extension/background.js
           node --check coupang_browser_extension/popup.js
 
-      - name: Security and redaction unit tests
+      - name: V1.6 unit tests
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           node _system/tests/coupang_browser_extension_v15_test.js
 
-      - name: Static credential-access guard
+      - name: Auto-crawl plan static guard
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bg = Get-Content 'coupang_browser_extension/background.js' -Raw -Encoding UTF8
+          $popup = Get-Content 'coupang_browser_extension/popup.js' -Raw -Encoding UTF8
+          $required = @('AUTO_CRAWL_PLAN','products','orders','returns','settlement','growth','insights','runAutoCrawl','autoCrawl')
+          foreach ($term in $required) {
+            if (-not $bg.Contains($term) -and -not $popup.Contains($term)) { throw "Auto-crawl primitive missing: $term" }
+          }
+          if (-not $popup.Contains('autoCrawl')) { throw 'Popup auto-crawl button handler missing.' }
+          Write-Host 'Auto-crawl static guard OK'
+
+      - name: Credential-access guard
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -52,31 +65,25 @@ jobs:
           foreach ($term in $forbidden) {
             if ($bg.Contains($term)) { throw "Forbidden credential-access primitive present: $term" }
           }
-          if (-not $bg.Contains("https://wing.coupang.com/tenants/sfl-portal/delivery/management")) { throw 'Direct WING URL missing.' }
+          if (-not $bg.Contains('https://wing.coupang.com/tenants/sfl-portal/delivery/management')) { throw 'Direct WING URL missing.' }
           Write-Host 'Credential-access guard OK'
 
       - name: Prepare single-layer release folder
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Existing_Browser_V1_5'
+          $out = Join-Path $env:RUNNER_TEMP 'TinySnow_Coupang_Existing_Browser_V1_6'
           New-Item -ItemType Directory -Path $out -Force | Out-Null
           Copy-Item 'coupang_browser_extension' -Destination $out -Recurse -Force
-          @(
-            'TinySnow Coupang Existing Browser V1.5',
-            '',
-            'Extract this download once only.',
-            'Open coupang_browser_extension and read the installation guide.',
-            'Install the unpacked extension in the SAME Chrome/Edge profile that is already signed in to Coupang.'
-          ) | Set-Content -LiteralPath (Join-Path $out 'README_FIRST.txt') -Encoding UTF8
+          Copy-Item 'coupang_browser_extension/README_安裝使用.txt' -Destination (Join-Path $out 'README.txt') -Force
           if (Get-ChildItem -LiteralPath $out -Recurse -Filter '*.zip') { throw 'Nested ZIP detected.' }
-          if (-not (Test-Path (Join-Path $out 'coupang_browser_extension\manifest.json'))) { throw 'Extension manifest missing from package.' }
+          if (-not (Test-Path (Join-Path $out 'coupang_browser_extension/manifest.json'))) { throw 'Extension manifest missing from package.' }
           Write-Host "Single-layer package folder OK: $out"
 
       - name: Upload verified single-layer build
         uses: actions/upload-artifact@v4
         with:
-          name: TinySnow_Coupang_Existing_Browser_V1_5_VERIFIED
-          path: ${{ runner.temp }}\TinySnow_Coupang_Existing_Browser_V1_5\*
+          name: TinySnow_Coupang_Existing_Browser_V1_6_VERIFIED
+          path: ${{ runner.temp }}\TinySnow_Coupang_Existing_Browser_V1_6\*
           if-no-files-found: error
           include-hidden-files: true
