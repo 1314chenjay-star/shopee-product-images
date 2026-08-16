@@ -20,7 +20,7 @@
     "https://*.coupangcdn.com/*"
   ],
   "background": {
-    "service_worker": "background_v18.js"
+    "service_worker": "background_v18_entry.js"
   },
   "action": {
     "default_title": "TinySnow Coupang",
