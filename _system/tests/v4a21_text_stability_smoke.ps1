@@ -42,11 +42,17 @@ if ($mainAllowed529 -notcontains '數量規格可選') { throw 'Stable quantity 
 $prompt529 = Get-PromptV2 'detail4' $product529
 $compact529 = Get-CompactTransportPromptV2 'detail4' $product529
 foreach ($text in @($prompt529,$compact529)) {
-    if ($text -notmatch '數量規格可選') { throw '529 prompt missing stable quantity wording.' }
     if ($text -match '多入數可選|多人數可選') { throw '529 prompt contains unstable/incorrect quantity wording.' }
-    if ($text -notmatch '文字無法逐字正確|無法逐字清楚正確') { throw 'Text omission-on-error rule missing.' }
+    if (($text -match '數量規格可選') -and ($text -match '多入數可選|多人數可選')) { throw '529 prompt mixed stable and unstable quantity wording.' }
+    $legacyOmitRule = $text -match '文字無法逐字正確|無法逐字清楚正確'
+    $v4bOmitRule = $text -match '看不清楚、被遮住、語意不確定或來源彼此衝突的文字不要猜|看不清就省略，不猜測'
+    if (-not ($legacyOmitRule -or $v4bOmitRule)) { throw 'Text omission-on-error rule missing.' }
 }
-if ($prompt529 -notmatch '最多使用 3 個短文字區塊') { throw 'detail4 three-block text budget missing.' }
+if ($prompt529 -match 'V4-B 原圖保真台灣化模式') {
+    if ($prompt529 -notmatch '禁止自行新增或推測') { throw 'V4-B detail4 no-invention rule missing.' }
+} elseif ($prompt529 -notmatch '最多使用 3 個短文字區塊') {
+    throw 'Legacy detail4 three-block text budget missing.'
+}
 
 $product580 = New-TestProductV4A21 '58015741169' '籃球訓練阻力繩' @(
     '黑色2米30磅+腰帶一組',
@@ -76,11 +82,17 @@ foreach ($forbidden in @('籃球訓練阻力繩','多規格可選','數量規格
 }
 
 $detail2Prompt580 = Get-PromptV2 'detail2' $product580
-if ($detail2Prompt580 -notmatch '局部放大圖與圈選細節全部禁止加文字標籤') { throw 'detail2 no-caption hard rule missing.' }
-if ($detail2Prompt580 -notmatch '禁止自行為商品局部結構') { throw 'global structural naming ban missing.' }
+if ($detail2Prompt580 -match 'V4-B 原圖保真台灣化模式') {
+    if ($detail2Prompt580 -notmatch '保留來源圖既有的結構、局部、配件、包裝或其他可見內容') { throw 'V4-B detail2 source-structure preservation rule missing.' }
+    if ($detail2Prompt580 -notmatch '沒有就不要補新的零件或功能') { throw 'V4-B detail2 no-invention structural rule missing.' }
+} else {
+    if ($detail2Prompt580 -notmatch '局部放大圖與圈選細節全部禁止加文字標籤') { throw 'Legacy detail2 no-caption hard rule missing.' }
+    if ($detail2Prompt580 -notmatch '禁止自行為商品局部結構') { throw 'Legacy global structural naming ban missing.' }
+}
 
 $prompt580 = Get-PromptV2 'detail4' $product580
-if ($prompt580 -notmatch '2公尺' -or $prompt580 -notmatch '200公分') { throw '580 Taiwan units lost after text-stability layer.' }
+if ($prompt580 -notmatch '2公尺') { throw '580 Taiwan length unit lost after text-stability layer.' }
 if ($prompt580 -match '(?<!公)2米') { throw '580 mainland unit wording reappeared.' }
+if (($prompt580 -notmatch 'V4-B 原圖保真台灣化模式') -and ($prompt580 -notmatch '200公分')) { throw 'Legacy detail4 prompt lost exact 200公分 equivalent.' }
 
-Write-Host '[PASS] V4-A.2.1 image text stability: unstable quantity wording removed, slot allowlists reduced, detail captions banned, Taiwan units preserved, and omission-on-error rules applied.' -ForegroundColor Green
+Write-Host '[PASS] Image text stability: unstable quantity wording stays removed, helper allowlists remain stable, V4-B may omit unnecessary microcopy, Taiwan units persist, and uncertain text is omitted instead of guessed.' -ForegroundColor Green
