@@ -1,7 +1,6 @@
 # TinySnow V4-C0
 # Sports-first universal category router.
-# Product structure wins over sport-context words: basketball shorts are apparel, basketball shoes are shoes,
-# and basketball knee pads are protective gear. Sports equipment receives deeper routing after structure checks.
+# Product structure wins over sport-context words. Generic words like "戶外" alone never imply sports/camping.
 
 function Test-V4CAnyKeyword([string]$Text, [string[]]$Keywords) {
     if ([string]::IsNullOrWhiteSpace($Text)) { return $false }
@@ -26,7 +25,7 @@ function Get-V4CCategoryRoute($Product, $Evidence) {
     $title = [string](Get-V4CProperty $Evidence 'title' (Get-V4CProperty $Product 'name' ''))
     $category = [string](Get-V4CProperty $Evidence 'raw_category' (Get-V4CProperty $Product 'category' ''))
     $text = ($title + ' ' + $category)
-    $sportContext = Test-V4CAnyKeyword $text @('運動','运动','Sports','Outdoor','籃球','篮球','排球','足球','棒球','壘球','垒球','羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','跑步','健身','瑜伽','露營','露营','登山','游泳','自行車','自行车','騎行','骑行')
+    $sportContext = Test-V4CAnyKeyword $text @('運動','运动','Sports','籃球','篮球','排球','足球','棒球','壘球','垒球','羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','跑步','健身','瑜伽','露營','露营','登山','游泳','自行車','自行车','騎行','骑行')
 
     # Structural/product-form routes outrank context words.
     if (Test-V4CAnyKeyword $title @('護膝','护膝','護腕','护腕','護肘','护肘','護踝','护踝','護具','护具','頭盔','头盔')) {
@@ -48,7 +47,7 @@ function Get-V4CCategoryRoute($Product, $Evidence) {
         return New-V4CRoute 'bags' $sub 0.94 @('capacity','dimensions','material','pockets','compartments','zipper','strap','load_rating') $priority
     }
 
-    # Sports-first deep equipment routes.
+    # Explicit sports/outdoor equipment routes. Generic "戶外" is intentionally NOT sufficient.
     if (Test-V4CAnyKeyword $text @('羽球','羽毛球','網球','网球','桌球','乒乓','匹克球','壁球','球拍')) {
         return New-V4CRoute 'sports' 'racket_sports' 0.95 @('racket_type','material','weight','grip','string','size','bundle_count','accessories') 'sports_deep'
     }
@@ -58,14 +57,28 @@ function Get-V4CCategoryRoute($Product, $Evidence) {
     if (Test-V4CAnyKeyword $text @('啞鈴','哑铃','壺鈴','壶铃','彈力帶','弹力带','瑜伽','健身','訓練器','训练器','拉力器','跳繩','跳绳','槓鈴','杠铃')) {
         return New-V4CRoute 'sports' 'fitness_training' 0.94 @('weight','resistance','load_rating','material','dimensions','bundle_count','accessories','usage_claims') 'sports_deep'
     }
-    if (Test-V4CAnyKeyword $text @('露營','露营','帳篷','帐篷','睡袋','登山','戶外','户外','野營','野营','天幕','營釘','营钉')) {
-        return New-V4CRoute 'sports' 'outdoor_camping' 0.91 @('dimensions','material','waterproof_rating','load_rating','capacity','accessories','bundle_count') 'sports_deep'
+    if (Test-V4CAnyKeyword $text @('露營','露营','帳篷','帐篷','睡袋','登山','野營','野营','天幕','營釘','营钉','露營燈','露营灯','野餐墊','野餐垫')) {
+        return New-V4CRoute 'sports' 'outdoor_camping' 0.94 @('dimensions','material','waterproof_rating','load_rating','capacity','battery','power','accessories','bundle_count') 'sports_deep'
     }
     if (Test-V4CAnyKeyword $text @('泳鏡','泳镜','泳帽','游泳','浮板','蛙鞋','潛水','潜水')) {
         return New-V4CRoute 'sports' 'swimming' 0.93 @('size','material','waterproof_claims','lens_claims','certification','accessories') 'sports_deep'
     }
     if (Test-V4CAnyKeyword $text @('自行車','自行车','單車','单车','騎行','骑行','碼表','码表','自行車燈','自行车灯')) {
         return New-V4CRoute 'sports' 'cycling' 0.92 @('compatibility','mounting','dimensions','material','battery','power','waterproof_rating') 'sports_deep'
+    }
+
+    # Home / garden / solar products frequently coexist in mixed Shopee catalogs.
+    if (Test-V4CAnyKeyword $title @('澆花','浇花','滴灌','灌溉','澆水器','浇水器')) {
+        return New-V4CRoute 'home_garden' 'irrigation' 0.95 @('power','battery','timer','flow_rate','capacity','dimensions','material','accessories','bundle_count','waterproof_rating')
+    }
+    if (Test-V4CAnyKeyword $title @('驅鳥','驱鸟','驅獸','驱兽','防獸','防兽','滅蚊燈','灭蚊灯','捕蟲燈','捕虫灯')) {
+        return New-V4CRoute 'home_garden' 'garden_protection' 0.93 @('power','battery','sensor_claims','sound_claims','light_claims','range_claims','waterproof_rating','certification','accessories')
+    }
+    if (Test-V4CAnyKeyword $title @('庭院燈','庭院灯','花園燈','花园灯','草坪燈','草坪灯','地埋燈','地埋灯','路燈','路灯','洗牆燈','洗墙灯','景觀燈','景观灯','風鈴燈','风铃灯','太陽能燈','太阳能灯','壁燈','壁灯')) {
+        return New-V4CRoute 'home_garden' 'lighting' 0.95 @('power','battery','brightness','color_temperature','sensor_claims','waterproof_rating','ip_rating','dimensions','material','installation','bundle_count')
+    }
+    if (Test-V4CAnyKeyword $title @('庭院擺飾','庭院摆饰','花園擺飾','花园摆饰','園藝','园艺')) {
+        return New-V4CRoute 'home_garden' 'garden_decor' 0.88 @('dimensions','material','power','battery','waterproof_rating','bundle_count','accessories')
     }
 
     # Non-sports universal safe fallback routes.
