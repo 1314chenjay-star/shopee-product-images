@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
-$host.UI.RawUI.WindowTitle = 'TinySnow Coupang 數據採集工具 V1.3'
+$host.UI.RawUI.WindowTitle = 'TinySnow Coupang 數據採集工具 V1.4'
 
 . (Join-Path $PSScriptRoot 'coupang_local_collector.ps1')
 . (Join-Path $PSScriptRoot 'coupang_existing_session.ps1')
@@ -9,8 +9,9 @@ $host.UI.RawUI.WindowTitle = 'TinySnow Coupang 數據採集工具 V1.3'
 while ($true) {
     Clear-Host
     Write-Host '=================================' -ForegroundColor Cyan
-    Write-Host 'TinySnow｜Coupang 數據採集工具 V1.3'
+    Write-Host 'TinySnow｜Coupang 數據採集工具 V1.4'
     Write-Host '純酷澎版｜不修改 Open API｜不保存帳號密碼' -ForegroundColor Green
+    Write-Host '預設入口：配送管理後台' -ForegroundColor Cyan
     Write-Host '=================================' -ForegroundColor Cyan
     Write-Host '1. 使用目前 Edge/Chrome 已登入狀態（推薦）'
     Write-Host '2. 開啟已複製的 Coupang 登入狀態'
