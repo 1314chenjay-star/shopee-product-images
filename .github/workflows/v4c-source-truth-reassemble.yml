@@ -54,3 +54,5 @@ jobs:
             git commit -m 'V4-C5.3 persist snapshot reassembly checkpoint [skip ci]'
             git push origin HEAD:v4c-universal-product-engine
           }
+
+# delta rerun after terminal Base64 padding fix
