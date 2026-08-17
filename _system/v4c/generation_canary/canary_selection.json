@@ -1,0 +1,21 @@
+{
+  "schema_version": "v4c5.1.canary-selection.1",
+  "stage_status": "BLOCKED_PRE_PAID_PREFLIGHT",
+  "execution_blocker": "BLOCK_NO_READY_VARIANT_CANARY_SAMPLE",
+  "selected_product_ids": [],
+  "selected_products": [],
+  "selected_product_count": 0,
+  "selected_paid_slot_count": 0,
+  "process_localize_count": 0,
+  "safe_derivative_count": 0,
+  "preserve_slots_in_selected_products": 0,
+  "selection_attempted_against_frozen_ready_products": 145,
+  "selection_attempted_against_frozen_execution_ready_slots": 549,
+  "required_variant_ready_products": 1,
+  "actual_variant_ready_products": 0,
+  "actual_variant_ready_slots": 0,
+  "paid_requests_sent": 0,
+  "generation_executed": false,
+  "bulk_generation_authorized": false,
+  "note": "No valid Canary selection exists because the frozen V4-C5.0 execution-ready population contains zero non-empty variant_scope samples. HOLD/locked products were not substituted."
+}

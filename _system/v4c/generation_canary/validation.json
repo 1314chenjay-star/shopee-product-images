@@ -1,0 +1,33 @@
+{
+  "schema_version": "v4c5.1.validation.1",
+  "passed": false,
+  "stage_status": "BLOCKED_PRE_PAID_PREFLIGHT",
+  "execution_blocker": "BLOCK_NO_READY_VARIANT_CANARY_SAMPLE",
+  "preflight_safety_checks_passed": true,
+  "hard_checks": {
+    "selected_products_lte_5": true,
+    "selected_paid_slots_lte_20": true,
+    "paid_requests_lte_20": true,
+    "all_selected_products_from_product_ready_for_generation": true,
+    "all_selected_paid_slots_from_v4c5_execution_ready_queue": true,
+    "payload_hold_selected_zero": true,
+    "product_execution_hold_selected_zero": true,
+    "locked_products_selected_zero": true,
+    "unknown_leak_zero": true,
+    "conflict_leak_zero": true,
+    "forbidden_leak_zero": true,
+    "cross_product_leak_zero": true,
+    "variant_leak_zero": true,
+    "duplicate_paid_request_zero": true,
+    "original_v4c5_queue_mutation_zero": true,
+    "approved_memory_mutation_zero": true,
+    "stable_head_unchanged": true,
+    "variant_sample_requirement_satisfied": false
+  },
+  "canary_execution_complete": false,
+  "human_visual_approval_complete": false,
+  "approved_memory_commit": false,
+  "bulk_generation_authorized": false,
+  "next_stage_requires_explicit_user_authorization": true,
+  "why_not_executed": "User required at least one actual READY product with non-empty variant_scope. Frozen V4-C5.0 has zero such products/slots; HOLD and locked substitutions are forbidden."
+}
