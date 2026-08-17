@@ -1,0 +1,56 @@
+name: V4-C5.3 Delta Snapshot Reassembly Checkpoint
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '.github/workflows/v4c-source-truth-reassemble.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_HEAD: 291b12791041f93f87ce8b97f1a42603c850bca8
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  reassemble-checkpoint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify delta-only baseline and stable
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Branch is not descended from V4-C5.3 delta baseline.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable changed: $stable" }
+          $parts=@(Get-ChildItem '_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part*' | Sort-Object Name)
+          if($parts.Count -ne 5){ throw "Expected 5 recovered snapshot parts, found $($parts.Count)" }
+
+      - name: Reassemble existing snapshot once and identify format
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B _system/tests/v4c_source_truth_reassemble.py | Tee-Object -FilePath v4c5_3_reassembly.log
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Persist checkpoint only
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- _system/v4c/source_truth_bootstrap/reassembly_checkpoint.json
+          $staged=@(git diff --cached --name-only)
+          foreach($p in $staged){ if($p -ne '_system/v4c/source_truth_bootstrap/reassembly_checkpoint.json'){ throw "Unexpected staged path: $p" } }
+          if($staged.Count -gt 0){
+            git commit -m 'V4-C5.3 persist snapshot reassembly checkpoint [skip ci]'
+            git push origin HEAD:v4c-universal-product-engine
+          }
