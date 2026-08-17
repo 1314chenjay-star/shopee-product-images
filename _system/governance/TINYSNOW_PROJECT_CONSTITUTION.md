@@ -73,6 +73,9 @@ Before any change that could damage completed work, identify the last-good check
 ### RULE_HYGIENE
 Do not grow prompts indefinitely. Consolidate equivalent rules, mark obsolete rules superseded, and move durable behavior into this Constitution, machine gates, locks, tests, and handoff state.
 
+### SELF_AUDIT_AFTER_FRICTION
+After a user correction, unexpected failure, idle gap, repeated friction, avoidable manual step, or important stage closure, ask what should have been anticipated and why the current system failed to prevent it. If the issue is generalizable, convert the lesson into a durable rule plus the strongest practical enforcement mechanism (machine gate, regression test, lock, checkpoint, automation, or workflow guard). If an equivalent rule already exists, fix enforcement rather than adding duplicate prose.
+
 ### STAGE_CLOSURE
 When a stage closes, persist the Definition-of-Done result, key evidence, remaining risk, permanent lessons, current state, and the single next best action. Do not leave completion truth only in chat.
 
