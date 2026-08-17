@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-import json, re, sqlite3
+import json, re, sqlite3, sys
 from pathlib import Path
 from collections import Counter, defaultdict
+
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='backslashreplace')
+except Exception:
+    pass
 
 BASE = Path('.')
 SKIP_DIRS = {'.git', '__pycache__', 'generation_canary', 'generation_canary_preflight'}
