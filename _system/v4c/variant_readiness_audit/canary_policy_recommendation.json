@@ -1,8 +1,10 @@
 {
-  "schema_version": "v4c5.1a-canary-policy-1",
+  "schema_version": "v4c5.1a-canary-policy-2",
   "discovery_run_reused": 31997341246,
+  "classification_workflow_run": 32000836523,
+  "classification_rerun": false,
   "specific_variant_ready_available": false,
-  "specific_variant_paid_sample_requirement": "STILL_BLOCKED",
+  "specific_variant_paid_sample_requirement": "CONDITIONAL",
   "variant_paid_canary_deferred": true,
   "dedicated_variant_paid_canary_required_in_future": true,
   "future_trigger": "first SPECIFIC_VARIANT + PRODUCT_READY candidate before bulk variant generation",
@@ -20,7 +22,9 @@
     "E_VARIANT_CONFLICT_UNSAFE"
   ],
   "safe_common_canary_products": 0,
+  "paid_canary_resume_status": "STILL_BLOCKED_NO_A_B_SCOPE_PROOF",
+  "remaining_blocker": "BLOCK_NO_A_OR_B_SCOPE_SEMANTICS_SAMPLE",
   "paid_canary_may_safely_resume_after_explicit_authorization": false,
   "automatic_paid_canary_restart": false,
-  "recommendation": "No A/B audit-safe READY product exists for a paid Canary; keep Paid Canary blocked."
+  "recommendation": "Specific-variant paid sampling is conditional because C=0 and no SPECIFIC_VARIANT PRODUCT_READY candidate exists. However, Paid Canary itself remains blocked because the current READY pool contains no audit-proven A/NO_VARIANTS or B/COMMON_TO_ALL_VARIANTS product; all 145 READY products are D/VARIANT_MAPPING_AMBIGUOUS. Do not restart Paid Canary until an audit-safe A/B sample exists or a later targeted stage resolves the mapping gap."
 }
