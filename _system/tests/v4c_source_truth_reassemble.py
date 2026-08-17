@@ -47,6 +47,25 @@ def list_count(obj,names):
             for i,v in enumerate(x[:5]): rec(v,f'{path}[{i}]')
     rec(obj); return hits
 
+def optional_transforms():
+    out=[]
+    try:
+        import brotli
+        out.append(('brotli',brotli.decompress))
+    except Exception:
+        pass
+    try:
+        import lz4.frame
+        out.append(('lz4_frame',lz4.frame.decompress))
+    except Exception:
+        pass
+    try:
+        import zstandard
+        out.append(('zstd',lambda b:zstandard.ZstdDecompressor().decompress(b)))
+    except Exception:
+        pass
+    return out
+
 def main():
     parts=[]; missing=[]
     for i in range(1,EXPECTED_PARTS+1):
@@ -61,7 +80,7 @@ def main():
     joined_padded=joined + ('=' * padding_chars)
     try: raw=base64.b64decode(joined_padded,validate=True)
     except Exception as e: raise SystemExit('REASSEMBLY_BASE64_INVALID:'+repr(e))
-    transforms=[('identity',lambda b:b),('gzip',gzip.decompress),('zlib',zlib.decompress),('raw_deflate',lambda b:zlib.decompress(b,-15)),('bz2',bz2.decompress),('lzma',lzma.decompress)]
+    transforms=[('identity',lambda b:b),('gzip',gzip.decompress),('zlib',zlib.decompress),('raw_deflate',lambda b:zlib.decompress(b,-15)),('bz2',bz2.decompress),('lzma',lzma.decompress)] + optional_transforms()
     candidates=[]; chosen=None
     for name,fn in transforms:
         try:
