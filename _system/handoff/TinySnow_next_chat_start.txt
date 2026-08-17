@@ -1,0 +1,19 @@
+TinySnow new-worker technical start instruction
+
+1. Read current branch HEAD for `v4c-universal-product-engine`; never reset to the SHA written in this file if branch has advanced.
+2. Verify stable `tinysnow-tool-only` remains `5d49f061e140813b3d229520e9e530f86b27b640`.
+3. Read:
+   - `_system/governance/TINYSNOW_PROJECT_CONSTITUTION.md`
+   - `_system/governance/failure_registry.jsonl`
+   - `_system/handoff/TinySnow_current_state.json`
+   - `_system/handoff/TinySnow_rolling_handoff.md`
+   - current C5.3 locks/checkpoints/recent workflow terminal states.
+4. Treat V4-C1 through V4-C5.2 as sealed/frozen. Fingerprint only; no old pipeline reruns.
+5. Continue V4-C5.3 delta from the latest durable checkpoint. Reuse existing five snapshot parts and existing `source_truth_store.py`; do not re-materialize/re-split/re-upload/rebuild.
+6. Current reassembly evidence: 5×19,999-char parts, joined Base64 SHA256 e053cc6c2cac7d774120f3a03b62b07294af6bb9477aa7fd87a188301e814b4c, decoded 74,995-byte payload SHA256 86060552697a521b844a989327fa167ca8ff971f273a8a3073e6bca34b0dea6d, representation unresolved. Do not add another codec guess without new evidence. Use exact bytes/boundaries/provenance and targeted repair only.
+7. After reassembly/source validation PASS, automatically continue zero-paid deterministic C5.3 importer/store/resolver/reconciliation/145-549 overlay/tests/lock work.
+8. Never infer variant mapping. Exact proof only; otherwise UNKNOWN/CONFLICT.
+9. Keep all paid/image/OpenAI/Vision/TinySnow-paid flags false. Do not start Paid Canary or real generation.
+10. Before each write re-fetch HEAD; if another worker advanced branch, absorb compatible delta and continue. Never force push.
+11. Private user/business context belongs only in private storage. Current status may be PRIVATE_MASTER_CONTEXT_WRITE_PENDING if Files/Library permission is unavailable; do not copy it into public GitHub.
+12. Stop only at paid generation/editing, stable merge/release, irreconcilable authoritative conflict, permission failure, or irreversible high-risk boundary.

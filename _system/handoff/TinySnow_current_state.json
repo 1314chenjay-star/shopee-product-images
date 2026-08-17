@@ -1,0 +1,73 @@
+{
+  "schema_version": "tinysnow.current-state.1",
+  "updated_at_utc": "2026-08-17T13:27:27Z",
+  "branch": "v4c-universal-product-engine",
+  "current_head_at_state_capture": "68b4ad6eb746931b3c35bb5030ec67f45ae66f95",
+  "stable_branch": "tinysnow-tool-only",
+  "stable_expected_head": "5d49f061e140813b3d229520e9e530f86b27b640",
+  "stable_mutation_allowed": false,
+  "api_v2_ps1_mutation_allowed": false,
+  "current_stage": "V4-C5.3 Authoritative Source Registry",
+  "execution_mode": ["FASTEST_SAFE_PATH","AUTOMATION_FIRST","DELTA_ONLY","CHECKPOINT_RESUME","TARGETED_REPAIR"],
+  "sealed_upstream": "V4-C1 through V4-C5.2",
+  "anti_repeat_gate": "regression_evidence + affected_scope + rerun_reason required; otherwise BLOCK_RERUN_NO_EVIDENCE",
+  "latest_successful_checkpoint": {
+    "workflow_run_id": 32035192139,
+    "workflow_name": "V4-C5.3 Existing Snapshot Parts Diagnostic Artifact",
+    "head_sha": "68b4ad6eb746931b3c35bb5030ec67f45ae66f95",
+    "conclusion": "success"
+  },
+  "c5_3_reused_existing_work": {
+    "snapshot_parts": [
+      "_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part01",
+      "_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part02",
+      "_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part03",
+      "_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part04",
+      "_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part05"
+    ],
+    "source_truth_store": "_system/source_truth/source_truth_store.py",
+    "source_truth_store_schema_rebuild_allowed": false,
+    "snapshot_rematerialization_allowed": false,
+    "snapshot_resplit_allowed": false
+  },
+  "reassembly_checkpoint": {
+    "part_count": 5,
+    "each_part_observed_chars": 19999,
+    "joined_base64_sha256": "e053cc6c2cac7d774120f3a03b62b07294af6bb9477aa7fd87a188301e814b4c",
+    "decoded_payload_size": 74995,
+    "decoded_payload_sha256": "86060552697a521b844a989327fa167ca8ff971f273a8a3073e6bca34b0dea6d",
+    "representation_status": "UNRESOLVED",
+    "permanent_rule": "No further codec guesses without new byte/provenance evidence; repair reassembly affected path only."
+  },
+  "authoritative_targets_pending_reconciliation": {
+    "products": 375,
+    "source_images": 2394,
+    "variant_options": 2673,
+    "ready_products_delta_scope": 145,
+    "ready_slots_delta_scope": 549
+  },
+  "remaining_c5_3_delta": [
+    "deterministic recovered source validation/reassembly repair",
+    "Shopee Source Truth importer",
+    "existing SourceTruthStore bootstrap",
+    "SourceTruthResolver",
+    "375/2394/2673 authoritative reconciliation",
+    "exact option-image binding without inference",
+    "145/549 scope overlay recovery",
+    "C5.3-only regression tests",
+    "frozen fingerprint verification",
+    "V4_C5_3_AUTHORITATIVE_SOURCE_REGISTRY_LOCK.json"
+  ],
+  "private_master_context_status": "PRIVATE_MASTER_CONTEXT_WRITE_PENDING",
+  "private_master_context_reason": "Files/Library search returned authorization failure in current execution context; private data must not be redirected to public GitHub.",
+  "cost_flags": {
+    "paid_api_called": false,
+    "openai_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "vision_api_called": false,
+    "tiny_snow_paid_api_called": false
+  },
+  "next_automatic_action": "Use the latest successful parts diagnostic artifact and exact existing bytes/boundaries to establish the minimum deterministic reassembly repair; then continue remaining zero-paid C5.3 delta automatically.",
+  "human_action_required_now": false
+}
