@@ -1,0 +1,41 @@
+name: V4-C5.3 Existing Snapshot Parts Diagnostic Artifact
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '.github/workflows/v4c-source-truth-parts-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BASE_HEAD: 291b12791041f93f87ce8b97f1a42603c850bca8
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+
+jobs:
+  existing-parts-artifact:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify existing delta baseline and exact five parts
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Not descended from C5.3 baseline' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable changed: $stable" }
+          $parts=@(Get-ChildItem '_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part*' | Sort-Object Name)
+          if($parts.Count -ne 5){ throw "Expected 5 parts, found $($parts.Count)" }
+          foreach($p in $parts){ Write-Host "$($p.Name) $($p.Length)" }
+      - name: Upload existing parts only
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4c5-3-existing-snapshot-parts-${{ github.run_id }}
+          path: _system/source_truth/bootstrap_transport/recovered_snapshot.b64.part*
+          if-no-files-found: error
+          retention-days: 1
