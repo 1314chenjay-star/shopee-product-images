@@ -34,6 +34,12 @@ jobs:
           $parts=@(Get-ChildItem '_system/source_truth/bootstrap_transport/recovered_snapshot.b64.part*' | Sort-Object Name)
           if($parts.Count -ne 5){ throw "Expected 5 recovered snapshot parts, found $($parts.Count)" }
 
+      - name: Install targeted snapshot decoder dependencies
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check --no-input brotli lz4 zstandard
+
       - name: Reassemble existing snapshot once and identify format
         shell: powershell
         run: |
@@ -54,6 +60,3 @@ jobs:
             git commit -m 'V4-C5.3 persist snapshot reassembly checkpoint [skip ci]'
             git push origin HEAD:v4c-universal-product-engine
           }
-
-# delta rerun after terminal Base64 padding fix
-# delta rerun with optional Brotli/LZ4/Zstd format probes
