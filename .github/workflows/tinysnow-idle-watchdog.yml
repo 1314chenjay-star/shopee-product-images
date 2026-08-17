@@ -1,0 +1,71 @@
+name: TinySnow Agent Queue Idle Watchdog
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/**'
+      - '_system/agent_queue/**'
+      - '_system/context/**'
+      - '_system/source_truth/product_identity_record.schema.json'
+      - '.github/workflows/tinysnow-idle-watchdog.yml'
+      - '.github/workflows/v4c-source-truth-recovery.yml'
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate capability recovery and handoff queue
+        run: python -B _system/agent_queue/validate_agent_queue.py
+      - name: Evaluate idle recovery decision
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -B _system/agent_queue/watchdog.py
+      - name: Dispatch safe next workflow when idle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          r=json.load(open('_system/agent_queue/recovery_report.json',encoding='utf-8'))
+          t=r.get('pending_task') or {}
+          decision=r.get('decision')
+          wf=t.get('next_workflow')
+          status={'decision':decision,'workflow':wf,'dispatched':False}
+          if decision=='AUTO_RECOVER' and wf:
+              p=pathlib.Path('.github/workflows')/wf
+              if p.exists():
+                  status['dispatch_requested']=True
+              else:
+                  status['dispatch_block']='DECLARED_RECOVERY_WORKFLOW_NOT_YET_PRESENT'
+          pathlib.Path('_system/agent_queue/recovery_dispatch_status.json').write_text(json.dumps(status,indent=2)+'\n',encoding='utf-8')
+          PY
+          if python -c "import json; x=json.load(open('_system/agent_queue/recovery_dispatch_status.json')); raise SystemExit(0 if x.get('dispatch_requested') else 1)"; then
+            WF=$(python -c "import json; print(json.load(open('_system/agent_queue/recovery_dispatch_status.json'))['workflow'])")
+            gh workflow run "$WF" --ref v4c-universal-product-engine
+            python - <<'PY'
+          import json
+          p='_system/agent_queue/recovery_dispatch_status.json'
+          x=json.load(open(p));x['dispatched']=True
+          open(p,'w').write(json.dumps(x,indent=2)+'\n')
+          PY
+          fi
+      - name: Upload recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinysnow-agent-watchdog-${{ github.run_id }}
+          path: |
+            _system/agent_queue/validation.json
+            _system/agent_queue/recovery_report.json
+            _system/agent_queue/recovery_dispatch_status.json
+          if-no-files-found: error
+          retention-days: 14

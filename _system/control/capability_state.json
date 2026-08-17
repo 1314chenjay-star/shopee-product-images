@@ -1,0 +1,27 @@
+{
+  "schema_version": "tinysnow.capability-state.1",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "status": "RECOVERING",
+  "allowed_statuses": ["RUNNING","SUCCESS","FAILED","BLOCKED_CAPABILITY","BLOCKED_EVIDENCE","BLOCKED_OWNER_DECISION","WAITING_EXTERNAL","RECOVERING"],
+  "capabilities": {
+    "github_read": true,
+    "github_write": true,
+    "github_actions": true,
+    "library_raw_workbook": true,
+    "paid_api": false,
+    "image_generation": false,
+    "image_editing": false,
+    "vision_api": false,
+    "tinysnow_paid_api": false
+  },
+  "authoritative_workbook": {
+    "name": "TinySnow_V4C0_375件商品全量测试报告.xlsx",
+    "library_available": true,
+    "materialized_in_current_recovery": true,
+    "expected_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a"
+  },
+  "sealed_stages": "V4-C1 through V4-C5.2",
+  "stable_mutation_allowed": false,
+  "api_v2_mutation_allowed": false,
+  "updated_reason": "Library and GitHub capabilities are currently available; recover C5.3 automatically without paid or generation capabilities."
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": "tinysnow.execution-checkpoint.1",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "last_good_head": "330f9d706b92a4c94d4cf6d0ae7059e72ee8cba4",
+  "last_successful_workflow": 32035192139,
+  "checkpoint": "CAPABILITY_RECOVERY_BOOTSTRAP",
+  "completed": [
+    "sealed upstream verification",
+    "existing governance/handoff read",
+    "existing snapshot parts preserved",
+    "existing SourceTruthStore preserved",
+    "Library authoritative workbook capability restored",
+    "GitHub write capability verified"
+  ],
+  "pending": [
+    "agent queue/watchdog validation",
+    "authoritative workbook SHA validation",
+    "source manifest extraction",
+    "SourceTruth importer/resolver/bootstrap",
+    "375/2394/2673 reconciliation",
+    "145/549 delta scope overlay",
+    "C5.3-only regressions",
+    "C5.3 seal"
+  ],
+  "resume_rule": "Never repeat completed entries; fingerprint then continue first pending action."
+}

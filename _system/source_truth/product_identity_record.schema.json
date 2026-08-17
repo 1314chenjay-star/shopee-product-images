@@ -1,0 +1,22 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"tinysnow.product_identity_record.v1",
+  "title":"TinySnow Product Identity Record",
+  "type":"object",
+  "required":["product_id","source_reference","source_sha256","image_sha256","variant_information","specification","provenance","confidence","approved_facts","risk_flags"],
+  "properties":{
+    "product_id":{"type":"string","minLength":1},
+    "source_reference":{"type":["string","object"]},
+    "source_sha256":{"type":["string","null"],"pattern":"^[0-9a-f]{64}$"},
+    "image_sha256":{"type":["string","array","null"]},
+    "variant_information":{"type":"object"},
+    "specification":{"type":"object"},
+    "provenance":{"type":"array","items":{"type":"object"}},
+    "confidence":{"type":"string","enum":["AUTHORITATIVE","VERIFIED","PARTIAL","UNKNOWN","CONFLICT"]},
+    "approved_facts":{"type":"array","items":{"type":"object"}},
+    "risk_flags":{"type":"array","items":{"type":"string"}}
+  },
+  "allOf":[{
+    "description":"Machine enforcement: facts without provenance are forbidden; UNKNOWN/CONFLICT cannot populate approved_facts."
+  }]
+}

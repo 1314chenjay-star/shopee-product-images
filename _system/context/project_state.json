@@ -1,0 +1,14 @@
+{
+  "schema_version":"tinysnow.project-state.1",
+  "active_stage":"V4-C5.3 Source Truth Repair",
+  "branch":"v4c-universal-product-engine",
+  "latest_observed_head":"330f9d706b92a4c94d4cf6d0ae7059e72ee8cba4",
+  "stable_expected":"5d49f061e140813b3d229520e9e530f86b27b640",
+  "sealed":"V4-C1 through V4-C5.2",
+  "ready_targets":{"products":145,"slots":549},
+  "source_truth_targets":{"products":375,"images":2394,"variant_options":2673},
+  "current_blocker":"C5.3 authoritative source transport/bootstrap not yet durably reconciled",
+  "recovery_status":"RECOVERING",
+  "paid_api_called":false,
+  "image_generation_called":false
+}

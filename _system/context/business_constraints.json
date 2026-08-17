@@ -1,0 +1,11 @@
+{
+  "schema_version":"tinysnow.business-constraints.1",
+  "product_direction":"ALL_CATEGORY_ECOMMERCE",
+  "truth_policy":"AUTHORITATIVE_SOURCE_ONLY",
+  "forbidden_inference":["brand","material","size","dimension","function","accessory","certification","warranty","gift","model","performance","variant mapping"],
+  "unknown_policy":"HOLD_OR_OMIT_NEVER_PROMOTE",
+  "stable_branch_mutation":false,
+  "duplicate_generation":false,
+  "sealed_stage_rerun":false,
+  "user_orchestration":"MINIMIZE_TO_TRUE_OWNER_OR_PAID_BOUNDARIES"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version":"tinysnow.agent-queue-state.1",
+  "states":["PENDING","RUNNING","SUCCESS","FAILED","BLOCKED_CAPABILITY","BLOCKED_EVIDENCE","BLOCKED_OWNER_DECISION","WAITING_EXTERNAL","RECOVERING"],
+  "idle_rule":"If a PENDING/RECOVERING zero-paid task exists and no non-watchdog workflow is active, produce AUTO_RECOVER and dispatch its declared next_workflow when present.",
+  "paid_boundary":"Never dispatch paid/generation work without owner authorization.",
+  "sealed_rule":"Never dispatch reruns of sealed stages; validate by fingerprint/lock only."
+}

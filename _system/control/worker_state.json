@@ -1,0 +1,16 @@
+{
+  "schema_version": "tinysnow.worker-state.1",
+  "worker_mode": "STATELESS_REPLACEABLE",
+  "status": "RECOVERING",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "branch": "v4c-universal-product-engine",
+  "must_read_before_write": [
+    "_system/governance/TINYSNOW_PROJECT_CONSTITUTION.md",
+    "_system/governance/failure_registry.jsonl",
+    "_system/handoff/TinySnow_current_state.json",
+    "_system/control/execution_checkpoint.json",
+    "_system/agent_queue/queue.jsonl"
+  ],
+  "concurrent_worker_rule": "Re-fetch HEAD before each write; absorb compatible new commits; never force push.",
+  "human_orchestration_required": false
+}

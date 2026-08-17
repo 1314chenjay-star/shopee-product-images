@@ -1,0 +1,21 @@
+{
+  "schema_version": "tinysnow.recovery-plan.1",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "policy": "DELTA_ONLY",
+  "pending_actions": [
+    {
+      "action_id": "C5_3_SOURCE_TRUTH_REPAIR",
+      "priority": 1,
+      "mode": "ZERO_PAID_DETERMINISTIC",
+      "required_capabilities": ["github_read","github_write","github_actions","library_raw_workbook"],
+      "auto_recover": true,
+      "forbidden": ["sealed_stage_rerun","source_download","OCR","semantic","memory_bootstrap","payload_rebuild","paid_api","image_generation","image_editing","stable_mutation"]
+    }
+  ],
+  "decision_rules": {
+    "capability_missing": "BLOCKED_CAPABILITY",
+    "authoritative_source_conflict": "BLOCKED_EVIDENCE",
+    "paid_or_irreversible_boundary": "BLOCKED_OWNER_DECISION",
+    "safe_pending_without_active_workflow": "RECOVERING"
+  }
+}
