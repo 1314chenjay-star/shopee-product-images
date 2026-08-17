@@ -3,8 +3,8 @@
 
 Keeps the original V4-C5.0 dry-run implementation intact, fixes only the
 new-stage display provenance adapter, prevents Python bytecode writes into the
-frozen Memory tree, and strengthens Canary requirements. No frozen pipeline is
-re-executed.
+frozen Memory tree, strengthens Canary requirements, and makes slot-incompatible
+Memory identity holds explicit in final reporting. No frozen pipeline is re-run.
 """
 import argparse, importlib.util, json, sqlite3, sys
 from pathlib import Path
@@ -50,6 +50,24 @@ def strengthen_canary(path):
     if not c['passed']: raise RuntimeError('Strengthened V4-C5.0 Canary failed: '+m.canon(c))
     print(m.canon(c))
 
+def annotate_full(out_dir):
+    d=Path(out_dir)
+    dry=m.read_jsonl(d/'dry_run_results.jsonl')
+    slot_mismatch=sum(1 for r in dry if 'MEMORY_SLOT_INCOMPATIBLE' in (r.get('reasons') or []))
+    product_identity_mismatch=sum(1 for r in dry if 'MEMORY_IDENTITY_CONFLICT' in (r.get('reasons') or []) or 'PRODUCT_ID_MISMATCH' in (r.get('reasons') or []))
+    identity_total=sum(1 for r in dry if any(x in {'MEMORY_SLOT_INCOMPATIBLE','MEMORY_IDENTITY_CONFLICT','MEMORY_VARIANT_SCOPE_MISMATCH','PRODUCT_ID_MISMATCH'} for x in (r.get('reasons') or [])))
+    for name in ('coverage_summary.json','V4_C5_0_GENERATION_PAYLOAD_LOCK.json'):
+        p=d/name; obj=json.loads(p.read_text(encoding='utf-8-sig'))
+        obj['identity_mismatch']=identity_total
+        obj['product_identity_mismatch']=product_identity_mismatch
+        obj['slot_mismatch']=slot_mismatch
+        obj['identity_mismatch_definition']='product identity, variant identity, or incompatible approved-output slot under same source SHA'
+        p.write_text(json.dumps(obj,ensure_ascii=False,indent=2),encoding='utf-8')
+    v=d/'validation.json'; obj=json.loads(v.read_text(encoding='utf-8-sig'))
+    obj['identity_holds_reported']=identity_total
+    obj['slot_mismatch_holds_reported']=slot_mismatch
+    v.write_text(json.dumps(obj,ensure_ascii=False,indent=2),encoding='utf-8')
+
 def main():
     ap=argparse.ArgumentParser(); sub=ap.add_subparsers(dest='cmd',required=True)
     p=sub.add_parser('canary'); p.add_argument('--output',required=True); p.add_argument('--size',type=int,default=50)
@@ -58,5 +76,5 @@ def main():
     if a.cmd=='canary':
         m.canary(a); strengthen_canary(a.output)
     else:
-        m.full(a)
+        m.full(a); annotate_full(a.out)
 if __name__=='__main__': main()
