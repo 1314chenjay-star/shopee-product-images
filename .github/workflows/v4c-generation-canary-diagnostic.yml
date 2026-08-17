@@ -14,6 +14,7 @@ env:
   BASE_HEAD: 75b6db8431f14dba934cf8d6f92042429fafd865
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
   OUT: _system/v4c/generation_canary_preflight
+  BLOCK_OUT: _system/v4c/generation_canary
   PYTHONDONTWRITEBYTECODE: '1'
 
 jobs:
@@ -35,10 +36,10 @@ jobs:
           git diff --quiet $env:BASE_HEAD -- _system/v4c/generation_payload _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/memory _system/start/api_v2.ps1
           if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C5.0/upstream state changed.' }
 
-      - name: Compile diagnostic only
+      - name: Compile no-spend diagnostic and blocker only
         shell: powershell
         run: |
-          python -B -m py_compile _system/tests/v4c_generation_canary_diagnose.py
+          python -B -m py_compile _system/tests/v4c_generation_canary_diagnose.py _system/tests/v4c_generation_canary_block.py
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
 
       - name: Audit all 145 READY products and 549 slots with zero provider calls
@@ -53,6 +54,25 @@ jobs:
           if([int]$a.paid_requests_sent -ne 0 -or [bool]$a.generation_executed -or [bool]$a.image_generation_api_called -or [bool]$a.tiny_snow_api_called -or [bool]$a.vision_api_called){ throw 'No-spend diagnostic boundary violated.' }
           Write-Host ($a | ConvertTo-Json -Depth 12)
 
+      - name: Materialize formal V4-C5.1 PRE-PAID BLOCK if hard variant requirement is impossible
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $a=Get-Content "$env:OUT/availability.json" -Raw | ConvertFrom-Json
+          if([string]$a.blocker -eq 'BLOCK_NO_READY_VARIANT_CANARY_SAMPLE'){
+            python -B _system/tests/v4c_generation_canary_block.py
+            if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+            $v=Get-Content "$env:BLOCK_OUT/validation.json" -Raw | ConvertFrom-Json
+            $l=Get-Content "$env:BLOCK_OUT/V4_C5_1_GENERATION_CANARY_LOCK.json" -Raw | ConvertFrom-Json
+            if([bool]$v.passed){ throw 'Blocked Canary must not be marked PASS.' }
+            if([bool]$v.canary_execution_complete -or [bool]$l.canary_execution_complete){ throw 'Blocked pre-paid Canary must not be marked execution complete.' }
+            if([int]$l.paid_requests_sent -ne 0 -or [bool]$l.generation_executed -or [bool]$l.image_generation_api_called -or [bool]$l.tiny_snow_api_called -or [bool]$l.vision_api_called){ throw 'Blocked Canary contains unauthorized paid/generation activity.' }
+          } elseif(-not [bool]$a.passed){
+            throw ('Unexpected preflight blocker requiring separate handling: '+[string]$a.blocker)
+          } else {
+            throw 'Diagnostic unexpectedly found a valid paid Canary combination. Do not auto-start paid workflow from no-spend diagnostic.'
+          }
+
       - name: Reconcile no-spend and no-mutation guarantees
         shell: powershell
         run: |
@@ -63,17 +83,24 @@ jobs:
           if($LASTEXITCODE -ne 0){ throw 'Frozen state mutated during diagnostic.' }
           $mem=(Get-FileHash '_system/memory/tinysnow_memory.sqlite' -Algorithm SHA256).Hash.ToLowerInvariant()
           if($mem -ne 'ac9ae4767f2c9ef7e5df5cbec0d272137f6c34684813c51716005df19da9f99d'){ throw 'Approved Memory DB changed.' }
+          $s=Get-Content "$env:BLOCK_OUT/coverage_summary.json" -Raw | ConvertFrom-Json
+          foreach($k in @('paid_requests_actually_sent','generation_successes','output_sha_count','unknown_leak','conflict_leak','forbidden_leak','cross_product_leak','variant_leak','locked_regeneration','v4c5_queue_mutation','approved_memory_mutation')){
+            if([int]$s.$k -ne 0){ throw "Blocked Canary safety metric nonzero: $k=$($s.$k)" }
+          }
+          if([bool]$s.generation_executed -or [bool]$s.image_generation_api_called -or [bool]$s.tiny_snow_api_called -or [bool]$s.vision_api_called){ throw 'Blocked Canary generation/API flag became true.' }
 
-      - name: Persist diagnostic only
+      - name: Persist diagnostic and formal blocked V4-C5.1 state only
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- "$env:OUT"
+          git add -- "$env:OUT" "$env:BLOCK_OUT"
           $staged=@(git diff --cached --name-only)
-          foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/generation_canary_preflight/')){ throw "Unexpected staged path: $p" } }
+          foreach($p in $staged){
+            if(-not ($p.StartsWith('_system/v4c/generation_canary_preflight/') -or $p.StartsWith('_system/v4c/generation_canary/'))){ throw "Unexpected staged path: $p" }
+          }
           if($staged.Count -gt 0){
-            git commit -m 'V4-C5.1 persist no-spend canary availability diagnostic [skip ci]'
+            git commit -m 'V4-C5.1 record pre-paid Canary block: no READY variant sample [skip ci]'
             git push origin HEAD:v4c-universal-product-engine
           }
