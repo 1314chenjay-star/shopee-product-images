@@ -1,0 +1,83 @@
+name: V4-C5.1a Variant Scope Readiness Audit
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '.github/workflows/v4c-variant-readiness-audit.yml'
+      - '_system/tests/v4c_variant_readiness_discover.py'
+      - '_system/tests/v4c_variant_readiness_audit.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_HEAD: feca0bec2030b8ab8cd8ec5daacd0cc54d114283
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  variant-readiness-audit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify frozen baseline and stable HEAD
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Branch is not descended from V4-C5.1 blocked baseline.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable changed: $stable" }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/memory/tinysnow_memory.sqlite _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen upstream or Memory changed.' }
+
+      - name: Compile audit helpers only
+        shell: powershell
+        run: |
+          python -B -m py_compile _system/tests/v4c_variant_readiness_discover.py
+          if(Test-Path '_system/tests/v4c_variant_readiness_audit.py'){
+            python -B -m py_compile _system/tests/v4c_variant_readiness_audit.py
+          }
+
+      - name: Zero-paid variant provenance discovery
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B _system/tests/v4c_variant_readiness_discover.py | Tee-Object -FilePath variant_discovery.log
+
+      - name: Run full V4-C5.1a audit when implementation exists
+        if: ${{ hashFiles('_system/tests/v4c_variant_readiness_audit.py') != '' }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B _system/tests/v4c_variant_readiness_audit.py
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Reconcile zero-paid and immutable boundaries
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw 'Stable changed during audit.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/memory/tinysnow_memory.sqlite _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen state mutated during audit.' }
+
+      - name: Persist final audit outputs only
+        if: ${{ hashFiles('_system/v4c/variant_readiness_audit/V4_C5_1A_VARIANT_READINESS_AUDIT_LOCK.json') != '' }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- _system/v4c/variant_readiness_audit
+          $staged=@(git diff --cached --name-only)
+          foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/variant_readiness_audit/')){ throw "Unexpected staged path: $p" } }
+          if($staged.Count -gt 0){
+            git commit -m 'V4-C5.1a persist variant scope readiness audit [skip ci]'
+            git push origin HEAD:v4c-universal-product-engine
+          }
