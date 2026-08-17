@@ -57,7 +57,9 @@ def main():
     if missing or len(parts)!=EXPECTED_PARTS:
         raise SystemExit('REASSEMBLY_PARTS_INCOMPLETE:'+','.join(missing))
     joined=''.join(x['text'] for x in parts)
-    try: raw=base64.b64decode(joined,validate=True)
+    padding_chars=(-len(joined)) % 4
+    joined_padded=joined + ('=' * padding_chars)
+    try: raw=base64.b64decode(joined_padded,validate=True)
     except Exception as e: raise SystemExit('REASSEMBLY_BASE64_INVALID:'+repr(e))
     transforms=[('identity',lambda b:b),('gzip',gzip.decompress),('zlib',zlib.decompress),('raw_deflate',lambda b:zlib.decompress(b,-15)),('bz2',bz2.decompress),('lzma',lzma.decompress)]
     candidates=[]; chosen=None
@@ -75,8 +77,8 @@ def main():
     result={
       'schema_version':'v4c5.3-reassembly-checkpoint-1','part_sequence_complete':True,'part_count':len(parts),
       'part_metadata':[{k:v for k,v in x.items() if k!='text'} for x in parts],
-      'joined_base64_sha256':sha(joined.encode()),'reconstructed_payload_size':len(raw),
-      'reconstructed_payload_sha256':sha(raw),'payload_magic_hex':raw[:16].hex(),
+      'joined_base64_sha256':sha(joined.encode()),'base64_padding_chars_added':padding_chars,
+      'reconstructed_payload_size':len(raw),'reconstructed_payload_sha256':sha(raw),'payload_magic_hex':raw[:16].hex(),
       'candidate_transforms':candidates,'expected_workbook_sha256':EXPECTED_WORKBOOK_SHA,'status':'FORMAT_UNRESOLVED'}
     if chosen:
         name,data,obj,rec=chosen
