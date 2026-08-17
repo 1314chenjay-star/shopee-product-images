@@ -1,0 +1,79 @@
+name: V4-C5.1 No-Spend Canary Availability Diagnostic
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '.github/workflows/v4c-generation-canary-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_HEAD: 75b6db8431f14dba934cf8d6f92042429fafd865
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  OUT: _system/v4c/generation_canary_preflight
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  diagnose-ready-canary:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify frozen V4-C5.0 and stable HEAD
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Current branch is not descended from sealed V4-C5.0.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable changed: $stable" }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/generation_payload _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/memory _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C5.0/upstream state changed.' }
+
+      - name: Compile diagnostic only
+        shell: powershell
+        run: |
+          python -B -m py_compile _system/tests/v4c_generation_canary_diagnose.py
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Audit all 145 READY products and 549 slots with zero provider calls
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B _system/tests/v4c_generation_canary_diagnose.py
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          $a=Get-Content "$env:OUT/availability.json" -Raw | ConvertFrom-Json
+          if([int]$a.frozen_execution_ready_slots -ne 549){ throw 'Execution-ready slot count mismatch.' }
+          if([int]$a.frozen_ready_products -ne 145){ throw 'Ready product count mismatch.' }
+          if([int]$a.paid_requests_sent -ne 0 -or [bool]$a.generation_executed -or [bool]$a.image_generation_api_called -or [bool]$a.tiny_snow_api_called -or [bool]$a.vision_api_called){ throw 'No-spend diagnostic boundary violated.' }
+          Write-Host ($a | ConvertTo-Json -Depth 12)
+
+      - name: Reconcile no-spend and no-mutation guarantees
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw 'Stable changed during diagnostic.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/generation_payload _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/memory _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen state mutated during diagnostic.' }
+          $mem=(Get-FileHash '_system/memory/tinysnow_memory.sqlite' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($mem -ne 'ac9ae4767f2c9ef7e5df5cbec0d272137f6c34684813c51716005df19da9f99d'){ throw 'Approved Memory DB changed.' }
+
+      - name: Persist diagnostic only
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$env:OUT"
+          $staged=@(git diff --cached --name-only)
+          foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/generation_canary_preflight/')){ throw "Unexpected staged path: $p" } }
+          if($staged.Count -gt 0){
+            git commit -m 'V4-C5.1 persist no-spend canary availability diagnostic [skip ci]'
+            git push origin HEAD:v4c-universal-product-engine
+          }
