@@ -1,0 +1,181 @@
+name: V4-C5.1 Paid Image Generation Canary + Post-Generation QA
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '.github/workflows/v4c-generation-canary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_HEAD: 75b6db8431f14dba934cf8d6f92042429fafd865
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  OUT: _system/v4c/generation_canary
+  MAX_PAID_REQUESTS: '20'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  paid-generation-canary:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout V4-C branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize bounded Canary paths
+        shell: powershell
+        run: |
+          $artifact=Join-Path $env:RUNNER_TEMP 'TinySnow-V4-C5.1-Canary-Review'
+          New-Item -ItemType Directory -Path $artifact -Force | Out-Null
+          "ARTIFACT_DIR=$artifact" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Verify V4-C5.0 frozen baseline and stable HEAD
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Current HEAD is not descended from sealed V4-C5.0 HEAD.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable HEAD changed: $stable" }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/generation_payload _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/memory _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C1-C5.0, Memory, Planner, or api_v2.ps1 changed.' }
+          $allowed=@(
+            '_system/tests/v4c_generation_canary.py',
+            '_system/tests/v4c_generation_canary_driver.py',
+            '_system/tests/v4c_generation_canary_execute.ps1',
+            '.github/workflows/v4c-generation-canary.yml'
+          )
+          foreach($p in @(git diff --name-only "$env:BASE_HEAD..HEAD")){
+            if($allowed -notcontains $p){ throw "Unexpected V4-C5.1 pre-execution change: $p" }
+          }
+          $memorySha=(Get-FileHash '_system/memory/tinysnow_memory.sqlite' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($memorySha -ne 'ac9ae4767f2c9ef7e5df5cbec0d272137f6c34684813c51716005df19da9f99d'){ throw 'Frozen approved Memory DB SHA changed.' }
+          Write-Host "BASE_HEAD=$env:BASE_HEAD"
+          Write-Host "STABLE_HEAD=$stable"
+
+      - name: Static compile and Windows PowerShell 5.1 parse
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B -m py_compile _system/tests/v4c_generation_canary.py _system/tests/v4c_generation_canary_driver.py
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '_system/tests/v4c_generation_canary_execute.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if(@($errors).Count -gt 0){ $errors | ForEach-Object { Write-Error $_.Message }; throw 'PowerShell 5.1 parse failed.' }
+
+      - name: Select <=5 complete READY products and 15-20 paid slots
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B _system/tests/v4c_generation_canary_driver.py select --out "$env:OUT"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          $s=Get-Content "$env:OUT/canary_selection.json" -Raw | ConvertFrom-Json
+          if([int]$s.selected_product_count -gt 5){ throw 'Selected product hard cap exceeded.' }
+          if([int]$s.selected_paid_slot_count -lt 15 -or [int]$s.selected_paid_slot_count -gt 20){ throw 'Selected paid slot target/hard cap violated.' }
+          if([int]$s.safe_derivative_count -lt 1){ throw 'Canary lacks SAFE_DERIVATIVE.' }
+          if([int]$s.process_localize_count -lt 1){ throw 'Canary lacks PROCESS_LOCALIZE.' }
+          if(-not (@($s.selected_products | Where-Object {$_.features.has_variant}).Count -ge 1)){ throw 'Canary lacks a READY variant_scope product; do not substitute HOLD/locked product.' }
+          if(-not (@($s.selected_products | Where-Object {$_.features.has_localization}).Count -ge 1)){ throw 'Canary lacks Traditional Chinese localization demand.' }
+          if(-not (@($s.selected_products | Where-Object {$_.features.has_low_text}).Count -ge 1)){ throw 'Canary lacks low/no-text sample.' }
+          if(-not (@($s.selected_products | Where-Object {$_.features.has_category_risk_guard}).Count -ge 1)){ throw 'Canary lacks category-risk-guard sample.' }
+          Write-Host ($s | ConvertTo-Json -Depth 12)
+
+      - name: Execute bounded paid source-preserving Canary
+        id: execute
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+        run: |
+          $ErrorActionPreference='Stop'
+          & .\_system\tests\v4c_generation_canary_execute.ps1 -OutDir "$env:OUT" -ArtifactDir "$env:ARTIFACT_DIR"
+
+      - name: Record executor completion marker
+        if: success()
+        shell: powershell
+        run: |
+          [pscustomobject]@{
+            executor_completed=$true
+            workflow_run=[string]$env:GITHUB_RUN_ID
+            completed_at=(Get-Date).ToUniversalTime().ToString('o')
+            max_paid_requests=20
+            bulk_generation_authorized=$false
+          } | ConvertTo-Json -Depth 5 | Set-Content "$env:OUT/execution_complete_marker.json" -Encoding UTF8
+
+      - name: Finalize Canary metadata
+        if: always()
+        shell: powershell
+        run: |
+          if(Test-Path "$env:OUT/canary_selection.json"){
+            $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+            python -B _system/tests/v4c_generation_canary_driver.py finalize --out "$env:OUT" --workflow-run "$env:GITHUB_RUN_ID" --stable-head "$stable"
+            if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          } else {
+            Write-Host 'Selection did not materialize; no V4-C5.1 metadata to finalize.'
+          }
+
+      - name: Final safety reconciliation
+        if: always()
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          if(-not(Test-Path "$env:OUT/validation.json")){ throw 'V4-C5.1 validation missing.' }
+          Remove-Item '_system/memory/tinysnow_memory.sqlite-wal','_system/memory/tinysnow_memory.sqlite-shm' -Force -ErrorAction SilentlyContinue
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw 'Stable HEAD changed during V4-C5.1.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/generation_payload _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/memory _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen prior stage, approved Memory, or api_v2.ps1 mutated during V4-C5.1.' }
+          $memorySha=(Get-FileHash '_system/memory/tinysnow_memory.sqlite' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($memorySha -ne 'ac9ae4767f2c9ef7e5df5cbec0d272137f6c34684813c51716005df19da9f99d'){ throw 'Approved Memory DB mutated.' }
+          $v=Get-Content "$env:OUT/validation.json" -Raw | ConvertFrom-Json
+          $c=Get-Content "$env:OUT/coverage_summary.json" -Raw | ConvertFrom-Json
+          if(-not [bool]$v.passed){ throw ('V4-C5.1 validation not PASS. blocker=' + [string]$v.execution_blocker) }
+          if([int]$c.selected_product_count -gt 5 -or [int]$c.selected_paid_slot_count -gt 20){ throw 'Canary selection cap violated.' }
+          if([int]$c.total_paid_request_count -gt 20){ throw 'MAX_PAID_REQUESTS violated.' }
+          foreach($k in @('unknown_leak','conflict_leak','forbidden_leak','cross_product_leak','variant_leak','locked_regeneration','v4c5_queue_mutation','approved_memory_mutation','duplicate_outputs')){
+            if([int]$c.$k -ne 0){ throw "Safety metric nonzero: $k=$($c.$k)" }
+          }
+          if([bool]$c.vision_api_called){ throw 'Unauthorized paid Vision API call detected.' }
+          if([bool]$c.bulk_generation_authorized){ throw 'Bulk generation must remain unauthorized.' }
+          if([bool]$c.approved_memory_commit){ throw 'Approved Memory commit must remain false.' }
+          Write-Host ($c | ConvertTo-Json -Depth 10)
+
+      - name: Upload Canary human review artifact
+        id: review_artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-V4-C5.1-Canary-Review
+          path: ${{ env.ARTIFACT_DIR }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Clean transient provider outputs
+        if: always()
+        shell: powershell
+        run: |
+          Remove-Item '_system/output','_system/logs' -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item '_system/memory/tinysnow_memory.sqlite-wal','_system/memory/tinysnow_memory.sqlite-shm' -Force -ErrorAction SilentlyContinue
+
+      - name: Persist only V4-C5.1 metadata and seal execution stage
+        if: always()
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          if(-not(Test-Path "$env:OUT/canary_selection.json")){ throw 'No Canary selection metadata to persist.' }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$env:OUT"
+          $staged=@(git diff --cached --name-only)
+          if($staged.Count -eq 0){ Write-Host 'No new Canary metadata to persist.'; exit 0 }
+          foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/generation_canary/')){ throw "Refusing unexpected staged path: $p" } }
+          git commit -m 'V4-C5.1 persist bounded paid Canary metadata [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
+          $head=(git rev-parse HEAD).Trim()
+          "V4-C5.1 persisted HEAD: $head" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "Review artifact: TinySnow-V4-C5.1-Canary-Review" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "Bulk generation authorized: false" | Add-Content $env:GITHUB_STEP_SUMMARY
