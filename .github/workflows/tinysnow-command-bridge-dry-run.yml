@@ -1,0 +1,99 @@
+name: TinySnow Agent Command Bridge Dry Run
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/agent_queue/command_schema.json'
+      - '_system/agent_queue/command_bridge.py'
+      - '_system/agent_queue/inbox/**'
+      - '_system/control/command_policy.json'
+      - '_system/control/retry_policy.json'
+      - '_system/control/worker_state.json'
+      - '_system/context/next_decision.json'
+      - '.github/workflows/tinysnow-command-bridge-dry-run.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tinysnow-command-bridge-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  command-bridge-dry-run:
+    if: github.ref == 'refs/heads/v4c-universal-product-engine'
+    runs-on: ubuntu-latest
+    env:
+      TINYSNOW_STABLE_HEAD_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Guard branch, stable and sealed-stage scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/v4c-universal-product-engine"
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$TINYSNOW_STABLE_HEAD_EXPECTED"
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --name-only HEAD^ HEAD > /tmp/changed.txt
+            if grep -Ev '^(_system/agent_queue/|_system/control/(command_policy.json|retry_policy.json|worker_state.json)$|_system/context/next_decision.json$|\.github/workflows/tinysnow-command-bridge-dry-run.yml$)' /tmp/changed.txt | grep -q .; then
+              echo "Unexpected non-control-layer change in command-bridge commit:"
+              grep -Ev '^(_system/agent_queue/|_system/control/(command_policy.json|retry_policy.json|worker_state.json)$|_system/context/next_decision.json$|\.github/workflows/tinysnow-command-bridge-dry-run.yml$)' /tmp/changed.txt
+              exit 1
+            fi
+          fi
+
+      - name: Compile command bridge
+        run: python -m py_compile _system/agent_queue/command_bridge.py
+
+      - name: Execute zero-paid command bridge dry run
+        run: python -B _system/agent_queue/command_bridge.py --dry-run
+
+      - name: Validate bridge result
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('.')
+          rows=[json.loads(x) for x in (root/'_system/agent_queue/results/execution_results.jsonl').read_text().splitlines() if x.strip()]
+          assert rows, 'NO_EXECUTION_RESULT'
+          r=rows[-1]; v=r['validation']
+          assert r['result']=='DRY_RUN_SUCCESS'
+          assert v['agent_queue_working'] is True
+          assert v['command_schema_valid'] is True
+          assert v['authority_policy_enforced'] is True
+          assert v['retry_policy_exists'] is True
+          assert v['no_sealed_stage_rerun'] is True
+          assert v['stable_unchanged'] is True
+          assert v['paid_api_called'] is False
+          assert v['image_generation_called'] is False
+          assert v['product_mutation'] is False
+          print(json.dumps({'passed':True,'command_id':r['command_id'],'result':r['result'],'validation':v},sort_keys=True))
+          PY
+
+      - name: Persist control-layer execution result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "tinysnow-command-worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/agent_queue/inbox/pending_commands.jsonl \
+                  _system/agent_queue/completed \
+                  _system/agent_queue/failed \
+                  _system/agent_queue/processing \
+                  _system/agent_queue/results/execution_results.jsonl
+          if ! git diff --cached --quiet; then
+            git commit -m "control: persist Agent Command Bridge dry-run result [skip ci]"
+            git push origin HEAD:v4c-universal-product-engine
+          fi
+
+      - name: Final stable guard
+        shell: bash
+        run: |
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$TINYSNOW_STABLE_HEAD_EXPECTED"

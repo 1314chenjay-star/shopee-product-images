@@ -1,0 +1,17 @@
+{
+  "schema_version": "tinysnow.retry-policy.1",
+  "max_retry_count": 2,
+  "same_checkpoint_timeout_minutes": 30,
+  "failure_classification": {
+    "first_failure": "DIAGNOSTIC_REQUIRED",
+    "second_failure": "DELTA_RECOVERY_REQUIRED",
+    "retry_limit_exceeded": "BLOCKED_STATE_ANALYSIS"
+  },
+  "escalation_action": "BLOCKED_STATE_ANALYSIS",
+  "same_checkpoint_rules": [
+    {"failure_number": 1, "action": "diagnostic"},
+    {"failure_number": 2, "action": "delta_recovery"},
+    {"failure_number": 3, "action": "BLOCKED_STATE_ANALYSIS"}
+  ],
+  "infinite_retry_forbidden": true
+}

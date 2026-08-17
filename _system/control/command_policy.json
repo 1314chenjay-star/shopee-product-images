@@ -1,0 +1,24 @@
+{
+  "schema_version": "tinysnow.command-policy.1",
+  "auto_allowed_actions": [
+    "status_check",
+    "diagnostic",
+    "resume_checkpoint",
+    "delta_retry",
+    "validation",
+    "reconciliation"
+  ],
+  "owner_approval_required_operations": [
+    "paid_api",
+    "image_generation",
+    "image_editing",
+    "stable_merge",
+    "destructive_operation",
+    "bulk_production_mutation"
+  ],
+  "default_decision": "DENY",
+  "sealed_stage_rule": "Never execute or dispatch a sealed-stage rerun. Frozen state may be checked by fingerprint/lock only.",
+  "stable_rule": "Never mutate tinysnow-tool-only from the command bridge.",
+  "command_scope_rule": "A command may only execute operations explicitly listed in allowed_operations and not listed in forbidden_operations.",
+  "owner_approval_rule": "Any owner-approval-required operation is blocked unless owner_approval=true and a later owner-authorized execution path explicitly handles it. This dry-run bridge never performs such operations."
+}

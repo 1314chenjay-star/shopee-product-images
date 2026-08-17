@@ -1,0 +1,32 @@
+{
+  "schema_version": "tinysnow.next-decision.1",
+  "current_stage": "V4-C5.3 Source Truth Repair",
+  "next_action": "AGENT_COMMAND_BRIDGE_DRY_RUN_ONLY",
+  "reason": "Control-layer delta requested by Owner; do not advance or rerun C5.3 source-truth work.",
+  "constraints": [
+    "control-layer-only",
+    "zero-paid",
+    "no-image-generation",
+    "no-product-mutation",
+    "experimental-branch-only",
+    "sealed-stage-fingerprint-only"
+  ],
+  "forbidden_actions": [
+    "rerun_v4_c0",
+    "rerun_v4_c1",
+    "rerun_v4_c2",
+    "rerun_v4_c3",
+    "rerun_v4_c4",
+    "rerun_v4_c5_0",
+    "rerun_v4_c5_1",
+    "rerun_v4_c5_1a",
+    "rerun_v4_c5_2",
+    "rerun_completed_c5_3_source_truth_work",
+    "paid_api",
+    "image_generation",
+    "image_editing",
+    "stable_merge",
+    "destructive_operation",
+    "bulk_production_mutation"
+  ]
+}
