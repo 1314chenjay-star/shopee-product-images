@@ -41,11 +41,30 @@ jobs:
           python -m pip install --disable-pip-version-check --no-input brotli lz4 zstandard
 
       - name: Reassemble existing snapshot once and identify format
+        id: reassemble
         shell: powershell
+        continue-on-error: true
         run: |
           $ErrorActionPreference='Stop'
           python -B _system/tests/v4c_source_truth_reassemble.py | Tee-Object -FilePath v4c5_3_reassembly.log
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Upload deterministic decoded payload diagnostic artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4c5-3-reassembled-payload-${{ github.run_id }}
+          path: |
+            v4c5_3_reassembled_payload.bin
+            _system/v4c/source_truth_bootstrap/reassembly_checkpoint.json
+            v4c5_3_reassembly.log
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Fail if reassembly format remains unresolved
+        if: steps.reassemble.outcome != 'success'
+        shell: powershell
+        run: throw 'Snapshot payload was reassembled and artifacted, but structured format remains unresolved.'
 
       - name: Persist checkpoint only
         shell: powershell
