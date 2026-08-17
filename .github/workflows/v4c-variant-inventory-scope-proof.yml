@@ -1,0 +1,85 @@
+name: V4-C5.2 Authoritative Variant Inventory + A/B Scope Proof Recovery
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '.github/workflows/v4c-variant-inventory-scope-proof.yml'
+      - '_system/tests/v4c_variant_inventory_scope_proof.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_HEAD: 176d1d3566fee16360200eb3a39bc48f899d9c19
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  variant-inventory-scope-proof:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify sealed baseline, stable HEAD, and frozen state
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Branch is not descended from sealed V4-C5.1a baseline.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable changed: $stable" }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/v4c/variant_readiness_audit _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/memory/tinysnow_memory.sqlite _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen V4-C5.1a/upstream/Memory state changed before V4-C5.2.' }
+
+      - name: Compile V4-C5.2 implementation only
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B -m py_compile _system/tests/v4c_variant_inventory_scope_proof.py
+
+      - name: Recover authoritative variant inventory and A/B proofs
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -B _system/tests/v4c_variant_inventory_scope_proof.py | Tee-Object -FilePath v4c5_2_scope_proof.log
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Validate zero-paid scope proof seal
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $v=Get-Content '_system/v4c/variant_inventory/validation.json' -Raw | ConvertFrom-Json
+          $l=Get-Content '_system/v4c/variant_inventory/V4_C5_2_VARIANT_INVENTORY_SCOPE_PROOF_LOCK.json' -Raw | ConvertFrom-Json
+          if(-not $v.passed -or -not $l.passed -or -not $l.sealed){ throw 'V4-C5.2 validation/lock did not PASS.' }
+          if([int]$v.ready_products_input -ne 145 -or [int]$v.ready_slots_input -ne 549){ throw 'READY reconciliation mismatch.' }
+          if([int]$v.invented_variant_mapping -ne 0){ throw 'Invented variant mapping detected.' }
+          if([int]$v.variant_specific_facts_in_B_common_payload -ne 0){ throw 'Variant-specific fact leaked into B common payload.' }
+          if([int]$v.cross_variant_contamination -ne 0){ throw 'Cross-variant contamination detected.' }
+          if($v.image_generation_called -or $v.image_editing_api_called -or $v.tiny_snow_api_called -or $v.vision_api_called -or $v.paid_api_called -or $v.generation_executed){ throw 'Zero-paid boundary violated.' }
+
+      - name: Reconcile immutable frozen state after proof recovery
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw 'Stable changed during V4-C5.2.' }
+          git diff --quiet $env:BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/v4c/variant_readiness_audit _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/memory/tinysnow_memory.sqlite _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen queue, V4-C5.1a seal, Memory, or api_v2.ps1 mutated.' }
+
+      - name: Persist sealed V4-C5.2 outputs only
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- _system/v4c/variant_inventory
+          $staged=@(git diff --cached --name-only)
+          foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/variant_inventory/')){ throw "Unexpected staged path: $p" } }
+          if($staged.Count -gt 0){
+            git commit -m 'V4-C5.2 persist authoritative variant inventory scope proof [skip ci]'
+            git push origin HEAD:v4c-universal-product-engine
+          }
