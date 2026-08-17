@@ -1,0 +1,78 @@
+{
+  "passed": true,
+  "schema_version": "v4c5.0.canary.1",
+  "canary_slot_count": 50,
+  "process_localize_covered": true,
+  "safe_derivative_covered": true,
+  "exact_approved_reuse_pass": true,
+  "identity_mismatch_rejected": true,
+  "variant_mismatch_rejected": true,
+  "source_sha_mismatch_rejected": true,
+  "derivative_parent_traceability_pass": true,
+  "regression_428_active": true,
+  "regression_575_active": true,
+  "unknown_leak": 0,
+  "conflict_leak": 0,
+  "forbidden_leak": 0,
+  "cross_product_leakage": 0,
+  "category_template_fact_leakage": 0,
+  "locked_regeneration": 0,
+  "hold_product_paid_slots": 0,
+  "generation_executed": false,
+  "paid_api_called": false,
+  "api_flags": {
+    "source_download_called": false,
+    "artifact_download_called": false,
+    "ocr_executed": false,
+    "semantic_inference_executed": false,
+    "preservation_reexecuted": false,
+    "factual_gate_reexecuted": false,
+    "planner_reexecuted": false,
+    "image_generation_called": false,
+    "image_editing_api_called": false,
+    "tiny_snow_api_called": false,
+    "vision_api_called": false,
+    "paid_api_called": false,
+    "generation_executed": false
+  },
+  "probe": {
+    "available": true,
+    "probe_memory_id": "output_060f24114ff28efda965e4fa",
+    "exact_reuse_pass": true,
+    "identity_mismatch_rejection_pass": true,
+    "variant_mismatch_rejection_pass": true
+  },
+  "sample_status_counts": {
+    "EXECUTION_READY": 44,
+    "HOLD_PAYLOAD": 6
+  },
+  "category_profiles_observed": [
+    "bags",
+    "fitness",
+    "footwear",
+    "general_merchandise",
+    "sports"
+  ],
+  "actual_sample_has_payload_ready": true,
+  "required_category_risk_profiles": [
+    "apparel",
+    "bags",
+    "footwear",
+    "general_merchandise",
+    "outdoor",
+    "sports"
+  ],
+  "category_risk_profile_canary_coverage": [
+    "apparel",
+    "bags",
+    "footwear",
+    "general_merchandise",
+    "outdoor",
+    "sports"
+  ],
+  "multi_category_guard_coverage_pass": true,
+  "category_profiles_are_guard_only": true,
+  "general_merchandise_guard_covered": true,
+  "outdoor_guard_covered": true,
+  "apparel_guard_covered": true
+}
