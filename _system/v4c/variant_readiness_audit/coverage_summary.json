@@ -1,0 +1,83 @@
+{
+  "schema_version": "v4c5.1a-coverage-1",
+  "authoritative_variant_source_used": {
+    "primary": "frozen V4-C0 structured semantic review variant_constraints",
+    "files": [
+      "_system/reports/v4c0_b001_semantic_review.json",
+      "_system/reports/v4c0_b001_semantic_review_r2.json",
+      "_system/reports/v4c0_b002_semantic_review.json",
+      "_system/reports/v4c0_b003_semantic_review.json",
+      "_system/reports/v4c0_b004_semantic_review.json",
+      "_system/reports/v4c0_b005_semantic_review.json",
+      "_system/reports/v4c0_b006_semantic_review.json",
+      "_system/reports/v4c0_b007_semantic_review.json",
+      "_system/reports/v4c0_b008_semantic_review.json",
+      "_system/reports/v4c0_b009_semantic_review.json",
+      "_system/reports/v4c0_b010_semantic_review.json",
+      "_system/reports/v4c0_b011_semantic_review.json",
+      "_system/reports/v4c0_b012_semantic_review.json",
+      "_system/reports/v4c0_b013_semantic_review.json",
+      "_system/reports/v4c0_b014_semantic_review.json",
+      "_system/reports/v4c0_b015_semantic_review.json",
+      "_system/reports/v4c0_b016_semantic_review.json",
+      "_system/reports/v4c0_b017_semantic_review.json"
+    ],
+    "specific_scope_provenance": [
+      "_system/v4c/results/source_evidence.jsonl",
+      "_system/v4c/results/semantic_evidence_queue.jsonl",
+      "_system/v4c/semantic/preservation/semantic_evidence.jsonl",
+      "_system/v4c/claim_gate/bridge/unfiltered_semantic_claim_gate_queue.jsonl",
+      "_system/v4c/claim_gate/calibration/claim_level_results.jsonl",
+      "_system/v4c/progressive_claim/progress.jsonl",
+      "_system/v4c/factual_gate/correction_v4c3_2/corrected_image_gate.jsonl",
+      "_system/v4c/factual_gate/correction_v4c3_2/corrected_generation_queue.jsonl",
+      "_system/v4c/generation_plan/canonical_image_state.jsonl",
+      "_system/v4c/generation_plan/product_5slot_plan.jsonl",
+      "_system/v4c/generation_payload/execution_ready_queue.jsonl",
+      "_system/memory/approved_fact_memory.jsonl"
+    ],
+    "discovery_run": 31997341246
+  },
+  "historical_variant_option_count": null,
+  "historical_variant_option_count_claimed": 2673,
+  "historical_variant_option_count_status": "HISTORICAL_VARIANT_OPTION_COUNT_NOT_CANONICALLY_RECONCILABLE",
+  "historical_variant_option_count_reason": "Discovery 31997341246 found no durable canonical 2,673-row variant-option source; V4-C0 constraint prose is not re-expanded into guessed option rows.",
+  "v4c0_proven_variant_constrained_products": 162,
+  "v4c0_variant_constraint_count": 648,
+  "source_inventory_products": 375,
+  "source_inventory_sources": 2394,
+  "persistent_memory_variant_fields": {
+    "approved_fact_memory_nonempty_variant_scope": 0,
+    "approved_output_memory_nonempty_variant_scope": 0,
+    "ready_product_approved_fact_nonempty_variant_scope": 0
+  },
+  "ready_products": 145,
+  "ready_slots": 549,
+  "product_class_counts": {
+    "A_NO_PRODUCT_VARIANTS": 0,
+    "B_VARIANTS_EXIST_SHARED_IMAGE_SCOPE_SAFE": 0,
+    "C_VARIANT_SCOPE_PROPAGATION_LOSS": 0,
+    "D_VARIANT_MAPPING_AMBIGUOUS": 145,
+    "E_VARIANT_CONFLICT_UNSAFE": 0
+  },
+  "slot_scope_counts": {
+    "NO_VARIANTS": 0,
+    "COMMON_TO_ALL_VARIANTS": 0,
+    "SPECIFIC_VARIANT": 0,
+    "VARIANT_MAPPING_UNKNOWN": 549,
+    "VARIANT_CONFLICT": 0
+  },
+  "specific_variant_ready_availability": false,
+  "c_affected_product_ids": [],
+  "c_affected_source_sequences": [],
+  "c_affected_slots": [],
+  "first_propagation_loss_stage_counts": {},
+  "cross_variant_contamination": 0,
+  "invented_variant_mapping": 0,
+  "v4c5_queue_mutation": 0,
+  "approved_memory_mutation": 0,
+  "hold_block_upgraded": 0,
+  "locked_products_regenerated": 0,
+  "generation_executed": false,
+  "paid_api_called": false
+}

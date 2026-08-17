@@ -1,0 +1,26 @@
+{
+  "schema_version": "v4c5.1a-canary-policy-1",
+  "discovery_run_reused": 31997341246,
+  "specific_variant_ready_available": false,
+  "specific_variant_paid_sample_requirement": "STILL_BLOCKED",
+  "variant_paid_canary_deferred": true,
+  "dedicated_variant_paid_canary_required_in_future": true,
+  "future_trigger": "first SPECIFIC_VARIANT + PRODUCT_READY candidate before bulk variant generation",
+  "wrong_variant_negative_probe_required": true,
+  "variant_isolation_regression_required": true,
+  "common_to_all_canary_required_when_available": false,
+  "common_to_all_fact_rule": "COMMON_TO_ALL_VARIANTS may use only verified facts applicable to every variant; no single-variant color/size/quantity/style/accessory claim.",
+  "audit_safe_paid_canary_product_classes": [
+    "A_NO_PRODUCT_VARIANTS",
+    "B_VARIANTS_EXIST_SHARED_IMAGE_SCOPE_SAFE"
+  ],
+  "audit_excluded_paid_canary_product_classes": [
+    "C_VARIANT_SCOPE_PROPAGATION_LOSS",
+    "D_VARIANT_MAPPING_AMBIGUOUS",
+    "E_VARIANT_CONFLICT_UNSAFE"
+  ],
+  "safe_common_canary_products": 0,
+  "paid_canary_may_safely_resume_after_explicit_authorization": false,
+  "automatic_paid_canary_restart": false,
+  "recommendation": "No A/B audit-safe READY product exists for a paid Canary; keep Paid Canary blocked."
+}
