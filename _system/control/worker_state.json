@@ -1,5 +1,5 @@
 {
-  "schema_version": "tinysnow.worker-state.1",
+  "schema_version": "tinysnow.worker-state.2",
   "worker_mode": "STATELESS_REPLACEABLE",
   "status": "RECOVERING",
   "stage": "V4-C5.3 Source Truth Repair",
@@ -9,8 +9,22 @@
     "_system/governance/failure_registry.jsonl",
     "_system/handoff/TinySnow_current_state.json",
     "_system/control/execution_checkpoint.json",
+    "_system/context/next_decision.json",
+    "_system/agent_queue/inbox/pending_commands.jsonl",
+    "_system/control/command_policy.json",
+    "_system/control/retry_policy.json",
     "_system/agent_queue/queue.jsonl"
   ],
+  "pre_execution_order": [
+    "read_checkpoint",
+    "read_next_decision",
+    "read_inbox_command",
+    "validate_command_authority",
+    "confirm_frozen_lock",
+    "execute_allowed_scope_only",
+    "write_execution_result"
+  ],
+  "command_bridge": "_system/agent_queue/command_bridge.py",
   "concurrent_worker_rule": "Re-fetch HEAD before each write; absorb compatible new commits; never force push.",
   "human_orchestration_required": false
 }
