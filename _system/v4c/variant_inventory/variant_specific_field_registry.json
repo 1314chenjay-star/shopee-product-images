@@ -1,0 +1,34 @@
+{
+  "schema_version": "v4c5.2-variant-specific-field-registry-1",
+  "fields": {
+    "color": {
+      "guard_only": true,
+      "source": "frozen_v4c0_variant_constraints"
+    },
+    "size": {
+      "guard_only": true,
+      "source": "frozen_v4c0_variant_constraints"
+    },
+    "quantity": {
+      "guard_only": true,
+      "source": "frozen_v4c0_variant_constraints"
+    },
+    "style": {
+      "guard_only": true,
+      "source": "frozen_v4c0_variant_constraints"
+    },
+    "model": {
+      "guard_only": true,
+      "source": "frozen_v4c0_variant_constraints"
+    },
+    "bundle_package": {
+      "guard_only": true,
+      "source": "frozen_v4c0_variant_constraints"
+    },
+    "accessory_configuration": {
+      "guard_only": true,
+      "source": "frozen_v4c0_variant_constraints"
+    }
+  },
+  "rule": "Registry raises scope review strictness only; it never supplies variant factual values."
+}

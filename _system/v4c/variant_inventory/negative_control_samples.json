@@ -1,0 +1,11 @@
+{
+  "schema_version": "v4c5.2-negative-controls-1",
+  "product_ids": [
+    "51765547764",
+    "25348397564",
+    "25348397567"
+  ],
+  "required_preflight_behavior": "REJECT_AS_VARIANT_MAPPING_UNKNOWN",
+  "same_sha_wrong_variant_case": "use existing V4-C4.2 identity/variant negative probe when applicable",
+  "must_not_be_upgraded_by_ab_overlay": true
+}

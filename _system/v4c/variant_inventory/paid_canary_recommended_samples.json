@@ -1,0 +1,7 @@
+{
+  "schema_version": "v4c5.2-paid-canary-recommended-samples-1",
+  "product_ids": [],
+  "max_products": 5,
+  "selection_rule": "A/B proven only; category diversity when frozen category metadata is available",
+  "generation_executed": false
+}
