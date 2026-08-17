@@ -5,6 +5,7 @@ on:
     branches: [v4c-universal-product-engine]
     paths:
       - '_system/tests/v4c_generation_payload_dry_run.py'
+      - '_system/tests/v4c_generation_payload_dry_run_v2.py'
       - '.github/workflows/v4c-generation-payload-dry-run.yml'
   workflow_dispatch:
 
@@ -15,6 +16,7 @@ env:
   BASE_HEAD: acb22aaec5335772317f5c664c91a56ddeecda1b
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
   OUT: _system/v4c/generation_payload
+  PYTHONDONTWRITEBYTECODE: '1'
 
 jobs:
   generation-payload-dry-run:
@@ -42,28 +44,28 @@ jobs:
           if($LASTEXITCODE -ne 0){ throw 'Frozen Memory/V4-C1-C4.2 data or api_v2.ps1 changed.' }
           $changed=@(git diff --name-only "$env:BASE_HEAD..HEAD")
           foreach($p in $changed){
-            if($p -ne '_system/tests/v4c_generation_payload_dry_run.py' -and $p -ne '.github/workflows/v4c-generation-payload-dry-run.yml'){
+            if($p -ne '_system/tests/v4c_generation_payload_dry_run.py' -and $p -ne '_system/tests/v4c_generation_payload_dry_run_v2.py' -and $p -ne '.github/workflows/v4c-generation-payload-dry-run.yml'){
               throw "Unexpected pre-V4-C5.0 change: $p"
             }
           }
           Write-Host "BASE_HEAD=$env:BASE_HEAD"
           Write-Host "STABLE_HEAD=$stable"
 
-      - name: Compile only V4-C5.0 payload gate
+      - name: Compile only V4-C5.0 payload modules
         shell: pwsh
         run: |
-          python -m py_compile _system/tests/v4c_generation_payload_dry_run.py _system/memory/memory_runtime.py
+          python -m py_compile _system/tests/v4c_generation_payload_dry_run.py _system/tests/v4c_generation_payload_dry_run_v2.py
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
 
-      - name: Run 50-slot Memory and Regression Canary
+      - name: Run strengthened 50-slot Memory and Regression Canary
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python _system/tests/v4c_generation_payload_dry_run.py canary --output "$env:CANARY" --size 50
+          python _system/tests/v4c_generation_payload_dry_run_v2.py canary --output "$env:CANARY" --size 50
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
           $c=Get-Content "$env:CANARY" -Raw | ConvertFrom-Json
           if(-not [bool]$c.passed){ throw 'V4-C5.0 Canary did not PASS.' }
-          foreach($k in @('process_localize_covered','safe_derivative_covered','exact_approved_reuse_pass','identity_mismatch_rejected','variant_mismatch_rejected','source_sha_mismatch_rejected','derivative_parent_traceability_pass','regression_428_active','regression_575_active')){
+          foreach($k in @('process_localize_covered','safe_derivative_covered','exact_approved_reuse_pass','identity_mismatch_rejected','variant_mismatch_rejected','source_sha_mismatch_rejected','derivative_parent_traceability_pass','regression_428_active','regression_575_active','actual_sample_has_payload_ready','multi_category_guard_coverage_pass','general_merchandise_guard_covered','outdoor_guard_covered','apparel_guard_covered')){
             if(-not [bool]$c.$k){ throw "Canary contract failed: $k" }
           }
           foreach($k in @('unknown_leak','conflict_leak','forbidden_leak','cross_product_leakage','category_template_fact_leakage','locked_regeneration','hold_product_paid_slots')){
@@ -76,7 +78,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          python _system/tests/v4c_generation_payload_dry_run.py full --out "$env:OUT" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
+          python _system/tests/v4c_generation_payload_dry_run_v2.py full --out "$env:OUT" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
           Copy-Item "$env:CANARY" "$env:OUT/canary_validation.json" -Force
 
@@ -96,8 +98,8 @@ jobs:
           foreach($prop in $s.api_flags.PSObject.Properties){ if([bool]$prop.Value){ throw "Forbidden full flag true: $($prop.Name)" } }
           $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
           if($stable -ne $env:STABLE_HEAD){ throw 'Stable HEAD changed during V4-C5.0.' }
-          git diff --quiet $env:BASE_HEAD -- _system/memory _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/start/api_v2.ps1
-          if($LASTEXITCODE -ne 0){ throw 'Frozen prior-stage or Memory data mutated during V4-C5.0.' }
+          $frozenDiff=@(git diff --name-only $env:BASE_HEAD -- _system/memory _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/start/api_v2.ps1)
+          if($frozenDiff.Count -ne 0){ throw "Frozen prior-stage or Memory mutation detected: $($frozenDiff -join '; ')" }
           $memoryDirty=@(git status --porcelain -- _system/memory)
           if($memoryDirty.Count -ne 0){ throw "Approved Memory worktree mutation detected: $($memoryDirty -join '; ')" }
 
