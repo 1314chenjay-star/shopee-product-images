@@ -23,6 +23,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Probe Decision Layer command inbox on heartbeat
+        shell: bash
+        env:
+          TINYSNOW_STABLE_HEAD_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$TINYSNOW_STABLE_HEAD_EXPECTED"
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('.')
+          inbox=root/'_system/agent_queue/inbox/pending_commands.jsonl'
+          rows=[json.loads(x) for x in inbox.read_text(encoding='utf-8-sig').splitlines() if x.strip()] if inbox.exists() else []
+          pending=[x for x in rows if x.get('status')=='PENDING']
+          if not pending:
+              print(json.dumps({'command_inbox_read':True,'pending_command':False,'authority_probe':'IDLE'},sort_keys=True))
+              raise SystemExit(0)
+          cmd=sorted(pending,key=lambda x:(int(x.get('priority',999)),str(x.get('created_at','')),str(x.get('command_id',''))))[0]
+          checkpoint=json.load(open(root/'_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          decision=json.load(open(root/'_system/context/next_decision.json',encoding='utf-8-sig'))
+          policy=json.load(open(root/'_system/control/command_policy.json',encoding='utf-8-sig'))
+          retry=json.load(open(root/'_system/control/retry_policy.json',encoding='utf-8-sig'))
+          required=['command_id','created_at','priority','action','scope','reason','allowed_operations','forbidden_operations','required_validation','status']
+          assert all(k in cmd for k in required), 'COMMAND_SCHEMA_REQUIRED_FIELD_MISSING'
+          assert cmd['action'] in policy['auto_allowed_actions'], 'COMMAND_REQUIRES_OWNER_OR_UNKNOWN_ACTION'
+          allowed=set(map(str,cmd.get('allowed_operations',[])))
+          forbidden=set(map(str,cmd.get('forbidden_operations',[])))
+          owner=set(map(str,policy.get('owner_approval_required_operations',[])))
+          decision_forbidden=set(map(str,decision.get('forbidden_actions',[])))
+          assert not (allowed & forbidden), 'ALLOWED_FORBIDDEN_OVERLAP'
+          assert not (allowed & owner), 'OWNER_APPROVAL_BOUNDARY'
+          assert not (allowed & decision_forbidden), 'NEXT_DECISION_FORBIDDEN_OPERATION'
+          assert int(cmd.get('retry_count',0)) <= int(retry['max_retry_count']), 'RETRY_LIMIT_EXCEEDED_BLOCKED_STATE_ANALYSIS'
+          assert checkpoint.get('checkpoint'), 'CHECKPOINT_MISSING'
+          print(json.dumps({'command_inbox_read':True,'pending_command':True,'command_id':cmd['command_id'],'checkpoint':checkpoint['checkpoint'],'authority_probe':'PASS','non_consuming':True},sort_keys=True))
+          PY
       - name: Validate capability recovery and handoff queue
         run: python -B _system/agent_queue/validate_agent_queue.py
       - name: Evaluate idle recovery decision
