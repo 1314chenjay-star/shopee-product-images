@@ -1,0 +1,116 @@
+name: V4-C5.0 Memory-Aware Generation Payload Dry Run
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/tests/v4c_generation_payload_dry_run.py'
+      - '.github/workflows/v4c-generation-payload-dry-run.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_HEAD: acb22aaec5335772317f5c664c91a56ddeecda1b
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  OUT: _system/v4c/generation_payload
+
+jobs:
+  generation-payload-dry-run:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize V4-C5.0 temp paths
+        shell: pwsh
+        run: |
+          $canary=Join-Path $env:RUNNER_TEMP 'v4c50_payload_canary.json'
+          "CANARY=$canary" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Verify sealed V4-C4.2 baseline and stable HEAD
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git merge-base --is-ancestor $env:BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Current HEAD is not descended from sealed V4-C4.2 HEAD.' }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable HEAD changed: $stable" }
+          git diff --quiet $env:BASE_HEAD -- _system/memory _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen Memory/V4-C1-C4.2 data or api_v2.ps1 changed.' }
+          $changed=@(git diff --name-only "$env:BASE_HEAD..HEAD")
+          foreach($p in $changed){
+            if($p -ne '_system/tests/v4c_generation_payload_dry_run.py' -and $p -ne '.github/workflows/v4c-generation-payload-dry-run.yml'){
+              throw "Unexpected pre-V4-C5.0 change: $p"
+            }
+          }
+          Write-Host "BASE_HEAD=$env:BASE_HEAD"
+          Write-Host "STABLE_HEAD=$stable"
+
+      - name: Compile only V4-C5.0 payload gate
+        shell: pwsh
+        run: |
+          python -m py_compile _system/tests/v4c_generation_payload_dry_run.py _system/memory/memory_runtime.py
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+
+      - name: Run 50-slot Memory and Regression Canary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_generation_payload_dry_run.py canary --output "$env:CANARY" --size 50
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          $c=Get-Content "$env:CANARY" -Raw | ConvertFrom-Json
+          if(-not [bool]$c.passed){ throw 'V4-C5.0 Canary did not PASS.' }
+          foreach($k in @('process_localize_covered','safe_derivative_covered','exact_approved_reuse_pass','identity_mismatch_rejected','variant_mismatch_rejected','source_sha_mismatch_rejected','derivative_parent_traceability_pass','regression_428_active','regression_575_active')){
+            if(-not [bool]$c.$k){ throw "Canary contract failed: $k" }
+          }
+          foreach($k in @('unknown_leak','conflict_leak','forbidden_leak','cross_product_leakage','category_template_fact_leakage','locked_regeneration','hold_product_paid_slots')){
+            if([int]$c.$k -ne 0){ throw "Canary safety metric nonzero: $k=$($c.$k)" }
+          }
+          if([bool]$c.generation_executed -or [bool]$c.paid_api_called){ throw 'Generation or paid API executed in Canary.' }
+          foreach($prop in $c.api_flags.PSObject.Properties){ if([bool]$prop.Value){ throw "Forbidden Canary flag true: $($prop.Name)" } }
+
+      - name: Run full frozen 660-slot dry run
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python _system/tests/v4c_generation_payload_dry_run.py full --out "$env:OUT" --stable-head "$env:STABLE_HEAD" --workflow-run "$env:GITHUB_RUN_ID"
+          if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
+          Copy-Item "$env:CANARY" "$env:OUT/canary_validation.json" -Force
+
+      - name: Final 660-slot reconciliation and no-spend guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $v=Get-Content "$env:OUT/validation.json" -Raw | ConvertFrom-Json
+          $s=Get-Content "$env:OUT/coverage_summary.json" -Raw | ConvertFrom-Json
+          if(-not [bool]$v.passed -or -not [bool]$s.passed){ throw 'V4-C5.0 Full Validation did not PASS.' }
+          if([int]$s.frozen_input_slots -ne 660){ throw 'Frozen input slot count changed.' }
+          if(([int]$s.memory_reuse_slots+[int]$s.final_paid_execution_candidate_slots+[int]$s.payload_hold_slots) -ne 660){ throw '660 final reconciliation failed.' }
+          foreach($k in @('duplicate_slots','missing_slots','unexpected_new_slots','original_planner_mutation','approved_memory_mutation','unknown_leak','conflict_leak','forbidden_leak','cross_product_leakage','variant_leakage','locked_regeneration')){
+            if([int]$s.$k -ne 0){ throw "Final safety metric nonzero: $k=$($s.$k)" }
+          }
+          if([bool]$s.generation_executed -or [bool]$s.paid_api_called){ throw 'Generation or paid API executed.' }
+          foreach($prop in $s.api_flags.PSObject.Properties){ if([bool]$prop.Value){ throw "Forbidden full flag true: $($prop.Name)" } }
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw 'Stable HEAD changed during V4-C5.0.' }
+          git diff --quiet $env:BASE_HEAD -- _system/memory _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen prior-stage or Memory data mutated during V4-C5.0.' }
+          $memoryDirty=@(git status --porcelain -- _system/memory)
+          if($memoryDirty.Count -ne 0){ throw "Approved Memory worktree mutation detected: $($memoryDirty -join '; ')" }
+
+      - name: Persist V4-C5.0 payload outputs only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add _system/v4c/generation_payload
+          git diff --cached --quiet
+          if($LASTEXITCODE -eq 0){ throw 'No V4-C5.0 payload outputs staged.' }
+          $staged=@(git diff --cached --name-only)
+          foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/generation_payload/')){ throw "Unexpected staged file: $p" } }
+          git commit -m 'V4-C5.0 persist memory-aware payload dry run [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
