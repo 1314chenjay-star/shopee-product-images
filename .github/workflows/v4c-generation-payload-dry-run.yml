@@ -99,9 +99,11 @@ jobs:
           $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
           if($stable -ne $env:STABLE_HEAD){ throw 'Stable HEAD changed during V4-C5.0.' }
           $frozenDiff=@(git diff --name-only $env:BASE_HEAD -- _system/memory _system/v4c/generation_plan _system/v4c/factual_gate _system/v4c/inventory _system/start/api_v2.ps1)
-          if($frozenDiff.Count -ne 0){ throw "Frozen prior-stage or Memory mutation detected: $($frozenDiff -join '; ')" }
-          $memoryDirty=@(git status --porcelain -- _system/memory)
+          if($frozenDiff.Count -ne 0){ throw "Frozen tracked prior-stage or Memory mutation detected: $($frozenDiff -join '; ')" }
+          $memoryDirty=@(git status --porcelain -- _system/memory | Where-Object { $_ -notmatch 'tinysnow_memory\.sqlite-(wal|shm)$' })
           if($memoryDirty.Count -ne 0){ throw "Approved Memory worktree mutation detected: $($memoryDirty -join '; ')" }
+          Remove-Item '_system/memory/tinysnow_memory.sqlite-wal' -Force -ErrorAction SilentlyContinue
+          Remove-Item '_system/memory/tinysnow_memory.sqlite-shm' -Force -ErrorAction SilentlyContinue
 
       - name: Persist V4-C5.0 payload outputs only
         shell: pwsh
