@@ -56,3 +56,4 @@ jobs:
           }
 
 # delta rerun after terminal Base64 padding fix
+# delta rerun with optional Brotli/LZ4/Zstd format probes
