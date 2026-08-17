@@ -1,0 +1,51 @@
+{
+  "command_id": "CMD-AGENT-BRIDGE-DRYRUN-001",
+  "created_at": "2026-08-17T16:32:00Z",
+  "priority": 1,
+  "action": "diagnostic",
+  "scope": "agent_command_bridge_control_layer_only",
+  "reason": "Prove Decision Layer command persistence, Worker detection, authority enforcement and result persistence without touching sealed stages.",
+  "allowed_operations": [
+    "read_checkpoint",
+    "read_next_decision",
+    "read_command_queue",
+    "validate_command_authority",
+    "validate_frozen_guard",
+    "write_control_execution_result"
+  ],
+  "forbidden_operations": [
+    "rerun_v4_c0",
+    "rerun_v4_c1",
+    "rerun_v4_c2",
+    "rerun_v4_c3",
+    "rerun_v4_c4",
+    "rerun_v4_c5_0",
+    "rerun_v4_c5_1",
+    "rerun_v4_c5_1a",
+    "rerun_v4_c5_2",
+    "rerun_completed_c5_3_source_truth_work",
+    "paid_api",
+    "image_generation",
+    "image_editing",
+    "product_mutation",
+    "stable_merge",
+    "destructive_operation",
+    "bulk_production_mutation"
+  ],
+  "required_validation": [
+    "command_schema_valid",
+    "authority_policy_enforced",
+    "retry_policy_exists",
+    "checkpoint_read",
+    "next_decision_read",
+    "frozen_guard_pass",
+    "stable_unchanged"
+  ],
+  "status": "COMPLETED",
+  "owner_approval": false,
+  "retry_count": 0,
+  "checkpoint": "CAPABILITY_RECOVERY_BOOTSTRAP",
+  "worker_detected_at": "2026-08-17T16:41:26Z",
+  "completed_at": "2026-08-17T16:41:26Z",
+  "execution_result": "DRY_RUN_SUCCESS"
+}
