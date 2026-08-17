@@ -1,11 +1,10 @@
-name: V4-C5.1a Variant Scope Readiness Audit
+name: V4-C5.1a Full Variant Classification + Scope Semantics Seal
 
 on:
   push:
     branches: [v4c-universal-product-engine]
     paths:
       - '.github/workflows/v4c-variant-readiness-audit.yml'
-      - '_system/tests/v4c_variant_readiness_discover.py'
       - '_system/tests/v4c_variant_readiness_audit.py'
   workflow_dispatch:
 
@@ -13,44 +12,38 @@ permissions:
   contents: write
 
 env:
-  BASE_HEAD: feca0bec2030b8ab8cd8ec5daacd0cc54d114283
+  AUDIT_BASE_HEAD: bd6d92873d5b26aeb986e1615e3eb3c2e482b814
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  DISCOVERY_RUN_ID: '31997341246'
   PYTHONDONTWRITEBYTECODE: '1'
 
 jobs:
-  variant-readiness-audit:
+  full-variant-classification-seal:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Verify frozen baseline and stable HEAD
+      - name: Verify latest audit baseline and frozen state
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
-          git merge-base --is-ancestor $env:BASE_HEAD HEAD
-          if($LASTEXITCODE -ne 0){ throw 'Branch is not descended from V4-C5.1 blocked baseline.' }
+          git merge-base --is-ancestor $env:AUDIT_BASE_HEAD HEAD
+          if($LASTEXITCODE -ne 0){ throw 'Branch is not descended from V4-C5.1a discovery PASS head.' }
           $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
           if($stable -ne $env:STABLE_HEAD){ throw "Stable changed: $stable" }
-          git diff --quiet $env:BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/memory/tinysnow_memory.sqlite _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/start/api_v2.ps1
-          if($LASTEXITCODE -ne 0){ throw 'Frozen upstream or Memory changed.' }
+          git diff --quiet $env:AUDIT_BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/memory/tinysnow_memory.sqlite _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen upstream or approved Memory changed after discovery PASS.' }
 
-      - name: Compile audit helpers only
-        shell: powershell
-        run: |
-          python -B -m py_compile _system/tests/v4c_variant_readiness_discover.py
-          if(Test-Path '_system/tests/v4c_variant_readiness_audit.py'){
-            python -B -m py_compile _system/tests/v4c_variant_readiness_audit.py
-          }
-
-      - name: Zero-paid variant provenance discovery
+      - name: Compile full audit implementation only
+        if: ${{ hashFiles('_system/tests/v4c_variant_readiness_audit.py') != '' }}
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
-          python -B _system/tests/v4c_variant_readiness_discover.py | Tee-Object -FilePath variant_discovery.log
+          python -B -m py_compile _system/tests/v4c_variant_readiness_audit.py
 
-      - name: Run full V4-C5.1a audit when implementation exists
+      - name: Full 145-product 549-slot variant classification
         if: ${{ hashFiles('_system/tests/v4c_variant_readiness_audit.py') != '' }}
         shell: powershell
         run: |
@@ -58,16 +51,33 @@ jobs:
           python -B _system/tests/v4c_variant_readiness_audit.py
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
 
-      - name: Reconcile zero-paid and immutable boundaries
+      - name: Validate seal outputs and zero-paid boundary
+        if: ${{ hashFiles('_system/tests/v4c_variant_readiness_audit.py') != '' }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $lock='_system/v4c/variant_readiness_audit/V4_C5_1A_VARIANT_READINESS_AUDIT_LOCK.json'
+          $validation='_system/v4c/variant_readiness_audit/validation.json'
+          if(-not (Test-Path $lock)){ throw 'V4-C5.1a lock missing.' }
+          if(-not (Test-Path $validation)){ throw 'V4-C5.1a validation missing.' }
+          $l=Get-Content -Raw -Encoding UTF8 $lock | ConvertFrom-Json
+          $v=Get-Content -Raw -Encoding UTF8 $validation | ConvertFrom-Json
+          if(-not $l.passed -or -not $l.sealed -or -not $v.passed){ throw 'V4-C5.1a did not PASS/SEAL.' }
+          if([int]$l.ready_products -ne 145 -or [int]$l.ready_slots -ne 549){ throw 'READY reconciliation mismatch.' }
+          if($l.paid_canary_restarted -ne $false){ throw 'Paid Canary must remain stopped.' }
+          if($l.generation_executed -ne $false -or $l.paid_api_called -ne $false){ throw 'Zero-paid boundary violated.' }
+          if([int]$l.v4c5_queue_mutation -ne 0 -or [int]$l.approved_memory_mutation -ne 0){ throw 'Frozen queue or Memory mutation detected.' }
+
+      - name: Reconcile stable and frozen state after audit
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
           $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
           if($stable -ne $env:STABLE_HEAD){ throw 'Stable changed during audit.' }
-          git diff --quiet $env:BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/memory/tinysnow_memory.sqlite _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/start/api_v2.ps1
-          if($LASTEXITCODE -ne 0){ throw 'Frozen state mutated during audit.' }
+          git diff --quiet $env:AUDIT_BASE_HEAD -- _system/v4c/inventory _system/v4c/factual_gate _system/v4c/generation_plan _system/v4c/generation_payload _system/memory/tinysnow_memory.sqlite _system/memory/approved_fact_memory.jsonl _system/memory/approved_output_memory.jsonl _system/start/api_v2.ps1
+          if($LASTEXITCODE -ne 0){ throw 'Frozen state mutated during full audit.' }
 
-      - name: Persist final audit outputs only
+      - name: Persist sealed V4-C5.1a audit outputs only
         if: ${{ hashFiles('_system/v4c/variant_readiness_audit/V4_C5_1A_VARIANT_READINESS_AUDIT_LOCK.json') != '' }}
         shell: powershell
         run: |
@@ -76,8 +86,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- _system/v4c/variant_readiness_audit
           $staged=@(git diff --cached --name-only)
+          if($staged.Count -eq 0){ throw 'No V4-C5.1a audit outputs staged.' }
           foreach($p in $staged){ if(-not $p.StartsWith('_system/v4c/variant_readiness_audit/')){ throw "Unexpected staged path: $p" } }
-          if($staged.Count -gt 0){
-            git commit -m 'V4-C5.1a persist variant scope readiness audit [skip ci]'
-            git push origin HEAD:v4c-universal-product-engine
-          }
+          git commit -m 'V4-C5.1a seal variant scope readiness audit [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
