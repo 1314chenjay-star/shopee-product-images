@@ -1,0 +1,75 @@
+{
+  "schema_version": "tinysnow.blocked-state-analysis.1",
+  "recorded_at_utc": "2026-08-17T16:22:00Z",
+  "status": "BLOCKED_STATE_ANALYSIS",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "branch": "v4c-universal-product-engine",
+  "diagnosed_head": "da673ee39c27470d966d75ad60c5343c8968eec0",
+  "checkpoint": "CAPABILITY_RECOVERY_BOOTSTRAP",
+  "current_task": "TASK-C5-3-SOURCE-TRUTH-REPAIR",
+  "last_successful_step": {
+    "workflow_run": 32035192139,
+    "workflow_name": "V4-C5.3 Existing Snapshot Parts Diagnostic Artifact",
+    "result": "SUCCESS",
+    "durable_completed_after_that": [
+      "sealed upstream verification",
+      "existing governance/handoff read",
+      "existing snapshot parts preserved",
+      "existing SourceTruthStore preserved",
+      "Library authoritative workbook capability restored",
+      "GitHub write capability verified"
+    ]
+  },
+  "failure_reason": {
+    "signature": "UNATTENDED_RECOVERY_NOT_DISPATCHED",
+    "classification": "ORCHESTRATION_BOOTSTRAP_GAP",
+    "details": [
+      "No GitHub Actions run exists for HEAD da673ee39c27470d966d75ad60c5343c8968eec0.",
+      "No in-progress or queued workflow worker exists on v4c-universal-product-engine at diagnosis time.",
+      "The control-layer commit used [skip ci], so its push-triggered watchdog did not execute.",
+      "The agent queue declares next_workflow=v4c-source-truth-recovery.yml, but that recovery workflow is not present at the diagnosed HEAD.",
+      "Therefore this is not a workflow hanging mid-command; unattended recovery never entered an execution workflow."
+    ]
+  },
+  "stuck_command_or_tool": {
+    "primary": "No active command: declared recovery workflow was never dispatched.",
+    "last_worker_tool_error": "GitHub contents/fetch returned HTTP 400 while attempting a whole-file read of a large/unsupported repository artifact during source-manifest extraction.",
+    "implication": "Do not rerun inventory or reassembly. Future recovery must process existing large repo artifacts inside a checked-out GitHub Actions workspace or by targeted ranges/artifacts rather than connector whole-file reads."
+  },
+  "active_worker": false,
+  "active_workflow_count": 0,
+  "queued_workflow_count": 0,
+  "retry_limits": {
+    "reassembly_format_guess_signature": "LIMIT_EXCEEDED_STOP_RETRY",
+    "reason": "TS-INC-011 already records multiple unsupported codec/reassembly attempts; no new codec attempt is allowed without new byte/provenance evidence.",
+    "unattended_dispatch_signature": "NO_EXECUTION_ATTEMPT_YET"
+  },
+  "resume_point": {
+    "do_not_repeat": [
+      "Git snapshot reconstruction",
+      "snapshot part reconstruction/codec guessing",
+      "source truth inventory rerun",
+      "authoritative workbook full SHA workflow rerun",
+      "completed validation",
+      "V4-C0 through V4-C5.2 sealed stages"
+    ],
+    "next_delta_only": [
+      "Validate existing agent queue/watchdog files without rerunning upstream work.",
+      "Create the missing v4c-source-truth-recovery.yml execution path.",
+      "Use the already verified authoritative workbook SHA and continue at source manifest extraction.",
+      "Perform large-file processing inside workflow-local checkout rather than connector whole-file fetch.",
+      "Checkpoint after each successful C5.3 delta step."
+    ]
+  },
+  "recovery_strategy_change_required": true,
+  "recovery_strategy": "Switch from repeated reassembly/connector-large-file probing to workflow-local processing of already-existing authoritative evidence. Do not execute this strategy as part of this diagnosis record.",
+  "owner_action_required": false,
+  "stable_expected_head": "5d49f061e140813b3d229520e9e530f86b27b640",
+  "cost_flags": {
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "vision_api_called": false,
+    "tinysnow_paid_api_called": false
+  }
+}
