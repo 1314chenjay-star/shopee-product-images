@@ -10,6 +10,7 @@ PART_DIR=ROOT/'_system/source_truth/bootstrap_transport'
 OUT_DIR=ROOT/'_system/v4c/source_truth_bootstrap'
 OUT_DIR.mkdir(parents=True,exist_ok=True)
 OUT=OUT_DIR/'reassembly_checkpoint.json'
+PAYLOAD_ARTIFACT=ROOT/'v4c5_3_reassembled_payload.bin'
 
 def sha(b:bytes)->str:return hashlib.sha256(b).hexdigest()
 
@@ -52,18 +53,15 @@ def optional_transforms():
     try:
         import brotli
         out.append(('brotli',brotli.decompress))
-    except Exception:
-        pass
+    except Exception: pass
     try:
         import lz4.frame
         out.append(('lz4_frame',lz4.frame.decompress))
-    except Exception:
-        pass
+    except Exception: pass
     try:
         import zstandard
         out.append(('zstd',lambda b:zstandard.ZstdDecompressor().decompress(b)))
-    except Exception:
-        pass
+    except Exception: pass
     return out
 
 def main():
@@ -80,6 +78,7 @@ def main():
     joined_padded=joined + ('=' * padding_chars)
     try: raw=base64.b64decode(joined_padded,validate=True)
     except Exception as e: raise SystemExit('REASSEMBLY_BASE64_INVALID:'+repr(e))
+    PAYLOAD_ARTIFACT.write_bytes(raw)
     transforms=[('identity',lambda b:b),('gzip',gzip.decompress),('zlib',zlib.decompress),('raw_deflate',lambda b:zlib.decompress(b,-15)),('bz2',bz2.decompress),('lzma',lzma.decompress)] + optional_transforms()
     candidates=[]; chosen=None
     for name,fn in transforms:
