@@ -3,27 +3,18 @@
   "encoding": "base64(xz(tar))",
   "sanitized": true,
   "contained_manifest_source_file_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
-  "contained_manifest_counts": {
-    "products": 375,
-    "gallery_images": 2394,
-    "variant_options": 2673
-  },
+  "contained_manifest_counts": {"products":375,"gallery_images":2394,"variant_options":2673},
   "transport_bytes": 76420,
   "transport_sha256": "d28bbc1be8a0a3aefe8fcbb489cdc617832feb4101314c41f7f9e58b953a1f5a",
   "base64_chars": 101896,
   "base64_sha256": "0cc833443cb6bee4c31d1bf59bb54d74c2eeed039eafb6e9c5ec5789e6661d50",
   "parts": [
     {"name":"part01.b64","chars":10000,"sha256":"1cdf0ceffb76a2d00f93b962549144b71fc93e6f5356383cf24790d88cc725b9"},
-    {"name":"part02.b64","chars":10000,"sha256":"90ab42242198d4d4e8e02a1783ac91f9bc35974cb03d9f903478bf038c41b4cf"},
-    {"name":"part03.b64","chars":10000,"sha256":"a5a4eabeb65f07c3cfdd8d60d8f25e84e74b7b108d987d3fffc53ebe46f873df"},
-    {"name":"part04.b64","chars":10000,"sha256":"1a7cbc3408809efd6c5de55b190e1cfa5d97f860fe41c8852f61231e38b6998d"},
-    {"name":"part05.b64","chars":10000,"sha256":"cf135c6ff7bd1fa796f07cb72594595eb23dfd4d74a2664bf97c1027b609a366"},
-    {"name":"part06.b64","chars":10000,"sha256":"f13d9b9c48501360c52a861918907c4231320c28fcd440171a953a7b39d99457"},
-    {"name":"part07.b64","chars":10000,"sha256":"66d4ca9ebdf3afb807192fd51e1bab700ee135c7ad76d1fa9048ea7f24239339"},
-    {"name":"part08.b64","chars":10000,"sha256":"b38377463e1a1065d3c5a2828ba68e7b9e1f48ce2fc35b58383f5a730be28f13"},
-    {"name":"part09.b64","chars":10000,"sha256":"f3889af842e5862d3a85f319842f133655f49e85d022c873b9a37e9db0ca63b4"},
-    {"name":"part10.b64","chars":10000,"sha256":"8a41261291738ecd0d793055fac8ab528cac38b38cbe689e064a25be2ea97f3f"},
-    {"name":"part11.b64","chars":1896,"sha256":"475533777c6bf307325d43828fb6941d5f261aa34bee53ace5a647922590cf34"}
+    {"name":"part02.b64","chars":20000,"sha256":"50a274df2ce4e47abf808786925f4d964c4f593c92b6aec2e82d995f93694fae"},
+    {"name":"part03.b64","chars":20000,"sha256":"5d140bf5dad5ebf213f797a57ac2f80e72a1131d085ce7602b751889ce03ebd0"},
+    {"name":"part04.b64","chars":20000,"sha256":"a7381875b48c6526fbb6854d832b0b53d99397d495dc2fef3ca4a20adaa9fa5b"},
+    {"name":"part05.b64","chars":20000,"sha256":"8c50f6bf2ae5c86ea56130bdd0e5e54992b068bb25f03b3980d310de45dc77e2"},
+    {"name":"part06.b64","chars":11896,"sha256":"abf72664b31d5f83023b34890cb9d818c110c3cf07ff688529565aff81acbb08"}
   ],
   "paid_api_called": false,
   "image_generation_called": false
