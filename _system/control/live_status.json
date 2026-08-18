@@ -2,10 +2,10 @@
   "schema_version": "tinysnow.live-status.1",
   "status": "RECOVERING",
   "stage": "V4-C5.3 Source Truth Repair",
-  "checkpoint": "SOURCE_TRUTH_BOOTSTRAP",
-  "last_update": "2026-08-18T11:26:57.267082Z",
+  "checkpoint": "SOURCE_TRUTH_RECONCILIATION",
+  "last_update": "2026-08-18T11:37:32.972254Z",
   "worker_state": "RECOVERING",
-  "next_action": "Resume first pending delta only: SourceTruth importer/resolver/bootstrap",
+  "next_action": "Resume first pending delta only: 375/2394/2673 reconciliation",
   "original_task_retry_allowed": false,
   "sealed_data_modified": false
 }

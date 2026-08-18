@@ -1,0 +1,27 @@
+{
+  "foreign_key_violations": 0,
+  "generation_called": false,
+  "idempotent_resume": true,
+  "missing_variant_image_policy": "HOLD",
+  "paid_api_called": false,
+  "row_counts": {
+    "gallery_images": 2394,
+    "products": 375,
+    "variant_options": 2673
+  },
+  "sealed_stage_rerun": false,
+  "source_download_rerun": false,
+  "source_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+  "sqlite_integrity": "ok",
+  "stage": "V4-C5.3 SourceTruth importer/resolver/bootstrap",
+  "status": "PASS",
+  "variant_option_image": {
+    "missing": 145,
+    "present": 2528,
+    "unique_urls": 2515
+  },
+  "workflow_run_id": 32132642877,
+  "tested_head": "f0d637dd5dfdd4ba1da828d902c0212021fe30c7",
+  "stable_head_verified": "5d49f061e140813b3d229520e9e530f86b27b640",
+  "validated_at_utc": "2026-08-18T11:37:32.972254Z"
+}
