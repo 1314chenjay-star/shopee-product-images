@@ -1,2 +1,3 @@
 run authoritative 145/549 scope overlay
 retry after evidence-reference validation
+controller takeover retry: zero-paid deterministic delta only
