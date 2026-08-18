@@ -1,0 +1,311 @@
+{
+  "schema_version": "tinysnow.c5.3.delta-scope-diagnostic.1",
+  "status": "PASS_DIAGNOSTIC",
+  "frozen_inputs": {
+    "execution_ready_slots": 549,
+    "ready_products": 145,
+    "canonical_image_rows": 2394,
+    "source_images": 2394,
+    "source_variant_options": 2673
+  },
+  "canonical_keys": {
+    "schema_version": 200,
+    "sequence": 200,
+    "source_id": 200,
+    "product_id": 200,
+    "image_index": 200,
+    "image_type": 200,
+    "source_url": 200,
+    "source_sha256": 200,
+    "source_sha256_provenance": 200,
+    "source_action": 200,
+    "canonical_state": 200,
+    "underlying_state": 200,
+    "state_reason": 200,
+    "state_evidence_references": 200,
+    "safe_fact_ids": 200,
+    "safe_text": 200,
+    "excluded_unknown_ids": 200,
+    "excluded_conflict_ids": 200,
+    "excluded_forbidden_ids": 200,
+    "variant_scope": 200,
+    "product_conflict_quarantine": 200,
+    "approved_output_sha256": 200,
+    "approved_slot_role": 200,
+    "duplicate_canonical_sequence": 200,
+    "do_not_regenerate": 200,
+    "selected_for_final_5slot": 200
+  },
+  "canonical_sample": {
+    "schema_version": "v4c4.0.preservation-aware-five-slot.1",
+    "sequence": 1,
+    "source_id": "V4C-S000001",
+    "product_id": "57365552793",
+    "image_index": 0,
+    "image_type": "主圖",
+    "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8257w-mrk8q05o33eu34",
+    "source_sha256": null,
+    "source_sha256_provenance": null,
+    "source_action": "PRESERVE_WITH_CAUTION",
+    "canonical_state": "HOLD",
+    "underlying_state": "HOLD",
+    "state_reason": "LEGACY_SOURCE_SHA_NOT_DURABLY_PERSISTED",
+    "state_evidence_references": [],
+    "safe_fact_ids": [],
+    "safe_text": [],
+    "excluded_unknown_ids": [],
+    "excluded_conflict_ids": [],
+    "excluded_forbidden_ids": [],
+    "variant_scope": [],
+    "product_conflict_quarantine": [],
+    "approved_output_sha256": null,
+    "approved_slot_role": null,
+    "duplicate_canonical_sequence": null,
+    "do_not_regenerate": false,
+    "selected_for_final_5slot": false
+  },
+  "join": {
+    "matched_by_product_sequence": 549,
+    "matched_by_product_sha": 549,
+    "matched_union": 549,
+    "single_url_resolved": 549,
+    "ambiguous_url": 0
+  },
+  "samples": [
+    {
+      "slot": {
+        "schema_version": "v4c5.0.execution-ready.1",
+        "product_id": "25348397564",
+        "slot_index": 1,
+        "slot_role": "MAIN",
+        "action": "PROCESS_LOCALIZE",
+        "source_sequence": 1600,
+        "source_sha256": "30d54f311539a652f6bf0a14c6475dc03fcec6f63e7dc8b0b7f0f2474aaa00a1",
+        "variant_scope": [],
+        "payload_ref_key": "25348397564:MAIN",
+        "dry_run_only": true,
+        "generation_executed": false,
+        "paid_api_called": false
+      },
+      "candidate_count": 1,
+      "candidate": {
+        "schema_version": "v4c4.0.preservation-aware-five-slot.1",
+        "sequence": 1600,
+        "source_id": "V4C-S001600",
+        "product_id": "25348397564",
+        "image_index": 0,
+        "image_type": "主圖",
+        "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ar-mroao9g9lt6v2c",
+        "source_sha256": "30d54f311539a652f6bf0a14c6475dc03fcec6f63e7dc8b0b7f0f2474aaa00a1",
+        "source_sha256_provenance": "_system/v4c/progress/v4c_source_progress.jsonl",
+        "source_action": "PRESERVE_WITH_CAUTION",
+        "canonical_state": "PROCESS_SAFE",
+        "underlying_state": "PROCESS_SAFE",
+        "state_reason": "V4_C3_2_CORRECTED_GENERATION_CANDIDATE",
+        "state_evidence_references": [
+          {
+            "path": "_system/v4c/factual_gate/correction_v4c3_2/corrected_generation_queue.jsonl",
+            "sequence": 1600
+          }
+        ],
+        "safe_fact_ids": [
+          "d4ffb3d3d7e4e453776d",
+          "ed139fd46b7d05753253",
+          "20c8df14f7ac868c38e6",
+          "bda3d922c6d7088543f5",
+          "084764a6180b1744361c",
+          "c159295ccb11f7046b7f"
+        ],
+        "safe_text": [
+          "source_text: 超輕合金加大拍面 新手一學就會",
+          "source_text: 超輕合金",
+          "source_text: 加大拍面",
+          "source_text: 穩固减震",
+          "source_text: 樱花粉",
+          "source_text: （單拍装）"
+        ],
+        "excluded_unknown_ids": [],
+        "excluded_conflict_ids": [],
+        "excluded_forbidden_ids": [
+          "112247cdc8dab651c750",
+          "3e97e750c97e4bdf26f5",
+          "74ab1965ac663163c5c3",
+          "97c9233afc571fec5175",
+          "b88ba9ab9878c094313d",
+          "b95cedeab15ce4141d30",
+          "be7974d545f5a697f849",
+          "e4e3c7d36355883c6b35"
+        ],
+        "variant_scope": [],
+        "product_conflict_quarantine": [],
+        "approved_output_sha256": null,
+        "approved_slot_role": null,
+        "duplicate_canonical_sequence": null,
+        "do_not_regenerate": false,
+        "selected_for_final_5slot": true
+      },
+      "urls": [
+        "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ar-mroao9g9lt6v2c"
+      ]
+    },
+    {
+      "slot": {
+        "schema_version": "v4c5.0.execution-ready.1",
+        "product_id": "25348397564",
+        "slot_index": 2,
+        "slot_role": "DETAIL_1",
+        "action": "PROCESS_LOCALIZE",
+        "source_sequence": 1603,
+        "source_sha256": "5534c10de88bac56c892f74649c55cd29face9c86c08dce029bf0d9b89820645",
+        "variant_scope": [],
+        "payload_ref_key": "25348397564:DETAIL_1",
+        "dry_run_only": true,
+        "generation_executed": false,
+        "paid_api_called": false
+      },
+      "candidate_count": 1,
+      "candidate": {
+        "schema_version": "v4c4.0.preservation-aware-five-slot.1",
+        "sequence": 1603,
+        "source_id": "V4C-S001603",
+        "product_id": "25348397564",
+        "image_index": 3,
+        "image_type": "商品圖3",
+        "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825a2-mroaob9wlpfrc5",
+        "source_sha256": "5534c10de88bac56c892f74649c55cd29face9c86c08dce029bf0d9b89820645",
+        "source_sha256_provenance": "_system/v4c/progress/v4c_source_progress.jsonl",
+        "source_action": "PRESERVE_WITH_CAUTION",
+        "canonical_state": "PROCESS_SAFE",
+        "underlying_state": "PROCESS_SAFE",
+        "state_reason": "V4_C3_2_CORRECTED_GENERATION_CANDIDATE",
+        "state_evidence_references": [
+          {
+            "path": "_system/v4c/factual_gate/correction_v4c3_2/corrected_generation_queue.jsonl",
+            "sequence": 1603
+          }
+        ],
+        "safe_fact_ids": [
+          "8ed085a76b72f30c837a",
+          "2fa80fcdbbb5edfd212a",
+          "9f96ba5a7d3e9bca8ba9",
+          "f65245e4dabd6981b515",
+          "74a308cab6631d0d7b22",
+          "c0bb859067b23230316a",
+          "1bc58d0d91a962ddb82e"
+        ],
+        "safe_text": [
+          "material: 尼龙",
+          "risk_field: material",
+          "source_text: 尼龙网拍线",
+          "source_text: Effortless",
+          "source_text: Effort",
+          "source_text: 韧性均衡",
+          "source_text: 发力轻松"
+        ],
+        "excluded_unknown_ids": [],
+        "excluded_conflict_ids": [],
+        "excluded_forbidden_ids": [
+          "0278c067837c92b02cbc",
+          "1d2b63f5ed8aece96cb8",
+          "7ff0895f9bf05a1d3415",
+          "80199b2a14d78b84cb4f",
+          "838ba02bfa51b4a11ee2",
+          "abea38b81e0385b980db",
+          "bd79f85c367b4a2728f3"
+        ],
+        "variant_scope": [],
+        "product_conflict_quarantine": [],
+        "approved_output_sha256": null,
+        "approved_slot_role": null,
+        "duplicate_canonical_sequence": null,
+        "do_not_regenerate": false,
+        "selected_for_final_5slot": true
+      },
+      "urls": [
+        "https://s-cf-tw.shopeesz.com/file/sg-11134201-825a2-mroaob9wlpfrc5"
+      ]
+    },
+    {
+      "slot": {
+        "schema_version": "v4c5.0.execution-ready.1",
+        "product_id": "25348397564",
+        "slot_index": 3,
+        "slot_role": "DETAIL_2",
+        "action": "PROCESS_LOCALIZE",
+        "source_sequence": 1602,
+        "source_sha256": "7fdf1be171a751c51bca8229eabd7f76700e2626bf2fd17237811a0745601927",
+        "variant_scope": [],
+        "payload_ref_key": "25348397564:DETAIL_2",
+        "dry_run_only": true,
+        "generation_executed": false,
+        "paid_api_called": false
+      },
+      "candidate_count": 1,
+      "candidate": {
+        "schema_version": "v4c4.0.preservation-aware-five-slot.1",
+        "sequence": 1602,
+        "source_id": "V4C-S001602",
+        "product_id": "25348397564",
+        "image_index": 2,
+        "image_type": "商品圖2",
+        "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8257z-mroaoat03xfl54",
+        "source_sha256": "7fdf1be171a751c51bca8229eabd7f76700e2626bf2fd17237811a0745601927",
+        "source_sha256_provenance": "_system/v4c/progress/v4c_source_progress.jsonl",
+        "source_action": "PRESERVE_WITH_CAUTION",
+        "canonical_state": "PROCESS_SAFE",
+        "underlying_state": "PROCESS_SAFE",
+        "state_reason": "V4_C3_2_CORRECTED_GENERATION_CANDIDATE",
+        "state_evidence_references": [
+          {
+            "path": "_system/v4c/factual_gate/correction_v4c3_2/corrected_generation_queue.jsonl",
+            "sequence": 1602
+          }
+        ],
+        "safe_fact_ids": [
+          "8af03e5fb3ecb05baf11",
+          "ba28ed835b3687312bea",
+          "a06c0f9b497c38e73651",
+          "c454f3496e6ce93e4a24",
+          "695d9c4366e337f96bb1",
+          "e204f0b861bff6490161"
+        ],
+        "safe_text": [
+          "source_text: 加大拍面",
+          "source_text: Increasethe",
+          "source_text: Coverage",
+          "source_text: 扣杀更精准",
+          "source_text: 更大击球区域",
+          "source_text: 更适合初学者"
+        ],
+        "excluded_unknown_ids": [],
+        "excluded_conflict_ids": [],
+        "excluded_forbidden_ids": [
+          "191b299cbbc9a84551c6",
+          "271ebb4baa994941b71b",
+          "2e514102f59ab01de95f",
+          "36218f6ef9d36259b737",
+          "8c0356b8cc7f9948e250",
+          "9eadf67de8176c6b77f1",
+          "ac1cdbfa1dd426ea5812",
+          "d8f174812b313f3243fa"
+        ],
+        "variant_scope": [],
+        "product_conflict_quarantine": [],
+        "approved_output_sha256": null,
+        "approved_slot_role": null,
+        "duplicate_canonical_sequence": null,
+        "do_not_regenerate": false,
+        "selected_for_final_5slot": true
+      },
+      "urls": [
+        "https://s-cf-tw.shopeesz.com/file/sg-11134201-8257z-mroaoat03xfl54"
+      ]
+    }
+  ],
+  "safety": {
+    "frozen_queue_mutation": false,
+    "paid_api_called": false,
+    "generation_executed": false,
+    "stable_mutation": false
+  }
+}
