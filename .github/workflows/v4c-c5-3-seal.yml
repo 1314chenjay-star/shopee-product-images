@@ -1,0 +1,129 @@
+name: V4-C5.3 Source Truth Seal
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths: ['_system/source_truth/c5_3_regression_validation.json']
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  c5-3-seal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout active V4-C branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard stable and seal preconditions
+        shell: bash
+        env:
+          STABLE_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')" = "$STABLE_EXPECTED"
+          python - <<'PY'
+          import json
+          def load(p): return json.load(open(p,encoding='utf-8-sig'))
+          cp=load('_system/control/execution_checkpoint.json')
+          reg=load('_system/source_truth/c5_3_regression_validation.json')
+          recon=load('_system/source_truth/reconciliation_validation.json')
+          overlay=load('_system/source_truth/ready_scope_overlay.json')
+          bootstrap=load('_system/source_truth/bootstrap_validation.json')
+          assert cp['stage']=='V4-C5.3 Source Truth Repair'
+          assert cp['checkpoint']=='C5_3_SEAL'
+          assert cp['pending']==['C5.3 seal'], cp['pending']
+          assert reg['status']=='PASS'
+          assert recon['status']=='PASS'
+          assert overlay['status']=='PASS'
+          assert bootstrap['status']=='PASS'
+          assert reg['safety']=={'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,'stable_mutation':False,'sealed_stage_rerun':False}
+          assert overlay['overlay_result']['product_ready']==145
+          assert overlay['overlay_result']['execution_ready_slots']==549
+          assert recon['observed']=={'products':375,'gallery_images':2394,'variant_options':2673}
+          print('C5_3_SEAL_GUARD_PASS')
+          PY
+
+      - name: Persist C5.3 seal and terminal control state
+        shell: bash
+        env:
+          SEALED_HEAD: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import datetime as dt, json, os, pathlib
+          root=pathlib.Path('.')
+          now=dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z')
+          seal={
+            'schema_version':'tinysnow.c5-3-seal.1',
+            'stage':'V4-C5.3 Source Truth Repair',
+            'status':'SEALED',
+            'sealed_head':os.environ['SEALED_HEAD'],
+            'workflow_run_id':int(os.environ['RUN_ID']),
+            'sealed_at_utc':now,
+            'authoritative_source_sha256':'616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a',
+            'source_truth_counts':{'products':375,'gallery_images':2394,'variant_options':2673},
+            'ready_scope':{'product_ready':145,'execution_ready_slots':549,'hold_slots':3445,'exact_variant_image_bindings':25},
+            'evidence':[
+              '_system/source_truth/bootstrap_manifest/manifest.json',
+              '_system/source_truth/bootstrap_validation.json',
+              '_system/source_truth/reconciliation_validation.json',
+              '_system/source_truth/ready_scope_overlay.json',
+              '_system/source_truth/c5_3_regression_validation.json'
+            ],
+            'safety':{'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,'stable_mutation':False,'sealed_upstream_rerun':False},
+            'next_boundary':'Stage closure / next-best-action scan; no stable merge without owner approval.'
+          }
+          (root/'_system/source_truth/c5_3_seal.json').write_text(json.dumps(seal,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          cp_path=root/'_system/control/execution_checkpoint.json'
+          live_path=root/'_system/control/live_status.json'
+          worker_path=root/'_system/control/worker_state.json'
+          queue_path=root/'_system/agent_queue/queue.jsonl'
+          cp=json.loads(cp_path.read_text(encoding='utf-8-sig'))
+          live=json.loads(live_path.read_text(encoding='utf-8-sig'))
+          worker=json.loads(worker_path.read_text(encoding='utf-8-sig'))
+          assert cp['pending']==['C5.3 seal']
+          cp['pending']=[]
+          if 'C5.3 seal' not in cp['completed']: cp['completed'].append('C5.3 seal')
+          cp['checkpoint']='C5_3_COMPLETE'
+          cp['last_good_head']=os.environ['SEALED_HEAD']
+          cp['last_successful_workflow']=int(os.environ['RUN_ID'])
+          cp['last_replacement_heartbeat_utc']=now
+          live.update({'status':'SUCCESS','checkpoint':'C5_3_COMPLETE','last_update':now,'worker_state':'SUCCESS','next_action':'C5.3 sealed; perform stage closure and next-best-action scan','original_task_retry_allowed':False,'sealed_data_modified':False})
+          worker.update({'status':'SUCCESS','last_heartbeat_utc':now,'last_durable_worker_signal_utc':now,'resume_mode':'SEALED_NO_RERUN','original_task_retry_allowed':False,'human_orchestration_required':False})
+          rows=[]
+          for line in queue_path.read_text(encoding='utf-8-sig').splitlines():
+              if not line.strip(): continue
+              r=json.loads(line)
+              if r.get('task_id')=='TASK-C5-3-SOURCE-TRUTH-REPAIR':
+                  r['status']='SUCCESS'; r['checkpoint']='C5_3_COMPLETE'; r['next_action']='Stage closure / next-best-action scan'
+              rows.append(r)
+          cp_path.write_text(json.dumps(cp,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          live_path.write_text(json.dumps(live,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          worker_path.write_text(json.dumps(worker,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          queue_path.write_text(''.join(json.dumps(r,ensure_ascii=False,separators=(',',':'))+'\n' for r in rows),encoding='utf-8')
+          print('C5_3_SEAL_PERSIST_READY', now)
+          PY
+
+      - name: Abort on concurrent branch movement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin v4c-universal-product-engine
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/v4c-universal-product-engine)" || { echo RACE_ABORT; exit 75; }
+
+      - name: Commit C5.3 seal
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "TinySnow Source Truth Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/source_truth/c5_3_seal.json _system/control _system/agent_queue/queue.jsonl
+          git commit -m "v4c5.3: seal Source Truth repair [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
