@@ -1,0 +1,66 @@
+{
+  "schema_version": "tinysnow.source-truth-ready-scope-overlay.1",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "checkpoint": "DELTA_SCOPE_OVERLAY",
+  "status": "PASS",
+  "mode": "PROVENANCE_AND_PRECEDENCE_OVERLAY_ONLY",
+  "sealed_scope_input": {
+    "stage": "V4-C5.2",
+    "ref_hint": "c59db",
+    "summary_path": "_system/v4c/ready_product_scope_summary.json",
+    "records_path": "_system/v4c/ready_product_scope_recovery.jsonl",
+    "exact_binding_path": "_system/v4c/exact_variant_image_binding_ready.json",
+    "downstream_consumer_path": "_system/v4c/paid_canary_scope_overlay.json",
+    "membership_recomputed": false,
+    "slot_scope_recomputed": false
+  },
+  "sealed_scope_counts": {
+    "product_ready": 145,
+    "execution_ready_slots": 549,
+    "hold_slots": 3445,
+    "exact_variant_image_bindings": 25
+  },
+  "source_truth_provenance": {
+    "platform": "SHOPEE_TW",
+    "source_type": "PLATFORM_RAW_STRUCTURED",
+    "authoritative_source_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+    "manifest_path": "_system/source_truth/bootstrap_manifest/manifest.json",
+    "bootstrap_validation_path": "_system/source_truth/bootstrap_validation.json",
+    "reconciliation_validation_path": "_system/source_truth/reconciliation_validation.json",
+    "reconciled_counts": {
+      "products": 375,
+      "gallery_images": 2394,
+      "variant_options": 2673
+    }
+  },
+  "authority_rules": {
+    "product_fact_authority": "SOURCE_TRUTH",
+    "sealed_ready_scope_authority": "V4-C5.2_DETERMINISTIC_SCOPE",
+    "memory_or_inference_may_override_source_truth": false,
+    "unknown_or_conflict_action": "HOLD",
+    "variant_mapping_guessing_allowed": false,
+    "exact_variant_mapping_source": "SEALED_EXACT_BINDING_ONLY"
+  },
+  "important_non_equivalence": {
+    "ready_product_count_145": "V4-C5.2 PRODUCT_READY membership",
+    "missing_variant_option_image_count_145": "authoritative source rows missing option image",
+    "same_number_means_same_population": false,
+    "missing_variant_option_image_action": "HOLD_UNLESS_EXACT_AUTHORITATIVE_BINDING_EXISTS"
+  },
+  "overlay_result": {
+    "product_ready": 145,
+    "execution_ready_slots": 549,
+    "scope_membership_changed": false,
+    "slot_count_changed": false,
+    "provenance_upgraded_to_source_truth": true,
+    "unknown_or_conflict_promoted_to_ready": false
+  },
+  "safety": {
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "sealed_stage_rerun": false,
+    "stable_mutation": false
+  },
+  "result": "C5.2 sealed 145 PRODUCT_READY / 549 execution-ready scope is preserved and overlaid with authoritative Source Truth provenance and fail-closed precedence rules."
+}
