@@ -1,5 +1,6 @@
-trigger=2026-08-18T12:20Z
+trigger=2026-08-18T12:24Z
 mode=C5_3_SCOPED_SOURCE_TRUTH_ONLY
+reason=retry_after_seal_workflow_branch_movement
 paid=false
 generation=false
 stable_mutation=false
