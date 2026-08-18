@@ -1,0 +1,61 @@
+name: V4-C5.3 Source Truth Replacement Recovery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replacement-recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard stable and preserved checkpoint
+        shell: bash
+        env:
+          TINYSNOW_STABLE_HEAD_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$TINYSNOW_STABLE_HEAD_EXPECTED"
+          python - <<'PY'
+          import json
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          q=[json.loads(x) for x in open('_system/agent_queue/queue.jsonl',encoding='utf-8-sig') if x.strip()]
+          assert cp['stage']=='V4-C5.3 Source Truth Repair'
+          assert cp['checkpoint']=='CAPABILITY_RECOVERY_BOOTSTRAP'
+          assert cp['pending'][0]=='agent queue/watchdog validation'
+          t=next(x for x in q if x['task_id']=='TASK-C5-3-SOURCE-TRUTH-REPAIR')
+          assert t['status']=='PENDING' and not t['paid'] and not t['generation'] and not t['owner_decision_required']
+          print('REPLACEMENT_RECOVERY_GUARD_PASS')
+          PY
+      - name: Validate queue and replacement decision
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -B _system/agent_queue/validate_agent_queue.py
+          python -B _system/agent_queue/watchdog.py
+          python - <<'PY'
+          import json
+          r=json.load(open('_system/agent_queue/recovery_report.json',encoding='utf-8'))
+          assert r['decision'] in {'AUTO_RECOVER','WAIT_ACTIVE'}, r
+          assert r['original_task_retried'] is False
+          assert r['sealed_stage_rerun'] is False
+          assert r['paid_api_called'] is False
+          assert r['image_generation_called'] is False
+          print('WATCHDOG_REPLACEMENT_PATH_PASS', r['decision'])
+          PY
+      - name: Upload replacement recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4c-c5-3-replacement-recovery-${{ github.run_id }}
+          path: |
+            _system/agent_queue/validation.json
+            _system/agent_queue/recovery_report.json
+            _system/control/stalled_execution_report.json
+            _system/control/execution_checkpoint.json
+          if-no-files-found: error
+          retention-days: 14
