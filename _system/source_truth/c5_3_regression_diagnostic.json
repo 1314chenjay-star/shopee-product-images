@@ -1,0 +1,32 @@
+{
+  "schema_version": "tinysnow.c5.3.regression-diagnostic.1",
+  "exit_code": 1,
+  "output_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/shopee-product-images/shopee-product-images/_system/tests/test_c5_3_source_truth_regression.py\", line 104, in <module>\n    main()\n  File \"/home/runner/work/shopee-product-images/shopee-product-images/_system/tests/test_c5_3_source_truth_regression.py\", line 38, in main\n    assert bootstrap[\"source_batch_sha256\"] == manifest[\"authoritative_workbook\"][\"sha256\"]\n           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\nKeyError: 'source_batch_sha256'\n",
+  "head": {
+    "code": 0,
+    "stdout": "243d5cdf7e57849bba31d91c7bb557a8996b23f6\n",
+    "stderr": ""
+  },
+  "sealed_ref_verify": {
+    "code": 128,
+    "stdout": "",
+    "stderr": "fatal: Needed a single revision\n"
+  },
+  "sealed_summary_show": {
+    "code": 128,
+    "stdout": "",
+    "stderr": "fatal: invalid object name 'c59db'.\n"
+  },
+  "exact_binding_show": {
+    "code": 128,
+    "stdout": "",
+    "stderr": "fatal: invalid object name 'c59db'.\n"
+  },
+  "safety": {
+    "checkpoint_mutated": false,
+    "sealed_artifact_mutated": false,
+    "paid_api_called": false,
+    "generation_executed": false,
+    "stable_mutation": false
+  }
+}
