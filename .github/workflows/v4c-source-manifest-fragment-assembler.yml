@@ -1,0 +1,53 @@
+name: V4-C5.3 Source Manifest Fragment Assembler
+
+on:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - '_system/source_truth/bootstrap_manifest/.staging/FRAGMENTS_READY'
+
+permissions:
+  contents: write
+
+jobs:
+  assemble-fragments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout active V4-C branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard stable and assemble missing variants shards
+        shell: bash
+        env:
+          TINYSNOW_STABLE_HEAD_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$TINYSNOW_STABLE_HEAD_EXPECTED"
+          STAGE=_system/source_truth/bootstrap_manifest/.staging
+          test -s "$STAGE/variants.part04a"
+          test -s "$STAGE/variants.part04b"
+          test -s "$STAGE/variants.part05a"
+          test -s "$STAGE/variants.part05b"
+          test -s "$STAGE/variants.part06"
+          cat "$STAGE/variants.part04a" "$STAGE/variants.part04b" > "$STAGE/variants.part04"
+          cat "$STAGE/variants.part05a" "$STAGE/variants.part05b" > "$STAGE/variants.part05"
+          test "$(wc -c < "$STAGE/variants.part04")" -eq 12000
+          test "$(wc -c < "$STAGE/variants.part05")" -eq 12000
+          test "$(wc -c < "$STAGE/variants.part06")" -eq 5929
+          rm -f "$STAGE/images.jsona.xz.b64" "$STAGE/variants.jsona.xz.b64"
+          printf '%s\n' 'verified fragments ready for authoritative hash gate' > "$STAGE/READY"
+
+      - name: Commit repaired staging and trigger authoritative hash gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "TinySnow Source Truth Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A _system/source_truth/bootstrap_manifest/.staging
+          git commit -m "v4c5.3: assemble source transport fragments [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
