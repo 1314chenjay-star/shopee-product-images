@@ -1,0 +1,53 @@
+name: V4-C5.3 Regression Diagnostic
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths: ['_system/source_truth/.c5_3_regression_diagnostic_trigger']
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+      - name: Run regression and capture exact failure
+        shell: bash
+        run: |
+          set +e
+          python -B _system/tests/test_c5_3_source_truth_regression.py > /tmp/c5.out 2>&1
+          CODE=$?
+          export CODE
+          python - <<'PY'
+          import json,os,pathlib,subprocess
+          root=pathlib.Path('.')
+          out=pathlib.Path('/tmp/c5.out').read_text(encoding='utf-8',errors='replace')[-12000:]
+          def git(*args):
+              p=subprocess.run(['git',*args],cwd=root,text=True,capture_output=True)
+              return {'code':p.returncode,'stdout':p.stdout[-2000:],'stderr':p.stderr[-2000:]}
+          d={
+            'schema_version':'tinysnow.c5.3.regression-diagnostic.1',
+            'exit_code':int(os.environ['CODE']),
+            'output_tail':out,
+            'head':git('rev-parse','HEAD'),
+            'sealed_ref_verify':git('rev-parse','--verify','c59db^{commit}'),
+            'sealed_summary_show':git('show','c59db:_system/v4c/ready_product_scope_summary.json'),
+            'exact_binding_show':git('show','c59db:_system/v4c/exact_variant_image_binding_ready.json'),
+            'safety':{'checkpoint_mutated':False,'sealed_artifact_mutated':False,'paid_api_called':False,'generation_executed':False,'stable_mutation':False}
+          }
+          (root/'_system/source_truth/c5_3_regression_diagnostic.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+          exit 0
+      - name: Persist diagnostic only
+        shell: bash
+        run: |
+          git config user.name "TinySnow Regression Diagnostic"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/source_truth/c5_3_regression_diagnostic.json
+          git commit -m "diagnostic: capture C5.3 regression failure [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
