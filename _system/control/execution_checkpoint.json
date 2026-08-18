@@ -1,9 +1,9 @@
 {
   "schema_version": "tinysnow.execution-checkpoint.1",
   "stage": "V4-C5.3 Source Truth Repair",
-  "last_good_head": "f0d637dd5dfdd4ba1da828d902c0212021fe30c7",
+  "last_good_head": "9bbf88974f6f4d58f95d768c78ae1749b4dc116c",
   "last_successful_workflow": 32132642877,
-  "checkpoint": "SOURCE_TRUTH_RECONCILIATION",
+  "checkpoint": "DELTA_SCOPE_OVERLAY",
   "completed": [
     "sealed upstream verification",
     "existing governance/handoff read",
@@ -14,14 +14,14 @@
     "agent queue/watchdog validation",
     "authoritative workbook SHA validation",
     "source manifest extraction",
-    "SourceTruth importer/resolver/bootstrap"
+    "SourceTruth importer/resolver/bootstrap",
+    "375/2394/2673 reconciliation"
   ],
   "pending": [
-    "375/2394/2673 reconciliation",
     "145/549 delta scope overlay",
     "C5.3-only regressions",
     "C5.3 seal"
   ],
   "resume_rule": "Never repeat completed entries; fingerprint then continue first pending action.",
-  "last_replacement_heartbeat_utc": "2026-08-18T11:37:32.972254Z"
+  "last_replacement_heartbeat_utc": "2026-08-18T12:12:35Z"
 }
