@@ -1,0 +1,12 @@
+{
+  "schema_version": "tinysnow.role-policy.1",
+  "roles": {
+    "OWNER": {"implementation": false, "purpose": "Human approval only for explicit owner boundaries."},
+    "ORCHESTRATOR": {"implementation": false, "may_issue_commands": true, "may_dispatch": true, "may_monitor": true, "may_write_categories": ["command", "decision", "dispatch_metadata", "private_context"], "forbidden_categories": ["business_implementation", "source_truth_processing", "reconciliation", "overlay", "regression", "seal_implementation", "image_processing"]},
+    "WORKER": {"implementation": true, "may_issue_commands": false, "must_follow_command_scope": true, "must_checkpoint": true, "must_heartbeat": true},
+    "MONITOR": {"implementation": false, "read_only": true, "may_issue_commands": false, "may_dispatch": false},
+    "SUPERVISOR": {"implementation": false, "may_dispatch_preapproved_zero_paid_recovery": true, "may_issue_new_business_commands": false}
+  },
+  "owner_boundaries": ["paid_api", "image_generation", "image_editing", "stable_merge", "stable_release", "irreversible_high_risk", "irreconcilable_authoritative_conflict", "required_permission_failure", "major_business_direction_change"],
+  "invariants": ["one_primary_orchestrator", "one_active_worker_per_task", "monitor_read_only", "supervisor_dispatch_only_preapproved_recovery", "worker_never_changes_owner_policy", "stable_never_mutated_by_control_plane", "completed_or_sealed_work_never_rerun", "live_state_overrides_stale_memory"]
+}
