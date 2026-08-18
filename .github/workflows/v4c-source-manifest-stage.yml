@@ -29,7 +29,7 @@ jobs:
           STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
           test "$STABLE" = "$TINYSNOW_STABLE_HEAD_EXPECTED"
 
-      - name: Verify authoritative structured transport
+      - name: Assemble and verify authoritative structured transport
         shell: bash
         run: |
           set -euo pipefail
@@ -40,21 +40,21 @@ jobs:
           outdir=root/'_system/source_truth/bootstrap_manifest'
           specs={
             'images': {
-              'rows':2394,'encoded_bytes':37889,
+              'parts':4,'rows':2394,'encoded_bytes':37889,
               'encoded_sha256':'26ddc9cbc9380412aa221d7cb9c22c6071cb1f95166554059a7bc8422b5d9fa9',
               'compressed_bytes':28416,'compressed_sha256':'7492645f0f1d646bc35ccd0c34718db115e06e4e6ea63306bc440721ec1343ee',
               'decompressed_bytes':260217,'decompressed_sha256':'5ddb89a47e8d01295fdb17970897ee7e4a46d3341685c2b655800ea3da387e2d'},
             'variants': {
-              'rows':2673,'encoded_bytes':65929,
+              'parts':6,'rows':2673,'encoded_bytes':65929,
               'encoded_sha256':'764e4da22895f5c60403803e52c7512012b5d39f2206c6de049efe0aeb379ad9',
               'compressed_bytes':49444,'compressed_sha256':'ba95288ecf9017fb7dea0bec185ad7d7bc03a3af22ed3a4fab70dae55be11165',
               'decompressed_bytes':341248,'decompressed_sha256':'064f1a99fce7202d63bd039aa69370cb153c4d9105ebe61f3af1c560b603ae5f'}
           }
           def sha(b): return hashlib.sha256(b).hexdigest()
           for name,s in specs.items():
-              src=stage/f'{name}.jsona.xz.b64'
-              assert src.exists(), (name,'missing_transport')
-              encoded=src.read_bytes()
+              parts=[stage/f'{name}.part{i:02d}' for i in range(1,s['parts']+1)]
+              assert all(p.exists() for p in parts), (name,'missing_part',[str(p) for p in parts if not p.exists()])
+              encoded=b''.join(p.read_bytes() for p in parts)
               assert len(encoded)==s['encoded_bytes'], (name,'encoded_bytes',len(encoded))
               assert sha(encoded)==s['encoded_sha256'], (name,'encoded_sha256',sha(encoded))
               compressed=base64.b64decode(encoded)
@@ -81,23 +81,18 @@ jobs:
           completed=list(cp.get('completed',[])); pending=list(cp.get('pending',[]))
           assert pending and pending[0]=='source manifest extraction', pending
           pending.pop(0)
-          if 'source manifest extraction' not in completed:
-              completed.append('source manifest extraction')
-          cp['completed']=completed
-          cp['pending']=pending
+          if 'source manifest extraction' not in completed: completed.append('source manifest extraction')
+          cp['completed']=completed; cp['pending']=pending
           cp['checkpoint']='SOURCE_TRUTH_BOOTSTRAP'
           cp['last_replacement_heartbeat_utc']=now
           live.update({'status':'RECOVERING','stage':'V4-C5.3 Source Truth Repair','checkpoint':'SOURCE_TRUTH_BOOTSTRAP','last_update':now,'worker_state':'RECOVERING','next_action':'Resume first pending delta only: SourceTruth importer/resolver/bootstrap','original_task_retry_allowed':False,'sealed_data_modified':False})
           worker.update({'status':'RECOVERING','stage':'V4-C5.3 Source Truth Repair','last_heartbeat_utc':now,'last_durable_worker_signal_utc':now,'resume_mode':'FIRST_PENDING_DELTA_ONLY','original_task_retry_allowed':False,'human_orchestration_required':False})
           q=[]
           for line in queue_path.read_text(encoding='utf-8-sig').splitlines():
-              if not line.strip():
-                  continue
+              if not line.strip(): continue
               row=json.loads(line)
               if row.get('task_id')=='TASK-C5-3-SOURCE-TRUTH-REPAIR':
-                  row['status']='RECOVERING'
-                  row['checkpoint']='SOURCE_TRUTH_BOOTSTRAP'
-                  row['next_action']='SourceTruth importer/resolver/bootstrap'
+                  row['status']='RECOVERING'; row['checkpoint']='SOURCE_TRUTH_BOOTSTRAP'; row['next_action']='SourceTruth importer/resolver/bootstrap'
               q.append(row)
           cp_path.write_text(json.dumps(cp,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           live_path.write_text(json.dumps(live,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
