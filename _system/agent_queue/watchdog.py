@@ -90,13 +90,23 @@ def main():
     active=github_active(os.getenv("GITHUB_REPOSITORY"),os.getenv("GITHUB_TOKEN"),os.getenv("GITHUB_RUN_ID"))
     guard=timeout_guard(checkpoint,active)
     decision="IDLE_SUCCESS"; reason="no pending action"; missing=[]
-    if guard.get("stalled"):
-        decision="STALLED_WORKER"
-        reason="same-checkpoint timeout/stalled marker active; suppress original task retry and preserve checkpoint"
-        write_stall_diagnostic(checkpoint,guard,active)
-    elif task:
+    required=[]
+    if task:
         required=next((x.get("required_capabilities",[]) for x in plan.get("pending_actions",[]) if x.get("action_id") in task.get("task_id","") or x.get("action_id")=="C5_3_SOURCE_TRUTH_REPAIR"),[])
         missing=[k for k in required if cap.get("capabilities",{}).get(k) is not True]
+    if guard.get("stalled"):
+        write_stall_diagnostic(checkpoint,guard,active)
+        if not task:
+            decision="STALLED_WORKER"; reason="stalled marker active but no pending replacement task"
+        elif task.get("owner_decision_required") or task.get("paid") or task.get("generation"):
+            decision="NEEDS_OWNER_DECISION"; reason="replacement task crosses owner/paid/generation boundary"
+        elif missing:
+            decision="NEEDS_CAPABILITY"; reason="replacement task required capability unavailable"
+        elif active.get("active"):
+            decision="WAIT_ACTIVE"; reason="another workflow is active; preserve stalled checkpoint"
+        else:
+            decision="AUTO_RECOVER"; reason="original worker stalled; suppress original retry and dispatch replacement workflow from preserved checkpoint"
+    elif task:
         if task.get("owner_decision_required") or task.get("paid") or task.get("generation"):
             decision="NEEDS_OWNER_DECISION"; reason="task crosses owner/paid/generation boundary"
         elif missing:
@@ -106,10 +116,10 @@ def main():
         else:
             decision="AUTO_RECOVER"; reason="safe pending zero-paid action with no other active workflow"
     report={
-      "schema_version":"tinysnow.recovery-report.2","stage":checkpoint.get("stage"),"checkpoint":checkpoint.get("checkpoint"),
+      "schema_version":"tinysnow.recovery-report.3","stage":checkpoint.get("stage"),"checkpoint":checkpoint.get("checkpoint"),
       "pending_task":task,"active_workflows":active,"decision":decision,"reason":reason,"missing_capabilities":missing,
       "timeout_guard":guard,"dry_run":args.dry_run,"paid_api_called":False,"image_generation_called":False,"stable_mutation":False,
-      "sealed_stage_rerun":False,"original_task_retried":False
+      "sealed_stage_rerun":False,"original_task_retried":False,"replacement_worker_allowed":bool(guard.get("stalled") and decision=="AUTO_RECOVER")
     }
     out=ROOT/"_system/agent_queue/recovery_report.json"; out.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(report,ensure_ascii=False,sort_keys=True))
