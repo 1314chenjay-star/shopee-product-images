@@ -3,7 +3,7 @@
   "status": "RECOVERING",
   "stage": "V4-C5.3 Source Truth Repair",
   "checkpoint": "SOURCE_MANIFEST_TRANSPORT",
-  "last_update": "2026-08-18T09:53:39.581007Z",
+  "last_update": "2026-08-18T11:01:15.091808Z",
   "worker_state": "RECOVERING",
   "next_action": "Resume first pending delta only: source manifest extraction",
   "original_task_retry_allowed": false,
