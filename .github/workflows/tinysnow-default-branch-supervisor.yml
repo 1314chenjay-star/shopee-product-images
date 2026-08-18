@@ -1,6 +1,10 @@
 name: TinySnow Default Branch Supervisor
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tinysnow-default-branch-supervisor.yml'
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
