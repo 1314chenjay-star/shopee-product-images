@@ -1,0 +1,106 @@
+name: V4-C5.3 Delta Scope Diagnostic
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/TRIGGER_C5_3_DELTA_SCOPE_DIAGNOSTIC'
+
+permissions:
+  contents: write
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+      - name: Guard and inspect exact join surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "5d49f061e140813b3d229520e9e530f86b27b640"
+          python - <<'PY'
+          import base64, collections, hashlib, json, lzma, pathlib
+          root=pathlib.Path('.')
+          def jsonl(path):
+              return [json.loads(x) for x in pathlib.Path(path).read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          slots=jsonl('_system/v4c/generation_payload/execution_ready_queue.jsonl')
+          ready=jsonl('_system/v4c/generation_payload/product_execution_readiness.jsonl')
+          canon=jsonl('_system/v4c/generation_plan/canonical_image_state.jsonl')
+          def transport(name):
+              b=(root/f'_system/source_truth/bootstrap_manifest/{name}.jsona.xz.b64').read_bytes()
+              return [json.loads(x) for x in lzma.decompress(base64.b64decode(b)).decode('utf-8').splitlines() if x]
+          images=transport('images'); variants=transport('variants')
+          ready_rows=[r for r in ready if r.get('status')=='PRODUCT_READY_FOR_GENERATION']
+          # generic key inventory
+          key_counts=collections.Counter(k for r in canon[:200] for k in r)
+          sample=canon[0] if canon else {}
+          # Try exact matching using actual field names present in frozen rows.
+          def val(r,*names):
+              for n in names:
+                  if n in r and r[n] not in (None,''): return r[n]
+              return None
+          by_pid_seq=collections.defaultdict(list); by_pid_sha=collections.defaultdict(list)
+          for r in canon:
+              pid=str(val(r,'product_id','productId','item_id') or '')
+              seq=val(r,'source_sequence','source_seq','sequence','image_sequence')
+              sha=val(r,'source_sha256','sha256','source_sha','image_sha256')
+              if pid and seq is not None: by_pid_seq[(pid,str(seq))].append(r)
+              if pid and sha: by_pid_sha[(pid,str(sha).lower())].append(r)
+          matched_seq=matched_sha=matched_union=url_resolved=0
+          ambiguous=0; samples=[]
+          for s in slots:
+              pid=str(s.get('product_id'))
+              seq=str(s.get('source_sequence'))
+              sha=str(s.get('source_sha256','')).lower()
+              a=by_pid_seq.get((pid,seq),[]); b=by_pid_sha.get((pid,sha),[])
+              if a: matched_seq+=1
+              if b: matched_sha+=1
+              pool=[]
+              seen=set()
+              for r in a+b:
+                  ident=id(r)
+                  if ident not in seen: pool.append(r); seen.add(ident)
+              if pool:
+                  matched_union+=1
+                  urls={str(val(r,'original_source_url','source_url','url','image_url','normalized_source_url') or '') for r in pool}
+                  urls.discard('')
+                  if len(urls)==1: url_resolved+=1
+                  elif len(urls)>1: ambiguous+=1
+                  if len(samples)<3: samples.append({'slot':s,'candidate_count':len(pool),'candidate':pool[0],'urls':sorted(urls)[:3]})
+          out={
+            'schema_version':'tinysnow.c5.3.delta-scope-diagnostic.1',
+            'status':'PASS_DIAGNOSTIC',
+            'frozen_inputs':{
+              'execution_ready_slots':len(slots),
+              'ready_products':len(ready_rows),
+              'canonical_image_rows':len(canon),
+              'source_images':len(images),
+              'source_variant_options':len(variants)},
+            'canonical_keys':dict(key_counts),
+            'canonical_sample':sample,
+            'join':{
+              'matched_by_product_sequence':matched_seq,
+              'matched_by_product_sha':matched_sha,
+              'matched_union':matched_union,
+              'single_url_resolved':url_resolved,
+              'ambiguous_url':ambiguous},
+            'samples':samples,
+            'safety':{'frozen_queue_mutation':False,'paid_api_called':False,'generation_executed':False,'stable_mutation':False}
+          }
+          pathlib.Path('_system/source_truth/delta_scope_diagnostic.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(out,ensure_ascii=False))
+          PY
+      - name: Persist diagnostic only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "TinySnow Delta Scope Diagnostic"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/source_truth/delta_scope_diagnostic.json
+          git commit -m "v4c5.3: persist delta scope join diagnostic [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
