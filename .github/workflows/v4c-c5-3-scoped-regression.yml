@@ -1,0 +1,126 @@
+name: V4-C5.3 Source Truth Scoped Regression
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths: ['_system/source_truth/.c5_3_regression_trigger']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  c5-3-scoped-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout active V4-C branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard stable and current delta
+        shell: bash
+        env:
+          STABLE_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')" = "$STABLE_EXPECTED"
+          python - <<'PY'
+          import json
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          assert cp['stage']=='V4-C5.3 Source Truth Repair'
+          assert cp['checkpoint']=='DELTA_SCOPE_OVERLAY'
+          assert cp['pending'][:2]==['145/549 delta scope overlay','C5.3-only regressions'], cp['pending']
+          overlay=json.load(open('_system/source_truth/ready_scope_overlay.json',encoding='utf-8-sig'))
+          assert overlay['status']=='PASS'
+          assert overlay['safety']=={'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,'sealed_stage_rerun':False,'stable_mutation':False}
+          print('C5_3_DELTA_GUARD_PASS')
+          PY
+
+      - name: Run C5.3-only Source Truth regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B _system/tests/test_c5_3_source_truth_regression.py
+
+      - name: Persist regression evidence and advance checkpoint
+        shell: bash
+        env:
+          TESTED_HEAD: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import datetime as dt, json, os, pathlib
+          root=pathlib.Path('.')
+          now=dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z')
+          validation={
+            'schema_version':'tinysnow.c5-3-source-truth-regression.1',
+            'stage':'V4-C5.3 Source Truth Repair',
+            'status':'PASS',
+            'tested_head':os.environ['TESTED_HEAD'],
+            'workflow_run_id':int(os.environ['RUN_ID']),
+            'checks':{
+              'authoritative_source_counts':'375/2394/2673 PASS',
+              'sqlite_integrity':'PASS',
+              'foreign_keys':'PASS',
+              'sealed_c5_2_scope':'145 PRODUCT_READY / 549 execution-ready / 3445 HOLD PASS',
+              'sealed_exact_bindings':'25 PASS',
+              'source_truth_precedence':'PASS',
+              'unknown_conflict_hold':'PASS',
+              'variant_guessing_forbidden':'PASS',
+              'two_145_populations_not_equated':'PASS'
+            },
+            'safety':{'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,'stable_mutation':False,'sealed_stage_rerun':False}
+          }
+          (root/'_system/source_truth/c5_3_regression_validation.json').write_text(json.dumps(validation,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          cp_path=root/'_system/control/execution_checkpoint.json'
+          live_path=root/'_system/control/live_status.json'
+          worker_path=root/'_system/control/worker_state.json'
+          queue_path=root/'_system/agent_queue/queue.jsonl'
+          cp=json.loads(cp_path.read_text(encoding='utf-8-sig'))
+          live=json.loads(live_path.read_text(encoding='utf-8-sig'))
+          worker=json.loads(worker_path.read_text(encoding='utf-8-sig'))
+          assert cp['pending'][:2]==['145/549 delta scope overlay','C5.3-only regressions'], cp['pending']
+          for name in ['145/549 delta scope overlay','C5.3-only regressions']:
+              cp['pending'].remove(name)
+              if name not in cp['completed']: cp['completed'].append(name)
+          cp['checkpoint']='C5_3_SEAL'
+          cp['last_good_head']=os.environ['TESTED_HEAD']
+          cp['last_successful_workflow']=int(os.environ['RUN_ID'])
+          cp['last_replacement_heartbeat_utc']=now
+          live.update({'status':'RECOVERING','checkpoint':'C5_3_SEAL','last_update':now,'worker_state':'RECOVERING','next_action':'Resume first pending delta only: C5.3 seal','original_task_retry_allowed':False,'sealed_data_modified':False})
+          worker.update({'status':'RECOVERING','last_heartbeat_utc':now,'last_durable_worker_signal_utc':now,'resume_mode':'FIRST_PENDING_DELTA_ONLY','original_task_retry_allowed':False,'human_orchestration_required':False})
+          rows=[]
+          for line in queue_path.read_text(encoding='utf-8-sig').splitlines():
+              if not line.strip(): continue
+              r=json.loads(line)
+              if r.get('task_id')=='TASK-C5-3-SOURCE-TRUTH-REPAIR':
+                  r['status']='RECOVERING'; r['checkpoint']='C5_3_SEAL'; r['next_action']='C5.3 seal'
+              rows.append(r)
+          cp_path.write_text(json.dumps(cp,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          live_path.write_text(json.dumps(live,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          worker_path.write_text(json.dumps(worker,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          queue_path.write_text(''.join(json.dumps(r,ensure_ascii=False,separators=(',',':'))+'\n' for r in rows),encoding='utf-8')
+          print('C5_3_REGRESSION_PERSIST_READY', now)
+          PY
+
+      - name: Abort on concurrent branch movement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin v4c-universal-product-engine
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/v4c-universal-product-engine)" || { echo RACE_ABORT; exit 75; }
+
+      - name: Commit C5.3 regression evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "TinySnow Source Truth Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/source_truth/c5_3_regression_validation.json _system/control _system/agent_queue/queue.jsonl
+          git commit -m "v4c5.3: pass scoped Source Truth regressions [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
