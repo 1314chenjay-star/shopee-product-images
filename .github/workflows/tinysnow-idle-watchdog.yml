@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Probe Decision Layer command inbox on heartbeat
         shell: bash
         env:
@@ -59,12 +60,15 @@ jobs:
           assert checkpoint.get('checkpoint'), 'CHECKPOINT_MISSING'
           print(json.dumps({'command_inbox_read':True,'pending_command':True,'command_id':cmd['command_id'],'checkpoint':checkpoint['checkpoint'],'authority_probe':'PASS','non_consuming':True},sort_keys=True))
           PY
+
       - name: Validate capability recovery and handoff queue
         run: python -B _system/agent_queue/validate_agent_queue.py
+
       - name: Evaluate idle recovery decision and timeout guard
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python -B _system/agent_queue/watchdog.py
+
       - name: Dispatch safe next workflow when idle
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,15 +80,15 @@ jobs:
           t=r.get('pending_task') or {}
           decision=r.get('decision')
           wf=t.get('next_workflow')
-          status={'decision':decision,'workflow':wf,'dispatched':False}
-          if decision=='AUTO_RECOVER' and wf:
+          status={'decision':decision,'workflow':wf,'dispatched':False,'replacement_worker':decision=='AUTO_RECOVER_REPLACEMENT'}
+          if decision in {'AUTO_RECOVER','AUTO_RECOVER_REPLACEMENT'} and wf:
               p=pathlib.Path('.github/workflows')/wf
               if p.exists():
                   status['dispatch_requested']=True
               else:
                   status['dispatch_block']='DECLARED_RECOVERY_WORKFLOW_NOT_YET_PRESENT'
           elif decision=='STALLED_WORKER':
-              status['dispatch_block']='TIMEOUT_GUARD_SUPPRESSED_ORIGINAL_TASK_RETRY'
+              status['dispatch_block']='NO_REPLACEMENT_TASK_DECLARED'
           pathlib.Path('_system/agent_queue/recovery_dispatch_status.json').write_text(json.dumps(status,indent=2)+'\n',encoding='utf-8')
           PY
           if python -c "import json; x=json.load(open('_system/agent_queue/recovery_dispatch_status.json')); raise SystemExit(0 if x.get('dispatch_requested') else 1)"; then
@@ -97,6 +101,7 @@ jobs:
           open(p,'w').write(json.dumps(x,indent=2)+'\n')
           PY
           fi
+
       - name: Upload recovery evidence
         uses: actions/upload-artifact@v4
         with:
