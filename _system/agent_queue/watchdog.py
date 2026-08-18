@@ -70,12 +70,17 @@ def write_stall_diagnostic(checkpoint, guard, active):
         "watchdog_detected_at_utc":dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00","Z"),
         "watchdog_timeout_guard":guard,
         "watchdog_active_workflows":active,
-        "resume_point":"CAPABILITY_RECOVERY_BOOTSTRAP:first_pending_delta_only",
-        "recommended_action":"STOP_WAITING; preserve checkpoint; suppress original-attempt retry; replacement worker may fingerprint and resume first pending delta only.",
+        "resume_point":f"{checkpoint.get('checkpoint')}:first_pending_delta_only",
+        "recommended_action":"STOP_WAITING; preserve checkpoint; suppress original-attempt retry; dispatch a stateless replacement worker for the first pending delta only when authority/capability gates pass.",
         "sealed_data_modified":False,
         "original_task_retried":False
     })
     path.write_text(json.dumps(current,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+
+def required_caps(plan, task):
+    if not task: return []
+    return next((x.get("required_capabilities",[]) for x in plan.get("pending_actions",[])
+                 if x.get("action_id") in task.get("task_id","") or x.get("action_id")=="C5_3_SOURCE_TRUTH_REPAIR"),[])
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--dry-run",action="store_true"); args=ap.parse_args()
@@ -89,27 +94,34 @@ def main():
     task=sorted(pending,key=lambda r:(int(r.get("priority",999)),r.get("task_id","")))[0] if pending else None
     active=github_active(os.getenv("GITHUB_REPOSITORY"),os.getenv("GITHUB_TOKEN"),os.getenv("GITHUB_RUN_ID"))
     guard=timeout_guard(checkpoint,active)
-    decision="IDLE_SUCCESS"; reason="no pending action"; missing=[]
-    if guard.get("stalled"):
-        decision="STALLED_WORKER"
-        reason="same-checkpoint timeout/stalled marker active; suppress original task retry and preserve checkpoint"
-        write_stall_diagnostic(checkpoint,guard,active)
-    elif task:
-        required=next((x.get("required_capabilities",[]) for x in plan.get("pending_actions",[]) if x.get("action_id") in task.get("task_id","") or x.get("action_id")=="C5_3_SOURCE_TRUTH_REPAIR"),[])
-        missing=[k for k in required if cap.get("capabilities",{}).get(k) is not True]
-        if task.get("owner_decision_required") or task.get("paid") or task.get("generation"):
+
+    required=required_caps(plan,task)
+    missing=[k for k in required if cap.get("capabilities",{}).get(k) is not True]
+    owner_boundary=bool(task and (task.get("owner_decision_required") or task.get("paid") or task.get("generation")))
+
+    decision="IDLE_SUCCESS"; reason="no pending action"
+    if task:
+        if owner_boundary:
             decision="NEEDS_OWNER_DECISION"; reason="task crosses owner/paid/generation boundary"
         elif missing:
             decision="NEEDS_CAPABILITY"; reason="required capability unavailable"
         elif active.get("active"):
             decision="WAIT_ACTIVE"; reason="another workflow is active"
+        elif guard.get("stalled"):
+            decision="AUTO_RECOVER_REPLACEMENT"
+            reason="previous worker stalled; original retry suppressed; safe zero-paid replacement may resume first pending delta only"
+            write_stall_diagnostic(checkpoint,guard,active)
         else:
             decision="AUTO_RECOVER"; reason="safe pending zero-paid action with no other active workflow"
+    elif guard.get("stalled"):
+        decision="STALLED_WORKER"; reason="stalled marker present but no pending replacement task is declared"
+        write_stall_diagnostic(checkpoint,guard,active)
+
     report={
-      "schema_version":"tinysnow.recovery-report.2","stage":checkpoint.get("stage"),"checkpoint":checkpoint.get("checkpoint"),
+      "schema_version":"tinysnow.recovery-report.3","stage":checkpoint.get("stage"),"checkpoint":checkpoint.get("checkpoint"),
       "pending_task":task,"active_workflows":active,"decision":decision,"reason":reason,"missing_capabilities":missing,
       "timeout_guard":guard,"dry_run":args.dry_run,"paid_api_called":False,"image_generation_called":False,"stable_mutation":False,
-      "sealed_stage_rerun":False,"original_task_retried":False
+      "sealed_stage_rerun":False,"original_task_retried":False,"replacement_worker":decision=="AUTO_RECOVER_REPLACEMENT"
     }
     out=ROOT/"_system/agent_queue/recovery_report.json"; out.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(report,ensure_ascii=False,sort_keys=True))
