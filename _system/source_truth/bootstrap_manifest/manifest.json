@@ -1,0 +1,55 @@
+{
+  "authoritative_workbook": {
+    "file_size": 609457,
+    "original_filename": "TinySnow_V4C0_375件商品全量测试报告.xlsx",
+    "privacy_rule": "raw workbook remains private; public transport contains only minimum structured Source Truth fields",
+    "sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+    "source_available_in_public_repo": false
+  },
+  "generation_called": false,
+  "paid_api_called": false,
+  "platform": "SHOPEE_TW",
+  "row_counts": {
+    "gallery_images": 2394,
+    "products": 375,
+    "variant_options": 2673
+  },
+  "schema_version": "tinysnow.source-truth-bootstrap-manifest.3-text-transport",
+  "sealed_stage_rerun": false,
+  "source_download_rerun": false,
+  "source_type": "PLATFORM_RAW_STRUCTURED",
+  "transport_files": {
+    "images.jsona.xz.b64": {
+      "compressed_bytes": 28416,
+      "compressed_sha256": "7492645f0f1d646bc35ccd0c34718db115e06e4e6ea63306bc440721ec1343ee",
+      "decompressed_bytes": 260217,
+      "decompressed_sha256": "5ddb89a47e8d01295fdb17970897ee7e4a46d3341685c2b655800ea3da387e2d",
+      "encoded_bytes": 37889,
+      "encoded_sha256": "26ddc9cbc9380412aa221d7cb9c22c6071cb1f95166554059a7bc8422b5d9fa9",
+      "rows": 2394
+    },
+    "products.jsona.xz.b64": {
+      "compressed_bytes": 2616,
+      "compressed_sha256": "894fa9655b31164af8407b098bf8b3d0051357d75350302a1775c3c53631659a",
+      "decompressed_bytes": 10852,
+      "decompressed_sha256": "469d4f4b0762b844f5a45efda24221d3ed7eb1090d3d7d63780e30434de0772f",
+      "encoded_bytes": 3489,
+      "encoded_sha256": "ec24d2f4c87f2e62d96a8b7e0b95a17d69e2f3db689b2f95c975f119dfbe3c36",
+      "rows": 375
+    },
+    "variants.jsona.xz.b64": {
+      "compressed_bytes": 49444,
+      "compressed_sha256": "ba95288ecf9017fb7dea0bec185ad7d7bc03a3af22ed3a4fab70dae55be11165",
+      "decompressed_bytes": 341248,
+      "decompressed_sha256": "064f1a99fce7202d63bd039aa69370cb153c4d9105ebe61f3af1c560b603ae5f",
+      "encoded_bytes": 65929,
+      "encoded_sha256": "764e4da22895f5c60403803e52c7512012b5d39f2206c6de049efe0aeb379ad9",
+      "rows": 2673
+    }
+  },
+  "variant_option_image": {
+    "missing": 145,
+    "present": 2528,
+    "unique_urls": 2515
+  }
+}
