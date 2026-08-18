@@ -1,0 +1,20 @@
+{
+  "schema_version": "tinysnow.c5.3.exact-binding-evidence-recovery.1",
+  "status": "PASS",
+  "frozen_ready_products": 145,
+  "frozen_execution_ready_slots": 549,
+  "exact_variant_image_binding_slots": 0,
+  "exact_variant_image_binding_products": 0,
+  "exact_variant_product_ids": [],
+  "non_binding_slots": 549,
+  "bindings": [],
+  "method": "same product_id + exact frozen source_url == authoritative variant option_image_url",
+  "source_truth_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+  "safety": {
+    "ready_membership_recomputed": false,
+    "frozen_queue_mutation": false,
+    "paid_api_called": false,
+    "generation_executed": false,
+    "stable_mutation": false
+  }
+}
