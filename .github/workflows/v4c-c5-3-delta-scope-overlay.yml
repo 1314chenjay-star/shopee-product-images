@@ -1,0 +1,177 @@
+name: V4-C5.3 Delta Scope Overlay
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/TRIGGER_C5_3_DELTA_SCOPE_OVERLAY'
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+      - name: Guard frozen inputs and build authoritative scope overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "5d49f061e140813b3d229520e9e530f86b27b640"
+          python - <<'PY'
+          import base64, collections, datetime as dt, hashlib, json, lzma, pathlib
+          root=pathlib.Path('.')
+          out=root/'_system/v4c/source_truth_bootstrap'; out.mkdir(parents=True,exist_ok=True)
+          SOURCE_SHA='616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a'
+          BATCH='batch_'+SOURCE_SHA[:24]
+          ALLOWED={'NO_VARIANTS','COMMON_TO_ALL_VARIANTS','SPECIFIC_VARIANT'}
+          def canon(v): return json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+          def digest(prefix,payload): return prefix+'_'+hashlib.sha256(canon(payload).encode()).hexdigest()[:24]
+          def jsonl(path): return [json.loads(x) for x in pathlib.Path(path).read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          def dumpjl(path,rows): pathlib.Path(path).write_text(''.join(json.dumps(x,ensure_ascii=False,separators=(',',':'))+'\n' for x in rows),encoding='utf-8')
+          def transport(name):
+              b=(root/f'_system/source_truth/bootstrap_manifest/{name}.jsona.xz.b64').read_bytes()
+              return [json.loads(x) for x in lzma.decompress(base64.b64decode(b)).decode().splitlines() if x]
+          def sha(path): return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+          slots=jsonl('_system/v4c/generation_payload/execution_ready_queue.jsonl')
+          readiness=jsonl('_system/v4c/generation_payload/product_execution_readiness.jsonl')
+          canon_images=jsonl('_system/v4c/generation_plan/canonical_image_state.jsonl')
+          products=transport('products'); source_images=transport('images'); variants=transport('variants')
+          assert len(slots)==549
+          ready=[r for r in readiness if r.get('status')=='PRODUCT_READY_FOR_GENERATION']
+          assert len(ready)==145
+          # Frozen input fingerprints from sealed V4-C5.0 coverage.
+          cov=json.loads((root/'_system/v4c/generation_payload/coverage_summary.json').read_text())
+          assert cov['final_paid_execution_candidate_slots']==549 and cov['final_paid_execution_candidate_products']==145
+          assert sha('_system/v4c/generation_plan/generation_plan_queue.jsonl')==cov['frozen_fingerprints']['generation_plan_queue_sha256']
+          # Source truth maps.
+          prod={str(r[0]):{'has_variants':bool(r[1]),'variant_count':int(r[2]),'image_count':int(r[3]),'source_row':int(r[4])} for r in products}
+          variants_by_pid=collections.defaultdict(list)
+          for r in variants:
+              pid,varname,idx,opt,url,srow=str(r[0]),str(r[1]),str(r[2]),str(r[3]),(str(r[4]).strip() if r[4] else ''),int(r[5])
+              key=digest('variant',[BATCH,pid,varname,idx,opt])
+              variants_by_pid[pid].append({'variant_identity_key':key,'variation_name':varname,'option_index':idx,'option_name':opt,'option_image_url':url or None,'source_row':srow})
+          source_img_by_pid_url=collections.defaultdict(list)
+          for r in source_images:
+              pid,pos,seq,url,srow=str(r[0]),str(r[1]),str(r[2]),str(r[3]).strip(),int(r[4])
+              ik=digest('image',[BATCH,pid,pos,seq,url])
+              source_img_by_pid_url[(pid,url)].append({'image_identity_key':ik,'image_position':pos,'image_sequence':seq,'source_row':srow})
+          frozen_by_pid_seq={(str(r['product_id']),str(r['sequence'])):r for r in canon_images}
+          slot_rows=[]; by_product=collections.defaultdict(list); scope_slot_counts=collections.Counter()
+          conflict_rows=[]; unknown_rows=[]
+          for s in slots:
+              pid=str(s['product_id']); seq=str(s['source_sequence'])
+              old=frozen_by_pid_seq.get((pid,seq)); assert old is not None
+              assert str(old.get('source_sha256') or '').lower()==str(s['source_sha256']).lower()
+              url=str(old.get('source_url') or '').strip(); assert url
+              p=prod.get(pid); assert p is not None
+              srcimgs=source_img_by_pid_url.get((pid,url),[])
+              if len(srcimgs)!=1:
+                  scope='VARIANT_CONFLICT' if len(srcimgs)>1 else 'VARIANT_MAPPING_UNKNOWN'; keys=[]; reason='SOURCE_GALLERY_URL_'+('AMBIGUOUS' if len(srcimgs)>1 else 'NOT_FOUND')
+              elif not p['has_variants'] and p['variant_count']==0 and len(variants_by_pid.get(pid,[]))==0:
+                  scope='NO_VARIANTS'; keys=[]; reason='AUTHORITATIVE_COMPLETE_ZERO_VARIANT_COVERAGE'
+              else:
+                  opts=variants_by_pid.get(pid,[])
+                  matches=[v for v in opts if v.get('option_image_url')==url]
+                  # exact all-variant linkage is sufficient durable common proof
+                  if opts and len(matches)==len(opts) and all(v.get('option_image_url') for v in opts):
+                      scope='COMMON_TO_ALL_VARIANTS'; keys=sorted(v['variant_identity_key'] for v in matches); reason='ALL_AUTHORITATIVE_VARIANTS_EXACTLY_REFERENCE_SOURCE_URL'
+                  elif matches:
+                      scope='SPECIFIC_VARIANT'; keys=sorted(v['variant_identity_key'] for v in matches); reason='AUTHORITATIVE_OPTION_IMAGE_EXACT_URL_MATCH'
+                  else:
+                      scope='VARIANT_MAPPING_UNKNOWN'; keys=[]; reason='PRODUCT_HAS_VARIANTS_WITHOUT_EXACT_SLOT_OPTION_IMAGE_PROOF'
+              rec={
+                'schema_version':'tinysnow.c5.3.ready-slot-scope-recovery.1','product_id':pid,
+                'slot_index':int(s['slot_index']),'slot_role':s['slot_role'],'action':s['action'],
+                'payload_ref_key':s['payload_ref_key'],'frozen_source_sequence':int(s['source_sequence']),
+                'frozen_source_sha256':s['source_sha256'],'source_url':url,
+                'source_truth_image_identity_key':srcimgs[0]['image_identity_key'] if len(srcimgs)==1 else None,
+                'scope_semantics':scope,'variant_identity_keys':keys,'proof_reason':reason,
+                'source_batch_id':BATCH,'authoritative_source_sha256':SOURCE_SHA,
+                'eligible_for_paid_canary_scope':scope in ALLOWED,
+                'overlay_only':True,'frozen_queue_mutated':False}
+              slot_rows.append(rec); by_product[pid].append(rec); scope_slot_counts[scope]+=1
+              if scope=='VARIANT_MAPPING_UNKNOWN': unknown_rows.append(rec)
+              if scope=='VARIANT_CONFLICT': conflict_rows.append(rec)
+          assert len(slot_rows)==549 and len(by_product)==145
+          product_rows=[]; scope_product_counts=collections.Counter(); eligible_products=[]
+          for pid in sorted(by_product):
+              rs=by_product[pid]; scopes=sorted(set(r['scope_semantics'] for r in rs))
+              if len(scopes)==1: product_scope=scopes[0]
+              elif 'VARIANT_CONFLICT' in scopes: product_scope='VARIANT_CONFLICT'
+              elif 'VARIANT_MAPPING_UNKNOWN' in scopes: product_scope='VARIANT_MAPPING_UNKNOWN'
+              else: product_scope='MIXED_EXACT_SCOPE'
+              all_safe=all(r['scope_semantics'] in ALLOWED for r in rs)
+              pr={'schema_version':'tinysnow.c5.3.ready-product-scope-recovery.1','product_id':pid,
+                  'execution_ready_slot_count':len(rs),'slot_scope_semantics':scopes,'product_scope_summary':product_scope,
+                  'all_execution_ready_slots_exact_scope':all_safe,'paid_canary_scope_eligible':all_safe,
+                  'source_batch_id':BATCH,'authoritative_source_sha256':SOURCE_SHA,'overlay_only':True}
+              product_rows.append(pr); scope_product_counts[product_scope]+=1
+              if all_safe: eligible_products.append(pr)
+          # Candidate files split by slot semantics.
+          no_variant=[r for r in slot_rows if r['scope_semantics']=='NO_VARIANTS']
+          common=[r for r in slot_rows if r['scope_semantics']=='COMMON_TO_ALL_VARIANTS']
+          specific=[r for r in slot_rows if r['scope_semantics']=='SPECIFIC_VARIANT']
+          candidate_slots=[r for r in slot_rows if r['eligible_for_paid_canary_scope']]
+          candidate_product_ids={r['product_id'] for r in product_rows if r['paid_canary_scope_eligible']}
+          paid_overlay=[r for r in candidate_slots if r['product_id'] in candidate_product_ids]
+          # Negative controls: preserve before/after provenance, never force old D/unknown to safe.
+          neg=[]
+          for pid in ['51765547764','25348397564','25348397567']:
+              rs=by_product.get(pid,[])
+              neg.append({'schema_version':'tinysnow.c5.3.negative-control-reconciliation.1','product_id':pid,
+                          'before_scope':'D_OR_UNKNOWN','before_variant_scope':[],
+                          'after_scopes':sorted(set(r['scope_semantics'] for r in rs)) if rs else [],
+                          'authoritative_exact_proof_found':bool(rs and all(r['scope_semantics'] in ALLOWED for r in rs)),
+                          'after_records':[{'slot_role':r['slot_role'],'scope_semantics':r['scope_semantics'],'variant_identity_keys':r['variant_identity_keys'],'proof_reason':r['proof_reason']} for r in rs],
+                          'mutation_of_frozen_record':False})
+          dumpjl(out/'ready_slot_scope_recovery.jsonl',slot_rows)
+          dumpjl(out/'ready_product_scope_recovery.jsonl',product_rows)
+          dumpjl(out/'specific_variant_ready_candidates.jsonl',specific)
+          dumpjl(out/'common_scope_ready_candidates.jsonl',common)
+          dumpjl(out/'no_variant_ready_candidates.jsonl',no_variant)
+          dumpjl(out/'unknown_scope_manifest.jsonl',unknown_rows)
+          dumpjl(out/'conflict_scope_manifest.jsonl',conflict_rows)
+          dumpjl(out/'paid_canary_scope_candidate_overlay.jsonl',paid_overlay)
+          dumpjl(out/'negative_control_reconciliation.jsonl',neg)
+          summary={
+            'schema_version':'tinysnow.c5.3.ready-scope-coverage.1','status':'PASS',
+            'ready_products_audited':145,'ready_slots_audited':549,
+            'slot_scope_counts':dict(scope_slot_counts),'product_scope_counts':dict(scope_product_counts),
+            'paid_canary_scope_eligible_products':len(candidate_product_ids),
+            'paid_canary_scope_eligible_slots':len(paid_overlay),
+            'specific_variant_ready_slot_candidates':len(specific),
+            'dedicated_variant_paid_canary_required':bool(specific),
+            'paid_canary_scope_blocker_resolved':bool(candidate_product_ids),
+            'negative_controls':['51765547764','25348397564','25348397567'],
+            'frozen_input_fingerprints':{
+              'execution_ready_queue_sha256':sha('_system/v4c/generation_payload/execution_ready_queue.jsonl'),
+              'product_execution_readiness_sha256':sha('_system/v4c/generation_payload/product_execution_readiness.jsonl'),
+              'generation_plan_queue_sha256':sha('_system/v4c/generation_plan/generation_plan_queue.jsonl')},
+            'safety':{'invented_mapping':0,'cross_product_leakage':0,'frozen_queue_mutation':0,'memory_mutation':0,'generation_executed':False,'paid_api_called':False,'stable_mutation':False}}
+          (out/'coverage_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          (out/'validation.json').write_text(json.dumps({'status':'PASS','ready_products':len(product_rows),'ready_slots':len(slot_rows),'all_slots_accounted':len(slot_rows)==549,'all_products_accounted':len(product_rows)==145,'unknown_slots':len(unknown_rows),'conflict_slots':len(conflict_rows),'candidate_products':len(candidate_product_ids),'candidate_slots':len(paid_overlay),'frozen_queue_mutation':False,'paid_api_called':False,'generation_executed':False},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          # Advance one checkpoint only.
+          cp_path=root/'_system/control/execution_checkpoint.json'; live_path=root/'_system/control/live_status.json'; worker_path=root/'_system/control/worker_state.json'
+          cp=json.loads(cp_path.read_text()); assert cp['checkpoint']=='DELTA_SCOPE_OVERLAY' and cp['pending'][0]=='145/549 delta scope overlay'
+          cp['pending']=cp['pending'][1:]; cp['completed'].append('145/549 delta scope overlay'); cp['checkpoint']='C5_3_REGRESSION'
+          now=dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'); cp['last_replacement_heartbeat_utc']=now
+          live=json.loads(live_path.read_text()); live.update({'status':'RECOVERING','checkpoint':'C5_3_REGRESSION','last_update':now,'worker_state':'RECOVERING','next_action':'Resume first pending delta only: C5.3-only regressions','original_task_retry_allowed':False,'sealed_data_modified':False})
+          worker=json.loads(worker_path.read_text()); worker.update({'status':'RECOVERING','last_heartbeat_utc':now,'last_durable_worker_signal_utc':now,'resume_mode':'FIRST_PENDING_DELTA_ONLY','original_task_retry_allowed':False,'human_orchestration_required':False})
+          cp_path.write_text(json.dumps(cp,ensure_ascii=False,indent=2)+'\n'); live_path.write_text(json.dumps(live,ensure_ascii=False,indent=2)+'\n'); worker_path.write_text(json.dumps(worker,ensure_ascii=False,indent=2)+'\n')
+          print(json.dumps(summary,ensure_ascii=False))
+          PY
+      - name: Persist overlay only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "TinySnow Delta Scope Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/v4c/source_truth_bootstrap _system/control/execution_checkpoint.json _system/control/live_status.json _system/control/worker_state.json
+          git commit -m "v4c5.3: reconcile 145 ready products and 549 slots [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
