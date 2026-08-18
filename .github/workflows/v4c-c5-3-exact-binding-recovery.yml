@@ -1,0 +1,79 @@
+name: V4-C5.3 Exact Binding Evidence Recovery
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths: ['_system/source_truth/.c5_3_exact_binding_recovery_trigger']
+
+permissions:
+  contents: write
+
+jobs:
+  recover-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+      - name: Reconstruct exact binding evidence without membership mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')" = "5d49f061e140813b3d229520e9e530f86b27b640"
+          python - <<'PY'
+          import base64,collections,hashlib,json,lzma,pathlib
+          root=pathlib.Path('.')
+          def jl(p): return [json.loads(x) for x in (root/p).read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          def transport(name):
+              b=(root/f'_system/source_truth/bootstrap_manifest/{name}.jsona.xz.b64').read_bytes()
+              return [json.loads(x) for x in lzma.decompress(base64.b64decode(b)).decode('utf-8').splitlines() if x]
+          slots=jl('_system/v4c/generation_payload/execution_ready_queue.jsonl')
+          canon=jl('_system/v4c/generation_plan/canonical_image_state.jsonl')
+          variants=transport('variants')
+          ready=jl('_system/v4c/generation_payload/product_execution_readiness.jsonl')
+          assert len(slots)==549
+          assert sum(1 for r in ready if r.get('status')=='PRODUCT_READY_FOR_GENERATION')==145
+          by_pid_seq={(str(r['product_id']),str(r['sequence'])):r for r in canon}
+          option_by_pid_url=collections.defaultdict(list)
+          for r in variants:
+              pid=str(r[0]); url=str(r[4]).strip() if r[4] else ''
+              if url:
+                  option_by_pid_url[(pid,url)].append({'variation_name':str(r[1]),'option_index':str(r[2]),'option_name':str(r[3]),'source_row':int(r[5])})
+          bindings=[]; no_match=0
+          for s in slots:
+              pid=str(s['product_id']); seq=str(s['source_sequence'])
+              c=by_pid_seq[(pid,seq)]
+              assert str(c['source_sha256']).lower()==str(s['source_sha256']).lower()
+              url=str(c['source_url']).strip()
+              matches=option_by_pid_url.get((pid,url),[])
+              if matches:
+                  bindings.append({'product_id':pid,'slot_index':int(s['slot_index']),'slot_role':s['slot_role'],'source_sequence':int(s['source_sequence']),'source_sha256':s['source_sha256'],'source_url':url,'variant_option_matches':matches,'proof':'SAME_PRODUCT_EXACT_OPTION_IMAGE_URL','membership_mutated':False})
+              else:
+                  no_match+=1
+          product_ids=sorted({r['product_id'] for r in bindings})
+          out={
+            'schema_version':'tinysnow.c5.3.exact-binding-evidence-recovery.1',
+            'status':'PASS',
+            'frozen_ready_products':145,
+            'frozen_execution_ready_slots':549,
+            'exact_variant_image_binding_slots':len(bindings),
+            'exact_variant_image_binding_products':len(product_ids),
+            'exact_variant_product_ids':product_ids,
+            'non_binding_slots':no_match,
+            'bindings':bindings,
+            'method':'same product_id + exact frozen source_url == authoritative variant option_image_url',
+            'source_truth_sha256':'616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a',
+            'safety':{'ready_membership_recomputed':False,'frozen_queue_mutation':False,'paid_api_called':False,'generation_executed':False,'stable_mutation':False}
+          }
+          (root/'_system/source_truth/c5_3_exact_binding_evidence.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('EXACT_BINDINGS',len(bindings),'PRODUCTS',len(product_ids))
+          PY
+      - name: Persist recovered evidence only
+        shell: bash
+        run: |
+          git config user.name "TinySnow Evidence Recovery"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/source_truth/c5_3_exact_binding_evidence.json
+          git commit -m "v4c5.3: recover exact variant binding evidence [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
