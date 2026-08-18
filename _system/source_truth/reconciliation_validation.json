@@ -1,0 +1,49 @@
+{
+  "schema_version": "tinysnow.source-truth-reconciliation.1",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "checkpoint": "SOURCE_TRUTH_RECONCILIATION",
+  "status": "PASS",
+  "mode": "FINGERPRINT_EXISTING_BOOTSTRAP_OUTPUTS_ONLY",
+  "authoritative_source_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+  "expected": {
+    "products": 375,
+    "gallery_images": 2394,
+    "variant_options": 2673
+  },
+  "observed": {
+    "products": 375,
+    "gallery_images": 2394,
+    "variant_options": 2673
+  },
+  "matches": {
+    "products": true,
+    "gallery_images": true,
+    "variant_options": true,
+    "source_sha256": true
+  },
+  "store_integrity": {
+    "sqlite_integrity": "ok",
+    "foreign_key_violations": 0,
+    "idempotent_resume": true
+  },
+  "variant_option_image_preserved_for_next_delta": {
+    "present": 2528,
+    "missing": 145,
+    "unique_urls": 2515,
+    "missing_policy": "HOLD"
+  },
+  "evidence": {
+    "manifest": "_system/source_truth/bootstrap_manifest/manifest.json",
+    "bootstrap_validation": "_system/source_truth/bootstrap_validation.json",
+    "bootstrap_workflow_run_id": 32132642877,
+    "bootstrap_tested_head": "f0d637dd5dfdd4ba1da828d902c0212021fe30c7"
+  },
+  "safety": {
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "source_download_rerun": false,
+    "sealed_stage_rerun": false,
+    "stable_mutation": false
+  },
+  "result": "375/2394/2673 authoritative Source Truth counts reconcile exactly; no re-import or sealed-stage rerun required."
+}
