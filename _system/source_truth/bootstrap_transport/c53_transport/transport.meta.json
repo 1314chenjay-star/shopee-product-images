@@ -1,0 +1,29 @@
+{
+  "base64_chars": 588896,
+  "base64_sha256": "f92c830951d7a13a747192c12a91b9ddaf14b82e025a7f6db6b0e7ef7a1ce484",
+  "contained_manifest_counts": {
+    "gallery_images": 2394,
+    "products": 375,
+    "variant_options": 2673
+  },
+  "contained_manifest_source_file_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+  "encoding": "base64(tar.gz)",
+  "image_generation_called": false,
+  "paid_api_called": false,
+  "parts": [
+    {"chars":60000,"name":"part01.b64","sha256":"d46c544f1bdd2fa1409bf99ca71597445e3c1ffb71ec1655d7f4a2700f8e784c"},
+    {"chars":60000,"name":"part02.b64","sha256":"44a064e11361476f282a17539141c8866ee43a6ec305a27198e8b404846a1322"},
+    {"chars":60000,"name":"part03.b64","sha256":"75c92a46597102c6e7f23bdd07fd6efcb7bdd707dbe9365da2c77bfad41ba68f"},
+    {"chars":60000,"name":"part04.b64","sha256":"1dda6e6118e83c1e66cda820a050529f1edf87058823c09262dc4662cbb1c95f"},
+    {"chars":60000,"name":"part05.b64","sha256":"d5bef81579d3af6e1deddd607e72912f7c8269169d7d8f0627465c332dc43c7b"},
+    {"chars":60000,"name":"part06.b64","sha256":"46e1b66f793372e1851b1b74cd5951e356749ab6044c34ed0ce1523513b86e85"},
+    {"chars":60000,"name":"part07.b64","sha256":"c7a287afec8a0f60d5fcbcc7e0a274d25d9f4db934a9574e8476604792c8ccf4"},
+    {"chars":60000,"name":"part08.b64","sha256":"1a0eb5b6d81381c55c67d7dacb7b87029b6ce627d26f617d00c7c65f53c3c93c"},
+    {"chars":60000,"name":"part09.b64","sha256":"4056f1cf066ca98f3595ba7b88831a4efb7df0359dac54313dbf63056b1d81df"},
+    {"chars":48896,"name":"part10.b64","sha256":"db3351018136e0f296a0dcd8b739312069d8b2cfa1fe1cc4426ea53fba2b7f02"}
+  ],
+  "sanitized": true,
+  "schema_version": "tinysnow.c53-manifest-transport.1",
+  "transport_bytes": 441671,
+  "transport_sha256": "9bebdf0864f74206e9e1f1310f38ecb20c7c2f8a64a42306ba517a4330b72f60"
+}
