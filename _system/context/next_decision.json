@@ -1,17 +1,20 @@
 {
   "schema_version": "tinysnow.next-decision.1",
   "current_stage": "V4-C5.3 Source Truth Repair",
-  "next_action": "AGENT_COMMAND_BRIDGE_DRY_RUN_ONLY",
-  "reason": "Control-layer delta requested by Owner; do not advance or rerun C5.3 source-truth work.",
+  "next_action": "SAFE_DELTA_RECOVERY_FROM_VALID_CHECKPOINT_ONLY",
+  "reason": "Execution health check confirmed the previous unattended worker is stalled. This control-layer recovery must not advance or retry the original C5.3 attempt; a replacement worker may only fingerprint completed outputs and resume the first pending delta from the preserved checkpoint.",
   "constraints": [
-    "control-layer-only",
+    "control-layer-only-until-replacement-worker",
     "zero-paid",
     "no-image-generation",
     "no-product-mutation",
     "experimental-branch-only",
-    "sealed-stage-fingerprint-only"
+    "sealed-stage-fingerprint-only",
+    "timeout-guard-required",
+    "resume-first-pending-delta-only"
   ],
   "forbidden_actions": [
+    "retry_original_long_running_attempt",
     "rerun_v4_c0",
     "rerun_v4_c1",
     "rerun_v4_c2",
@@ -22,6 +25,11 @@
     "rerun_v4_c5_1a",
     "rerun_v4_c5_2",
     "rerun_completed_c5_3_source_truth_work",
+    "rebuild_snapshot",
+    "rebuild_inventory",
+    "recalculate_all_sha",
+    "rebuild_archive",
+    "rerun_completed_validation",
     "paid_api",
     "image_generation",
     "image_editing",

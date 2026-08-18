@@ -1,0 +1,37 @@
+{
+  "schema_version": "tinysnow.stalled-execution-report.1",
+  "status": "STALLED_WORKER",
+  "health_check_at_utc": "2026-08-18T00:43:47Z",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "branch": "v4c-universal-product-engine",
+  "observed_head": "f1027484ee5317e7a5508fa1ad55f3f07be419d8",
+  "current_workflow_run": null,
+  "current_workflow_status": "NO_CONFIRMED_ACTIVE_RUN",
+  "last_successful_workflow": 32035192139,
+  "last_successful_workflow_name": "V4-C5.3 Existing Snapshot Parts Diagnostic Artifact",
+  "checkpoint": "CAPABILITY_RECOVERY_BOOTSTRAP",
+  "failure_reason": "Same checkpoint remained unchanged far beyond the 30-minute timeout. Durable control-plane evidence shows no pending command, no processing item, and the previous C5.3 diagnosis recorded zero active/queued workflow workers. The declared v4c-source-truth-recovery.yml path is still absent, so the unattended recovery never entered a live C5.3 execution worker. The RECOVERING value in worker_state is stale durable state, not proof of live execution.",
+  "last_success": {
+    "control_step": "CMD-AGENT-BRIDGE-DRYRUN-001 DRY_RUN_SUCCESS",
+    "control_step_completed_at_utc": "2026-08-17T16:41:26Z",
+    "last_repo_modification_at_utc": "2026-08-17T16:44:25Z",
+    "last_worker_state_modification_at_utc": "2026-08-17T16:40:22Z",
+    "last_durable_completed_checkpoint_entry": "GitHub write capability verified"
+  },
+  "heartbeat": {
+    "last_heartbeat_time_utc": null,
+    "durable_heartbeat_timestamp_available": false,
+    "last_durable_worker_signal_utc": "2026-08-17T16:41:26Z"
+  },
+  "health": {
+    "active_worker": false,
+    "active_tool_execution_for_original_task": false,
+    "same_checkpoint_timeout_minutes": 30,
+    "elapsed_since_last_repo_progress_minutes_at_detection": 479,
+    "timeout_exceeded": true
+  },
+  "resume_point": "CAPABILITY_RECOVERY_BOOTSTRAP:first_pending_delta_only",
+  "recommended_action": "STOP_WAITING. Preserve the existing checkpoint and completed outputs. Do not retry the original long-running attempt. A replacement worker must fingerprint completed state and resume only the first pending delta; it must never return to snapshot creation, inventory rebuild, all-SHA recalculation, archive rebuild, or sealed-stage validation.",
+  "sealed_data_modified": false,
+  "original_task_retried": false
+}

@@ -61,7 +61,7 @@ jobs:
           PY
       - name: Validate capability recovery and handoff queue
         run: python -B _system/agent_queue/validate_agent_queue.py
-      - name: Evaluate idle recovery decision
+      - name: Evaluate idle recovery decision and timeout guard
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python -B _system/agent_queue/watchdog.py
@@ -83,6 +83,8 @@ jobs:
                   status['dispatch_requested']=True
               else:
                   status['dispatch_block']='DECLARED_RECOVERY_WORKFLOW_NOT_YET_PRESENT'
+          elif decision=='STALLED_WORKER':
+              status['dispatch_block']='TIMEOUT_GUARD_SUPPRESSED_ORIGINAL_TASK_RETRY'
           pathlib.Path('_system/agent_queue/recovery_dispatch_status.json').write_text(json.dumps(status,indent=2)+'\n',encoding='utf-8')
           PY
           if python -c "import json; x=json.load(open('_system/agent_queue/recovery_dispatch_status.json')); raise SystemExit(0 if x.get('dispatch_requested') else 1)"; then
@@ -103,5 +105,8 @@ jobs:
             _system/agent_queue/validation.json
             _system/agent_queue/recovery_report.json
             _system/agent_queue/recovery_dispatch_status.json
+            _system/control/stalled_execution_report.json
+            _system/control/timeout_policy.json
+            _system/control/live_status.json
           if-no-files-found: error
           retention-days: 14

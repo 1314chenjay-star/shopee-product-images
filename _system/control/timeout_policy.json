@@ -1,0 +1,41 @@
+{
+  "schema_version": "tinysnow.timeout-policy.1",
+  "same_checkpoint_timeout_minutes": 30,
+  "max_retry_count": 2,
+  "stall_detection": {
+    "same_checkpoint_required": true,
+    "timeout_requires_no_fresh_active_worker": true,
+    "progress_signals": [
+      "checkpoint_change",
+      "new_successful_step",
+      "fresh_worker_heartbeat",
+      "new_durable_processing_record",
+      "new_tool_execution_for_current_worker"
+    ],
+    "missing_durable_heartbeat_falls_back_to_last_durable_progress": true,
+    "on_timeout_status": "STALLED_WORKER"
+  },
+  "recovery_action": {
+    "sequence": [
+      "STOP_WAITING",
+      "WRITE_STALLED_EXECUTION_REPORT",
+      "PRESERVE_LAST_VALID_CHECKPOINT",
+      "FINGERPRINT_COMPLETED_OUTPUTS",
+      "BLOCK_ORIGINAL_ATTEMPT_RETRY",
+      "RESUME_FIRST_PENDING_DELTA_ONLY"
+    ],
+    "retry_original_task": false,
+    "allow_infinite_retry": false,
+    "rebuild_snapshot": false,
+    "rebuild_inventory": false,
+    "recalculate_all_sha": false,
+    "rebuild_archive": false,
+    "rerun_completed_validation": false,
+    "rerun_sealed_stages": false,
+    "sealed_data_read_only": true
+  },
+  "compatibility": {
+    "retry_policy": "_system/control/retry_policy.json",
+    "retry_policy_values_must_match": true
+  }
+}

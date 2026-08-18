@@ -1,7 +1,7 @@
 {
   "schema_version": "tinysnow.worker-state.2",
   "worker_mode": "STATELESS_REPLACEABLE",
-  "status": "RECOVERING",
+  "status": "STALLED_WORKER",
   "stage": "V4-C5.3 Source Truth Repair",
   "branch": "v4c-universal-product-engine",
   "must_read_before_write": [
@@ -9,6 +9,8 @@
     "_system/governance/failure_registry.jsonl",
     "_system/handoff/TinySnow_current_state.json",
     "_system/control/execution_checkpoint.json",
+    "_system/control/timeout_policy.json",
+    "_system/control/live_status.json",
     "_system/context/next_decision.json",
     "_system/agent_queue/inbox/pending_commands.jsonl",
     "_system/control/command_policy.json",
@@ -17,14 +19,23 @@
   ],
   "pre_execution_order": [
     "read_checkpoint",
+    "read_timeout_policy",
+    "read_live_status",
     "read_next_decision",
     "read_inbox_command",
     "validate_command_authority",
     "confirm_frozen_lock",
-    "execute_allowed_scope_only",
+    "fingerprint_completed_outputs",
+    "execute_allowed_delta_scope_only",
     "write_execution_result"
   ],
   "command_bridge": "_system/agent_queue/command_bridge.py",
   "concurrent_worker_rule": "Re-fetch HEAD before each write; absorb compatible new commits; never force push.",
-  "human_orchestration_required": false
+  "human_orchestration_required": false,
+  "stalled_detected_at_utc": "2026-08-18T00:43:47Z",
+  "last_durable_worker_signal_utc": "2026-08-17T16:41:26Z",
+  "last_heartbeat_utc": null,
+  "timeout_policy": "_system/control/timeout_policy.json",
+  "resume_mode": "FIRST_PENDING_DELTA_ONLY",
+  "original_task_retry_allowed": false
 }

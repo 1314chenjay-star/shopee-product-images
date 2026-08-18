@@ -1,0 +1,11 @@
+{
+  "schema_version": "tinysnow.live-status.1",
+  "status": "RECOVERY_READY",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "checkpoint": "CAPABILITY_RECOVERY_BOOTSTRAP",
+  "last_update": "2026-08-18T00:43:47Z",
+  "worker_state": "STALLED_WORKER",
+  "next_action": "Do not retry the original C5.3 attempt. Keep the valid checkpoint frozen; the next replacement worker must fingerprint completed outputs and resume only the first pending delta under timeout/retry guards.",
+  "original_task_retry_allowed": false,
+  "sealed_data_modified": false
+}
