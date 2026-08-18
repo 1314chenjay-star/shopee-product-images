@@ -13,6 +13,10 @@ permissions:
   contents: write
   actions: read
 
+concurrency:
+  group: tinysnow-default-branch-supervisor
+  cancel-in-progress: false
+
 jobs:
   c5-3-replacement-recovery:
     permissions:
