@@ -2,10 +2,8 @@ name: V4-C5.3 Source Manifest Stage
 
 on:
   push:
-    branches:
-      - v4c-universal-product-engine
-    paths:
-      - '_system/source_truth/bootstrap_manifest/.staging/READY'
+    branches: [v4c-universal-product-engine]
+    paths: ['_system/source_truth/bootstrap_manifest/.staging/READY']
 
 permissions:
   contents: write
@@ -14,8 +12,7 @@ jobs:
   assemble-source-manifest:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout active V4-C branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: v4c-universal-product-engine
           fetch-depth: 0
@@ -40,30 +37,32 @@ jobs:
           outdir=root/'_system/source_truth/bootstrap_manifest'
           specs={
             'images': {
-              'parts':4,'rows':2394,'encoded_bytes':37889,
+              'files':['images.part01','images.part02','images.part03','images.part04'],
+              'rows':2394,'encoded_bytes':37889,
               'encoded_sha256':'26ddc9cbc9380412aa221d7cb9c22c6071cb1f95166554059a7bc8422b5d9fa9',
               'compressed_bytes':28416,'compressed_sha256':'7492645f0f1d646bc35ccd0c34718db115e06e4e6ea63306bc440721ec1343ee',
               'decompressed_bytes':260217,'decompressed_sha256':'5ddb89a47e8d01295fdb17970897ee7e4a46d3341685c2b655800ea3da387e2d'},
             'variants': {
-              'parts':6,'rows':2673,'encoded_bytes':65929,
+              'files':['variants.part01','variants.part02','variants.part03','variants.part04a','variants.part04b','variants.part05','variants.part06'],
+              'rows':2673,'encoded_bytes':65929,
               'encoded_sha256':'764e4da22895f5c60403803e52c7512012b5d39f2206c6de049efe0aeb379ad9',
               'compressed_bytes':49444,'compressed_sha256':'ba95288ecf9017fb7dea0bec185ad7d7bc03a3af22ed3a4fab70dae55be11165',
               'decompressed_bytes':341248,'decompressed_sha256':'064f1a99fce7202d63bd039aa69370cb153c4d9105ebe61f3af1c560b603ae5f'}
           }
           def sha(b): return hashlib.sha256(b).hexdigest()
           for name,s in specs.items():
-              parts=[stage/f'{name}.part{i:02d}' for i in range(1,s['parts']+1)]
+              parts=[stage/f for f in s['files']]
               assert all(p.exists() for p in parts), (name,'missing_part',[str(p) for p in parts if not p.exists()])
               encoded=b''.join(p.read_bytes() for p in parts)
               assert len(encoded)==s['encoded_bytes'], (name,'encoded_bytes',len(encoded))
               assert sha(encoded)==s['encoded_sha256'], (name,'encoded_sha256',sha(encoded))
               compressed=base64.b64decode(encoded)
-              assert len(compressed)==s['compressed_bytes'], (name,'compressed_bytes',len(compressed))
-              assert sha(compressed)==s['compressed_sha256'], (name,'compressed_sha256',sha(compressed))
+              assert len(compressed)==s['compressed_bytes']
+              assert sha(compressed)==s['compressed_sha256']
               decompressed=lzma.decompress(compressed)
-              assert len(decompressed)==s['decompressed_bytes'], (name,'decompressed_bytes',len(decompressed))
-              assert sha(decompressed)==s['decompressed_sha256'], (name,'decompressed_sha256',sha(decompressed))
-              assert decompressed.count(b'\n')==s['rows'], (name,'rows',decompressed.count(b'\n'))
+              assert len(decompressed)==s['decompressed_bytes']
+              assert sha(decompressed)==s['decompressed_sha256']
+              assert decompressed.count(b'\n')==s['rows']
               (outdir/f'{name}.jsona.xz.b64').write_bytes(encoded)
               print('TRANSPORT_VERIFIED',name,s['rows'],sha(encoded))
 
@@ -83,8 +82,7 @@ jobs:
           pending.pop(0)
           if 'source manifest extraction' not in completed: completed.append('source manifest extraction')
           cp['completed']=completed; cp['pending']=pending
-          cp['checkpoint']='SOURCE_TRUTH_BOOTSTRAP'
-          cp['last_replacement_heartbeat_utc']=now
+          cp['checkpoint']='SOURCE_TRUTH_BOOTSTRAP'; cp['last_replacement_heartbeat_utc']=now
           live.update({'status':'RECOVERING','stage':'V4-C5.3 Source Truth Repair','checkpoint':'SOURCE_TRUTH_BOOTSTRAP','last_update':now,'worker_state':'RECOVERING','next_action':'Resume first pending delta only: SourceTruth importer/resolver/bootstrap','original_task_retry_allowed':False,'sealed_data_modified':False})
           worker.update({'status':'RECOVERING','stage':'V4-C5.3 Source Truth Repair','last_heartbeat_utc':now,'last_durable_worker_signal_utc':now,'resume_mode':'FIRST_PENDING_DELTA_ONLY','original_task_retry_allowed':False,'human_orchestration_required':False})
           q=[]
