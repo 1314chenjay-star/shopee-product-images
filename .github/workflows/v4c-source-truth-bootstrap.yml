@@ -1,0 +1,156 @@
+name: V4-C5.3 SourceTruth Bootstrap Validation
+
+on:
+  push:
+    branches:
+      - v4c-universal-product-engine
+    paths:
+      - '_system/source_truth/bootstrap.py'
+      - '_system/tests/v4c_source_truth_bootstrap.py'
+      - '.github/workflows/v4c-source-truth-bootstrap.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v4c-source-truth-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  validate-bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout active V4-C branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard stable and branch
+        shell: bash
+        env:
+          STABLE_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "v4c-universal-product-engine"
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$STABLE_EXPECTED"
+
+      - name: Verify manifest transport only
+        run: python _system/source_truth/bootstrap.py --verify-only
+
+      - name: Run focused importer resolver bootstrap regression
+        run: python _system/tests/v4c_source_truth_bootstrap.py --json-out /tmp/source_truth_bootstrap_validation.json
+
+      - name: Refresh branch before durable checkpoint write
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin v4c-universal-product-engine
+          git merge --ff-only origin/v4c-universal-product-engine
+
+      - name: Record validation and advance first pending delta only
+        shell: bash
+        env:
+          STABLE_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$STABLE_EXPECTED"
+          python - <<'PY'
+          import datetime as dt
+          import json
+          import os
+          import pathlib
+
+          root = pathlib.Path('.')
+          target = 'SourceTruth importer/resolver/bootstrap'
+          next_pending = '375/2394/2673 reconciliation'
+          now = dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00', 'Z')
+
+          validation_path = pathlib.Path('/tmp/source_truth_bootstrap_validation.json')
+          validation = json.loads(validation_path.read_text(encoding='utf-8'))
+          if validation.get('status') != 'PASS':
+              raise SystemExit('bootstrap validation did not PASS')
+          validation['workflow_run_id'] = int(os.environ['GITHUB_RUN_ID'])
+          validation['tested_head'] = os.environ['GITHUB_SHA']
+          validation['stable_head_verified'] = os.environ['STABLE_EXPECTED']
+          validation['validated_at_utc'] = now
+          out = root / '_system/source_truth/bootstrap_validation.json'
+          out.write_text(json.dumps(validation, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          cp_path = root / '_system/control/execution_checkpoint.json'
+          live_path = root / '_system/control/live_status.json'
+          worker_path = root / '_system/control/worker_state.json'
+          queue_path = root / '_system/agent_queue/queue.jsonl'
+
+          cp = json.loads(cp_path.read_text(encoding='utf-8-sig'))
+          completed = list(cp.get('completed', []))
+          pending = list(cp.get('pending', []))
+          if target not in completed:
+              if not pending or pending[0] != target:
+                  raise SystemExit(f'first pending delta changed; refusing to skip: {pending}')
+              pending.pop(0)
+              completed.append(target)
+              cp['completed'] = completed
+              cp['pending'] = pending
+              cp['checkpoint'] = 'SOURCE_TRUTH_RECONCILIATION'
+              cp['last_good_head'] = os.environ['GITHUB_SHA']
+              cp['last_successful_workflow'] = int(os.environ['GITHUB_RUN_ID'])
+              cp['last_replacement_heartbeat_utc'] = now
+              cp_path.write_text(json.dumps(cp, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+              live = json.loads(live_path.read_text(encoding='utf-8-sig'))
+              live.update({
+                  'status': 'RECOVERING',
+                  'stage': 'V4-C5.3 Source Truth Repair',
+                  'checkpoint': 'SOURCE_TRUTH_RECONCILIATION',
+                  'last_update': now,
+                  'worker_state': 'RECOVERING',
+                  'next_action': 'Resume first pending delta only: 375/2394/2673 reconciliation',
+                  'original_task_retry_allowed': False,
+                  'sealed_data_modified': False,
+              })
+              live_path.write_text(json.dumps(live, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+              worker = json.loads(worker_path.read_text(encoding='utf-8-sig'))
+              worker.update({
+                  'status': 'RECOVERING',
+                  'stage': 'V4-C5.3 Source Truth Repair',
+                  'last_durable_worker_signal_utc': now,
+                  'last_heartbeat_utc': now,
+                  'resume_mode': 'FIRST_PENDING_DELTA_ONLY',
+                  'original_task_retry_allowed': False,
+                  'human_orchestration_required': False,
+              })
+              worker_path.write_text(json.dumps(worker, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+              queue = []
+              for line in queue_path.read_text(encoding='utf-8-sig').splitlines():
+                  if not line.strip():
+                      continue
+                  row = json.loads(line)
+                  if row.get('task_id') == 'TASK-C5-3-SOURCE-TRUTH-REPAIR':
+                      row['status'] = 'RECOVERING'
+                      row['checkpoint'] = 'SOURCE_TRUTH_RECONCILIATION'
+                      row['next_action'] = next_pending
+                  queue.append(row)
+              queue_path.write_text(
+                  ''.join(json.dumps(row, ensure_ascii=False, separators=(',', ':')) + '\n' for row in queue),
+                  encoding='utf-8',
+              )
+          PY
+
+      - name: Commit validated bootstrap checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "TinySnow Source Truth Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/source_truth/bootstrap_validation.json _system/control _system/agent_queue/queue.jsonl
+          if git diff --cached --quiet; then
+            echo "No durable delta to commit"
+            exit 0
+          fi
+          git commit -m "v4c5.3: validate SourceTruth bootstrap [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
