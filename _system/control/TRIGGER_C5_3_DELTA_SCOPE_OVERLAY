@@ -1,3 +1,4 @@
 run authoritative 145/549 scope overlay
 retry after evidence-reference validation
 controller takeover retry: zero-paid deterministic delta only
+2026-08-19 controller progress trigger after repeated heartbeat-without-checkpoint-advance
