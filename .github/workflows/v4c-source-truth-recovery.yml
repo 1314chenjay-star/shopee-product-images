@@ -1,0 +1,120 @@
+name: TinySnow V4-C5.3 Source Truth Recovery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: tinysnow-v4c-c53-source-truth-recovery
+  cancel-in-progress: false
+
+jobs:
+  replacement-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard branch, stable and checkpoint
+        shell: bash
+        env:
+          EXPECTED_STABLE: 5d49f061e140813b3d229520e9e530f86b27b640
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF_NAME}" = "v4c-universal-product-engine"
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "$EXPECTED_STABLE"
+          python - <<'PY'
+          import json
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          live=json.load(open('_system/control/live_status.json',encoding='utf-8-sig'))
+          q=[json.loads(x) for x in open('_system/agent_queue/queue.jsonl',encoding='utf-8-sig') if x.strip()]
+          task=next(x for x in q if x.get('task_id')=='TASK-C5-3-SOURCE-TRUTH-REPAIR')
+          assert cp['checkpoint']=='CAPABILITY_RECOVERY_BOOTSTRAP', 'BOOTSTRAP_ALREADY_ADVANCED_OR_WRONG_CHECKPOINT'
+          assert live.get('original_task_retry_allowed') is False
+          assert task.get('paid') is False and task.get('generation') is False
+          print(json.dumps({'checkpoint':cp['checkpoint'],'replacement_worker':True,'sealed_rerun':False},sort_keys=True))
+          PY
+
+      - name: Validate manifest, bootstrap SourceTruthStore and reconcile C1 evidence
+        run: |
+          rm -rf _system/v4c/source_truth_recovery
+          mkdir -p _system/v4c/source_truth_recovery
+          python -B _system/source_truth/c53_recovery.py \
+            --transport-dir _system/source_truth/bootstrap_transport/c53_transport \
+            --source-evidence _system/v4c/results/source_evidence.jsonl \
+            --output-dir _system/v4c/source_truth_recovery
+
+      - name: Advance durable checkpoint and heartbeat
+        run: python -B _system/source_truth/c53_advance_state.py
+
+      - name: Verify allowed delta only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          r=json.load(open('_system/v4c/source_truth_recovery/recovery_report.json',encoding='utf-8'))
+          assert r['status']=='PASS'
+          assert r['counts']['products']==375
+          assert r['counts']['gallery_images']==2394
+          assert r['counts']['variant_options']==2673
+          assert r['counts']['gallery_exact_product_url_matches']==2394
+          assert r['paid_api_called'] is False
+          assert r['image_generation_called'] is False
+          assert r['tiny_snow_api_called'] is False
+          assert r['stable_mutation'] is False
+          assert r['sealed_stage_rerun'] is False
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8'))
+          assert cp['checkpoint']=='C5_3_RECONCILED_375_2394_2673'
+          live=json.load(open('_system/control/live_status.json',encoding='utf-8'))
+          assert live['worker_state']=='RECOVERING'
+          worker=json.load(open('_system/control/worker_state.json',encoding='utf-8'))
+          assert worker['last_heartbeat_utc']
+          print(json.dumps({'recovery_validation':'PASS','checkpoint':cp['checkpoint'],'heartbeat':worker['last_heartbeat_utc']},sort_keys=True))
+          PY
+          git status --short
+          python - <<'PY'
+          import subprocess
+          allowed={'_system/control/execution_checkpoint.json','_system/control/live_status.json','_system/control/worker_state.json','_system/agent_queue/queue.jsonl','_system/v4c/source_truth_recovery/recovery_report.json','_system/v4c/source_truth_recovery/source_truth.sqlite','_system/v4c/source_truth_recovery/source_truth.sqlite-wal','_system/v4c/source_truth_recovery/source_truth.sqlite-shm'}
+          changed=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          untracked=set(subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines())
+          unexpected=(changed|untracked)-allowed
+          assert not unexpected, f'UNEXPECTED_MUTATION:{sorted(unexpected)}'
+          PY
+
+      - name: Upload Source Truth recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4c-c5-3-source-truth-recovery-${{ github.run_id }}
+          path: |
+            _system/v4c/source_truth_recovery/recovery_report.json
+            _system/v4c/source_truth_recovery/source_truth.sqlite
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Persist checkpoint without committing SQLite
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin v4c-universal-product-engine
+          REMOTE=$(git rev-parse origin/v4c-universal-product-engine)
+          LOCAL=$(git rev-parse HEAD)
+          test "$REMOTE" = "$LOCAL" || { echo "RACE_HEAD_MOVED:$REMOTE:$LOCAL"; exit 1; }
+          git config user.name "tinysnow-recovery-worker"
+          git config user.email "tinysnow-recovery-worker@users.noreply.github.com"
+          git add \
+            _system/control/execution_checkpoint.json \
+            _system/control/live_status.json \
+            _system/control/worker_state.json \
+            _system/agent_queue/queue.jsonl \
+            _system/v4c/source_truth_recovery/recovery_report.json
+          git diff --cached --quiet && { echo "NO_DURABLE_DELTA"; exit 1; }
+          git commit -m "V4-C5.3 advance Source Truth recovery checkpoint [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
