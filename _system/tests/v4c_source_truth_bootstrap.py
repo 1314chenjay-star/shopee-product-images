@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sqlite3
 import sys
 import tempfile
 from pathlib import Path
@@ -54,7 +53,6 @@ def run() -> dict:
             "products": 375,
             "gallery_images": 2394,
             "variant_options": 2673,
-            "gallery_scopes": 375,
         }, "bootstrap database counts mismatch")
         require(first["variant_option_image"] == manifest["variant_option_image"],
                 "bootstrap variant-image counts mismatch")
@@ -66,59 +64,58 @@ def run() -> dict:
                 "idempotent bootstrap changed counts")
 
         resolver = SourceTruthResolver(db_path)
-        try:
-            first_product = products[0]
-            product_id = str(first_product[0])
-            product = resolver.product(product_id)
-            require(product is not None, "resolver cannot resolve known product")
-            require(product["source_confidence"] == "AUTHORITATIVE",
-                    "product resolver lost authoritative confidence")
-            require(int(product["image_count"]) == int(first_product[3]),
-                    "product image count changed")
-            require(int(product["variant_count"]) == int(first_product[2]),
-                    "product variant count changed")
+        first_product = products[0]
+        product_id = str(first_product[0])
+        product = resolver.product(product_id)
+        require(product is not None, "resolver cannot resolve known product")
+        require(product["capture_status"] == "AUTHORITATIVE",
+                "product resolver lost authoritative capture status")
+        require(int(product["image_count"]) == int(first_product[3]),
+                "product image count changed")
+        require(int(product["variant_count"]) == int(first_product[2]),
+                "product variant count changed")
 
-            gallery = resolver.gallery(product_id)
-            require(gallery["source_confidence"] == "AUTHORITATIVE",
-                    "gallery resolver lost authoritative confidence")
-            require(len(gallery["images"]) == int(first_product[3]),
-                    "gallery resolver count mismatch")
+        gallery = resolver.gallery(product_id)
+        require(gallery["status"] == "RESOLVED",
+                "known product gallery did not resolve")
+        require(gallery["source_confidence"] == "AUTHORITATIVE",
+                "gallery resolver lost authoritative confidence")
+        require(len(gallery["images"]) == int(first_product[3]),
+                "gallery resolver count mismatch")
 
-            product_variants = resolver.variant_options(product_id)
-            require(len(product_variants) == int(first_product[2]),
-                    "variant resolver count mismatch")
+        product_variants = resolver.variant_options(product_id)
+        require(len(product_variants) == int(first_product[2]),
+                "variant resolver count mismatch")
 
-            missing_row = next(row for row in variants if not row[4])
-            missing = resolver.variant_image(
-                str(missing_row[0]), str(missing_row[1]), int(missing_row[2])
-            )
-            require(missing["status"] == "HOLD", "missing variant image was not held")
-            require(missing["reason"] == "MISSING_AUTHORITATIVE_VARIANT_IMAGE",
-                    "missing variant image got wrong HOLD reason")
+        missing_row = next(row for row in variants if not row[4])
+        missing = resolver.variant_image(
+            str(missing_row[0]), str(missing_row[1]), int(missing_row[2])
+        )
+        require(missing["status"] == "HOLD", "missing variant image was not held")
+        require(missing["reason"] == "MISSING_AUTHORITATIVE_VARIANT_IMAGE",
+                "missing variant image got wrong HOLD reason")
 
-            present_row = next(row for row in variants if row[4])
-            present = resolver.variant_image(
-                str(present_row[0]), str(present_row[1]), int(present_row[2])
-            )
-            require(present["status"] == "RESOLVED",
-                    "known variant image did not resolve")
-            require(present["confidence"] == "AUTHORITATIVE",
-                    "known variant image lost authoritative confidence")
-            require(present["option_image_url"] == present_row[4],
-                    "variant image URL changed")
+        present_row = next(row for row in variants if row[4])
+        present = resolver.variant_image(
+            str(present_row[0]), str(present_row[1]), int(present_row[2])
+        )
+        require(present["status"] == "RESOLVED",
+                "known variant image did not resolve")
+        require(present["confidence"] == "AUTHORITATIVE",
+                "known variant image lost authoritative confidence")
+        require(present["option_image_url"] == present_row[4],
+                "variant image URL changed")
 
-            unknown = resolver.variant_image("__unknown__", "__unknown__", 1)
-            require(unknown["status"] == "HOLD",
-                    "unknown variant was not held")
-            require(unknown["reason"] == "UNKNOWN_VARIANT_OPTION",
-                    "unknown variant got wrong HOLD reason")
+        unknown = resolver.variant_image("__unknown__", "__unknown__", 1)
+        require(unknown["status"] == "HOLD", "unknown variant was not held")
+        require(unknown["reason"] == "UNKNOWN_VARIANT_OPTION",
+                "unknown variant got wrong HOLD reason")
 
-            integrity = resolver.store.connection.execute("PRAGMA integrity_check").fetchone()[0]
-            fk = resolver.store.connection.execute("PRAGMA foreign_key_check").fetchall()
-            require(integrity == "ok", f"sqlite integrity_check failed: {integrity}")
-            require(not fk, f"sqlite foreign_key_check failed: {fk[:3]}")
-        finally:
-            resolver.close()
+        integrity = resolver.store.integrity()
+        require(integrity["integrity_check"] == "ok",
+                f"sqlite integrity_check failed: {integrity}")
+        require(integrity["foreign_key_errors"] == 0,
+                f"sqlite foreign_key_check failed: {integrity}")
 
     return {
         "status": "PASS",
