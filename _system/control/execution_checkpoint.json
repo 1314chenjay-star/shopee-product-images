@@ -1,7 +1,7 @@
 {
   "schema_version": "tinysnow.execution-checkpoint.1",
   "stage": "V4-C5.3 Source Truth Repair",
-  "last_good_head": "68dde8aa65e9457ac6fc9e2da050893e0e2e7ed4",
+  "last_good_head": "42646b7405f6bdaacac266558ecf3027c4a0493f",
   "last_successful_workflow": 32132642877,
   "checkpoint": "DELTA_SCOPE_OVERLAY",
   "completed": [
@@ -23,5 +23,5 @@
     "C5.3 seal"
   ],
   "resume_rule": "Never repeat completed entries; fingerprint then continue first pending action.",
-  "last_replacement_heartbeat_utc": "2026-08-18T19:35:59.573903Z"
+  "last_replacement_heartbeat_utc": "2026-08-18T20:01:51.156098Z"
 }

@@ -3,7 +3,7 @@
   "status": "RECOVERING",
   "stage": "V4-C5.3 Source Truth Repair",
   "checkpoint": "DELTA_SCOPE_OVERLAY",
-  "last_update": "2026-08-18T19:35:59.573903Z",
+  "last_update": "2026-08-18T20:01:51.156098Z",
   "worker_state": "RECOVERING",
   "next_action": "Resume first pending delta only: 145/549 delta scope overlay",
   "original_task_retry_allowed": false,
