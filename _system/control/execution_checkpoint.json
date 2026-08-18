@@ -3,7 +3,7 @@
   "stage": "V4-C5.3 Source Truth Repair",
   "last_good_head": "037c7044bd677cc1f848b4bb2efc6e2f24c38380",
   "last_successful_workflow": 32035192139,
-  "checkpoint": "SOURCE_MANIFEST_TRANSPORT",
+  "checkpoint": "SOURCE_TRUTH_BOOTSTRAP",
   "completed": [
     "sealed upstream verification",
     "existing governance/handoff read",
@@ -12,10 +12,10 @@
     "Library authoritative workbook capability restored",
     "GitHub write capability verified",
     "agent queue/watchdog validation",
-    "authoritative workbook SHA validation"
+    "authoritative workbook SHA validation",
+    "source manifest extraction"
   ],
   "pending": [
-    "source manifest extraction",
     "SourceTruth importer/resolver/bootstrap",
     "375/2394/2673 reconciliation",
     "145/549 delta scope overlay",
@@ -23,5 +23,5 @@
     "C5.3 seal"
   ],
   "resume_rule": "Never repeat completed entries; fingerprint then continue first pending action.",
-  "last_replacement_heartbeat_utc": "2026-08-18T11:01:15.091808Z"
+  "last_replacement_heartbeat_utc": "2026-08-18T11:26:57.267082Z"
 }
