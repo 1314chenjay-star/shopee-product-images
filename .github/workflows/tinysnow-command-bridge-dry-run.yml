@@ -10,7 +10,11 @@ on:
       - '_system/control/command_policy.json'
       - '_system/control/retry_policy.json'
       - '_system/control/worker_state.json'
+      - '_system/control/topology.json'
+      - '_system/control/role_policy.json'
+      - '_system/control/control_plane_preflight.py'
       - '_system/context/next_decision.json'
+      - '_system/governance/TINYSNOW_CONTROL_PLANE_CONTRACT.md'
       - '.github/workflows/tinysnow-command-bridge-dry-run.yml'
   workflow_dispatch:
 
@@ -27,12 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TINYSNOW_STABLE_HEAD_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
+      TINYSNOW_TARGET_BRANCH: v4c-universal-product-engine
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Guard branch, stable and sealed-stage scope
+      - name: Guard branch, stable and control-layer-only scope
         shell: bash
         run: |
           set -euo pipefail
@@ -41,15 +46,19 @@ jobs:
           test "$STABLE" = "$TINYSNOW_STABLE_HEAD_EXPECTED"
           if git rev-parse HEAD^ >/dev/null 2>&1; then
             git diff --name-only HEAD^ HEAD > /tmp/changed.txt
-            if grep -Ev '^(_system/agent_queue/|_system/control/(command_policy.json|retry_policy.json|worker_state.json)$|_system/context/next_decision.json$|\.github/workflows/tinysnow-command-bridge-dry-run.yml$)' /tmp/changed.txt | grep -q .; then
+            if grep -Ev '^(_system/agent_queue/|_system/control/(command_policy.json|retry_policy.json|worker_state.json|topology.json|role_policy.json|control_plane_preflight.py)$|_system/context/next_decision.json$|_system/governance/TINYSNOW_CONTROL_PLANE_CONTRACT.md$|\.github/workflows/tinysnow-command-bridge-dry-run.yml$)' /tmp/changed.txt | grep -q .; then
               echo "Unexpected non-control-layer change in command-bridge commit:"
-              grep -Ev '^(_system/agent_queue/|_system/control/(command_policy.json|retry_policy.json|worker_state.json)$|_system/context/next_decision.json$|\.github/workflows/tinysnow-command-bridge-dry-run.yml$)' /tmp/changed.txt
               exit 1
             fi
           fi
 
-      - name: Compile command bridge
-        run: python -m py_compile _system/agent_queue/command_bridge.py
+      - name: Compile control gate and command bridge
+        run: |
+          python -m py_compile _system/control/control_plane_preflight.py
+          python -m py_compile _system/agent_queue/command_bridge.py
+
+      - name: Enforce canonical topology, role, checkpoint and idempotency
+        run: python -B _system/control/control_plane_preflight.py --role WORKER --write-intent command_execution
 
       - name: Execute zero-paid command bridge dry run
         run: python -B _system/agent_queue/command_bridge.py --dry-run
@@ -82,12 +91,12 @@ jobs:
           set -euo pipefail
           git config user.name "tinysnow-command-worker"
           git config user.email "actions@users.noreply.github.com"
-          git add _system/agent_queue/inbox/pending_commands.jsonl \
-                  _system/agent_queue/completed \
-                  _system/agent_queue/failed \
-                  _system/agent_queue/processing \
-                  _system/agent_queue/results/execution_results.jsonl
+          git add _system/agent_queue/inbox/pending_commands.jsonl _system/agent_queue/completed _system/agent_queue/failed _system/agent_queue/processing _system/agent_queue/results/execution_results.jsonl
           if ! git diff --cached --quiet; then
+            git fetch origin v4c-universal-product-engine --quiet
+            REMOTE=$(git rev-parse origin/v4c-universal-product-engine)
+            LOCAL=$(git rev-parse HEAD)
+            test "$REMOTE" = "$LOCAL" || { echo "STALE_COMMAND_WORKER_HEAD:$LOCAL:$REMOTE"; exit 1; }
             git commit -m "control: persist Agent Command Bridge dry-run result [skip ci]"
             git push origin HEAD:v4c-universal-product-engine
           fi

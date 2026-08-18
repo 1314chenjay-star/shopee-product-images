@@ -1,20 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "tinysnow.agent-command.1",
+  "$id": "tinysnow.agent-command.2",
   "title": "TinySnow Agent Command",
   "type": "object",
-  "required": [
-    "command_id",
-    "created_at",
-    "priority",
-    "action",
-    "scope",
-    "reason",
-    "allowed_operations",
-    "forbidden_operations",
-    "required_validation",
-    "status"
-  ],
+  "required": ["command_id", "created_at", "priority", "action", "scope", "reason", "allowed_operations", "forbidden_operations", "required_validation", "status", "issuer_role", "repository_full_name", "branch", "task_id", "expected_checkpoint", "observed_head", "idempotency_key"],
   "properties": {
     "command_id": {"type": "string", "minLength": 1},
     "created_at": {"type": "string", "format": "date-time"},
@@ -28,7 +17,14 @@
     "status": {"enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "BLOCKED_OWNER_DECISION", "BLOCKED_STATE_ANALYSIS"]},
     "owner_approval": {"type": "boolean", "default": false},
     "retry_count": {"type": "integer", "minimum": 0, "default": 0},
-    "checkpoint": {"type": "string"}
+    "checkpoint": {"type": "string"},
+    "issuer_role": {"const": "ORCHESTRATOR"},
+    "repository_full_name": {"const": "1314chenjay-star/shopee-product-images"},
+    "branch": {"const": "v4c-universal-product-engine"},
+    "task_id": {"type": "string", "minLength": 1},
+    "expected_checkpoint": {"type": "string", "minLength": 1},
+    "observed_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "idempotency_key": {"type": "string", "minLength": 8}
   },
   "additionalProperties": true
 }

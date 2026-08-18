@@ -8,21 +8,32 @@ on:
       - '_system/agent_queue/**'
       - '_system/context/**'
       - '_system/source_truth/product_identity_record.schema.json'
+      - '_system/governance/TINYSNOW_CONTROL_PLANE_CONTRACT.md'
       - '.github/workflows/tinysnow-idle-watchdog.yml'
       - '.github/workflows/v4c-source-truth-recovery.yml'
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: tinysnow-idle-watchdog-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   watchdog:
     runs-on: ubuntu-latest
+    env:
+      TINYSNOW_TARGET_BRANCH: v4c-universal-product-engine
     steps:
       - uses: actions/checkout@v4
+
+      - name: Control plane preflight
+        run: |
+          python -m py_compile _system/control/control_plane_preflight.py
+          python -B _system/control/control_plane_preflight.py --role SUPERVISOR --write-intent dispatch_recovery
+
       - name: Probe Decision Layer command inbox on heartbeat
         shell: bash
         env:
@@ -45,8 +56,12 @@ jobs:
           decision=json.load(open(root/'_system/context/next_decision.json',encoding='utf-8-sig'))
           policy=json.load(open(root/'_system/control/command_policy.json',encoding='utf-8-sig'))
           retry=json.load(open(root/'_system/control/retry_policy.json',encoding='utf-8-sig'))
-          required=['command_id','created_at','priority','action','scope','reason','allowed_operations','forbidden_operations','required_validation','status']
+          required=['command_id','created_at','priority','action','scope','reason','allowed_operations','forbidden_operations','required_validation','status','issuer_role','repository_full_name','branch','task_id','expected_checkpoint','observed_head','idempotency_key']
           assert all(k in cmd for k in required), 'COMMAND_SCHEMA_REQUIRED_FIELD_MISSING'
+          assert cmd['issuer_role']=='ORCHESTRATOR', 'COMMAND_ISSUER_ROLE_FORBIDDEN'
+          assert cmd['repository_full_name']=='1314chenjay-star/shopee-product-images', 'COMMAND_REPOSITORY_MISMATCH'
+          assert cmd['branch']=='v4c-universal-product-engine', 'COMMAND_BRANCH_MISMATCH'
+          assert cmd['expected_checkpoint']==checkpoint['checkpoint'], 'STALE_COMMAND_CHECKPOINT'
           assert cmd['action'] in policy['auto_allowed_actions'], 'COMMAND_REQUIRES_OWNER_OR_UNKNOWN_ACTION'
           allowed=set(map(str,cmd.get('allowed_operations',[])))
           forbidden=set(map(str,cmd.get('forbidden_operations',[])))
@@ -56,15 +71,17 @@ jobs:
           assert not (allowed & owner), 'OWNER_APPROVAL_BOUNDARY'
           assert not (allowed & decision_forbidden), 'NEXT_DECISION_FORBIDDEN_OPERATION'
           assert int(cmd.get('retry_count',0)) <= int(retry['max_retry_count']), 'RETRY_LIMIT_EXCEEDED_BLOCKED_STATE_ANALYSIS'
-          assert checkpoint.get('checkpoint'), 'CHECKPOINT_MISSING'
           print(json.dumps({'command_inbox_read':True,'pending_command':True,'command_id':cmd['command_id'],'checkpoint':checkpoint['checkpoint'],'authority_probe':'PASS','non_consuming':True},sort_keys=True))
           PY
+
       - name: Validate capability recovery and handoff queue
         run: python -B _system/agent_queue/validate_agent_queue.py
+
       - name: Evaluate idle recovery decision and timeout guard
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python -B _system/agent_queue/watchdog.py
+
       - name: Dispatch safe next workflow when idle
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,24 +96,16 @@ jobs:
           status={'decision':decision,'workflow':wf,'dispatched':False}
           if decision=='AUTO_RECOVER' and wf:
               p=pathlib.Path('.github/workflows')/wf
-              if p.exists():
-                  status['dispatch_requested']=True
-              else:
-                  status['dispatch_block']='DECLARED_RECOVERY_WORKFLOW_NOT_YET_PRESENT'
-          elif decision=='STALLED_WORKER':
-              status['dispatch_block']='TIMEOUT_GUARD_SUPPRESSED_ORIGINAL_TASK_RETRY'
+              if p.exists(): status['dispatch_requested']=True
+              else: status['dispatch_block']='DECLARED_RECOVERY_WORKFLOW_NOT_YET_PRESENT'
+          elif decision=='STALLED_WORKER': status['dispatch_block']='TIMEOUT_GUARD_SUPPRESSED_ORIGINAL_TASK_RETRY'
           pathlib.Path('_system/agent_queue/recovery_dispatch_status.json').write_text(json.dumps(status,indent=2)+'\n',encoding='utf-8')
           PY
           if python -c "import json; x=json.load(open('_system/agent_queue/recovery_dispatch_status.json')); raise SystemExit(0 if x.get('dispatch_requested') else 1)"; then
             WF=$(python -c "import json; print(json.load(open('_system/agent_queue/recovery_dispatch_status.json'))['workflow'])")
             gh workflow run "$WF" --ref v4c-universal-product-engine
-            python - <<'PY'
-          import json
-          p='_system/agent_queue/recovery_dispatch_status.json'
-          x=json.load(open(p));x['dispatched']=True
-          open(p,'w').write(json.dumps(x,indent=2)+'\n')
-          PY
           fi
+
       - name: Upload recovery evidence
         uses: actions/upload-artifact@v4
         with:
