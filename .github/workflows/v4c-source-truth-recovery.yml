@@ -118,3 +118,7 @@ jobs:
             _system/control/worker_state.json
           if-no-files-found: error
           retention-days: 14
+
+  execute-first-pending-delta:
+    needs: replacement-recovery
+    uses: ./.github/workflows/v4c-c5-3-delta-recovery-bridge.yml
