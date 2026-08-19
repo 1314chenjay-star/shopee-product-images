@@ -121,4 +121,5 @@ jobs:
 
   execute-first-pending-delta:
     needs: replacement-recovery
+    if: always()
     uses: ./.github/workflows/v4c-c5-3-delta-recovery-bridge.yml
