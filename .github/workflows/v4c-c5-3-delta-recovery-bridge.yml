@@ -23,7 +23,22 @@ jobs:
           ref: v4c-universal-product-engine
           fetch-depth: 0
 
-      - name: Guard stable and checkpoint
+      - name: Determine whether delta recovery is required
+        id: state
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          q=[json.loads(x) for x in open('_system/agent_queue/queue.jsonl',encoding='utf-8-sig') if x.strip()]
+          t=next(x for x in q if x['task_id']=='TASK-C5-3-SOURCE-TRUTH-REPAIR')
+          should=(cp.get('checkpoint')=='DELTA_SCOPE_OVERLAY' and cp.get('pending',[None])[0]=='145/549 delta scope overlay' and t.get('checkpoint')=='DELTA_SCOPE_OVERLAY')
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f: f.write('should_run='+('true' if should else 'false')+'\n')
+          print({'checkpoint':cp.get('checkpoint'),'queue_checkpoint':t.get('checkpoint'),'should_run':should})
+          PY
+
+      - name: Guard stable and safety boundary
+        if: steps.state.outputs.should_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -31,16 +46,13 @@ jobs:
           test "$STABLE" = "5d49f061e140813b3d229520e9e530f86b27b640"
           python - <<'PY'
           import json
-          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
-          assert cp['checkpoint']=='DELTA_SCOPE_OVERLAY'
-          assert cp['pending'][0]=='145/549 delta scope overlay'
           q=[json.loads(x) for x in open('_system/agent_queue/queue.jsonl',encoding='utf-8-sig') if x.strip()]
           t=next(x for x in q if x['task_id']=='TASK-C5-3-SOURCE-TRUTH-REPAIR')
-          assert t['checkpoint']=='DELTA_SCOPE_OVERLAY'
           assert not t['paid'] and not t['generation'] and not t['owner_decision_required']
           PY
 
       - name: Reuse authoritative overlay implementation
+        if: steps.state.outputs.should_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -57,6 +69,7 @@ jobs:
           python /tmp/tinysnow_c5_3_overlay.py
 
       - name: Synchronize queue with advanced checkpoint
+        if: steps.state.outputs.should_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -76,6 +89,7 @@ jobs:
           PY
 
       - name: Persist durable overlay evidence
+        if: steps.state.outputs.should_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
