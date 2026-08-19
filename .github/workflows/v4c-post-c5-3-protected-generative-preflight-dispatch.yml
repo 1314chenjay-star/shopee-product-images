@@ -48,10 +48,13 @@ jobs:
           q=[json.loads(x) for x in Path('_system/agent_queue/queue.jsonl').read_text(encoding='utf-8-sig').splitlines() if x.strip()]
           t=next(x for x in q if x.get('task_id')=='TASK-POST-C5-3-MINIMAL-CANARY-REVIEW')
           assert t['checkpoint']=='SOURCE_PRESERVATION_GUARD_PASS'
-          assert t['next_action']=='INTEGRATE_GUARD_INTO_EXECUTION_PATH_AND_SELECT_TRUE_GENERATIVE_CANARY'
+          assert t['next_action']=='EXECUTE_REGISTERED_MAIN_PROTECTED_GENERATIVE_PREFLIGHT_DISPATCHER'
+          assert t.get('next_workflow')=='v4c-post-c5-3-protected-generative-preflight-dispatch.yml'
+          assert t.get('dispatcher_branch')=='main'
           assert int(t.get('paid_requests_already_sent',0))==1
           assert t.get('second_paid_request_authorized') is False
           assert t.get('bulk_generation_authorized') is False
+          assert t.get('stable_mutation_authorized') is False
           print('ZERO_PAID_PREFLIGHT_GUARD=PASS')
           '@ | python -
 
