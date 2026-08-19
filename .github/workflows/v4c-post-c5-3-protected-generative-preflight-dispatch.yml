@@ -1,5 +1,6 @@
 name: V4-C Post-C5.3 Protected Generative Canary Preflight Dispatcher
 
+# zero-paid retrigger after persistence-order fix; safe/idempotent under queue guard
 on:
   push:
     branches: [main]
