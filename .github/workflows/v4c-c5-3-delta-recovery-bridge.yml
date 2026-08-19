@@ -51,25 +51,35 @@ jobs:
           assert not t['paid'] and not t['generation'] and not t['owner_decision_required']
           PY
 
-      - name: Reuse authoritative overlay implementation
+      - name: Run authoritative overlay with durable diagnostics
+        id: overlay
         if: steps.state.outputs.should_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import textwrap
-          src=Path('.github/workflows/v4c-c5-3-delta-scope-overlay.yml').read_text(encoding='utf-8')
-          marker="          python - <<'PY'\n"
-          start=src.index(marker)+len(marker)
-          end=src.index("\n          PY",start)
-          code=textwrap.dedent(src[start:end])
-          Path('/tmp/tinysnow_c5_3_overlay.py').write_text(code,encoding='utf-8')
+          import json, os, textwrap, traceback, datetime as dt
+          diag_path=Path('_system/control/c5_3_delta_recovery_diagnostic.json')
+          result='FAIL'
+          try:
+              src=Path('.github/workflows/v4c-c5-3-delta-scope-overlay.yml').read_text(encoding='utf-8')
+              marker="          python - <<'PY'\n"
+              start=src.index(marker)+len(marker)
+              end=src.index("\n          PY",start)
+              code=textwrap.dedent(src[start:end])
+              exec(compile(code,'v4c-c5-3-delta-scope-overlay.yml','exec'),{'__name__':'__main__'})
+              result='PASS'
+              diag={'schema_version':'tinysnow.c5.3.delta-recovery-diagnostic.1','status':'PASS','timestamp_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),'error':None}
+          except BaseException as e:
+              diag={'schema_version':'tinysnow.c5.3.delta-recovery-diagnostic.1','status':'FAIL','timestamp_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),'error_type':type(e).__name__,'error':str(e),'traceback':traceback.format_exc()}
+          diag_path.write_text(json.dumps(diag,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f: f.write('result='+result+'\n')
+          print(json.dumps(diag,ensure_ascii=False))
           PY
-          python /tmp/tinysnow_c5_3_overlay.py
 
       - name: Synchronize queue with advanced checkpoint
-        if: steps.state.outputs.should_run == 'true'
+        if: steps.overlay.outputs.result == 'PASS'
         shell: bash
         run: |
           set -euo pipefail
@@ -89,12 +99,26 @@ jobs:
           PY
 
       - name: Persist durable overlay evidence
-        if: steps.state.outputs.should_run == 'true'
+        if: steps.overlay.outputs.result == 'PASS'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "TinySnow Delta Recovery Worker"
           git config user.email "actions@users.noreply.github.com"
-          git add _system/v4c/source_truth_bootstrap _system/control/execution_checkpoint.json _system/control/live_status.json _system/control/worker_state.json _system/agent_queue/queue.jsonl
+          git add _system/v4c/source_truth_bootstrap _system/control/execution_checkpoint.json _system/control/live_status.json _system/control/worker_state.json _system/control/c5_3_delta_recovery_diagnostic.json _system/agent_queue/queue.jsonl
           git commit -m "v4c5.3: recover 145 ready products and 549 slots [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
+
+      - name: Persist failure diagnostic without partial overlay state
+        if: steps.state.outputs.should_run == 'true' && steps.overlay.outputs.result == 'FAIL'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard HEAD
+          git clean -fd _system/v4c/source_truth_bootstrap || true
+          test -f _system/control/c5_3_delta_recovery_diagnostic.json || exit 1
+          git config user.name "TinySnow Delta Recovery Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/control/c5_3_delta_recovery_diagnostic.json
+          git commit -m "control: persist C5.3 delta recovery failure diagnostic [skip ci]"
           git push origin HEAD:v4c-universal-product-engine
