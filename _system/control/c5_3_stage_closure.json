@@ -1,0 +1,55 @@
+{
+  "schema_version": "tinysnow.c5-3-stage-closure.1",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "status": "CLOSED_SEALED",
+  "seal_path": "_system/source_truth/c5_3_seal.json",
+  "seal_commit": "a183b02c7d384be94e350ac021edc016e8e5d739",
+  "definition_of_done": {
+    "authoritative_source_counts": "375/2394/2673 PASS",
+    "frozen_ready_scope": "145 products / 549 execution-ready slots preserved",
+    "delta_overlay": "PASS; 549/549 frozen execution slots classified VARIANT_MAPPING_UNKNOWN without guessing",
+    "scoped_regression": "PASS",
+    "source_truth_transport_integrity": "PASS",
+    "seal": "PASS"
+  },
+  "authority_resolution": {
+    "historical_c5_2_exact_binding_claim": 25,
+    "historical_claim_status": "AUDIT_ONLY_REF_UNRESOLVABLE",
+    "authoritative_exact_bindings_in_frozen_549": 0,
+    "authoritative_non_binding_slots": 549,
+    "variant_mapping_guessing_allowed": false
+  },
+  "post_seal_findings": {
+    "all_authoritative_products_have_variants": true,
+    "source_truth_products": 375,
+    "products_with_all_variant_option_images_present": 369,
+    "source_truth_native_ready_candidate_products": 143,
+    "source_truth_native_ready_candidate_variant_options": 720,
+    "old_gallery_slot_binding_required_for_new_preflight": false,
+    "generation_authorized": false
+  },
+  "remaining_risk": [
+    "The old frozen 549 gallery execution slots have no authoritative exact variant-option binding and must never be promoted by inference.",
+    "Any real image generation or paid canary remains owner-gated.",
+    "Stable branch remains frozen until an explicitly authorized release decision."
+  ],
+  "permanent_lessons": [
+    "Do not treat historical fingerprints or unresolvable historical claims as current authority; reconcile them against a durable baseline and preserve them audit-only.",
+    "Heartbeat-only recovery is not progress; if checkpoint does not move, route the worker to the first pending delta and persist failure diagnostics.",
+    "When a temporary build artifact is intentionally not persisted, regression must verify durable transport/manifests and persisted validation rather than reference a nonexistent snapshot.",
+    "SourceTruth-native variant option images provide exact variant identity without guessing and can be preflighted independently of old gallery-slot bindings."
+  ],
+  "single_next_best_action": "OWNER_GATE_FOR_MINIMAL_PAID_VARIANT_CANARY",
+  "owner_gate_reason": "A zero-paid SourceTruth-native preflight found 143 frozen-ready candidate products / 720 exact variant options. The next dependency-chain action would perform real image generation / paid work, which is prohibited without explicit owner approval.",
+  "monitoring": {
+    "must_remain_enabled": true,
+    "while_owner_gate_waits": "Continue hourly live checks; do not self-disable; report drift, permission failures, stable mutation, or unexpected worker activity."
+  },
+  "safety": {
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "stable_mutation": false,
+    "sealed_stage_rerun": false
+  }
+}
