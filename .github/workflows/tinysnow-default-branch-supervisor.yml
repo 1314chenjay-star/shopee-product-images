@@ -18,9 +18,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  c5-3-delta-recovery:
+  c5-3-replacement-recovery:
     permissions:
       contents: write
       actions: read
-    uses: 1314chenjay-star/shopee-product-images/.github/workflows/v4c-c5-3-delta-recovery-bridge.yml@v4c-universal-product-engine
+    uses: 1314chenjay-star/shopee-product-images/.github/workflows/v4c-source-truth-recovery.yml@v4c-universal-product-engine
     secrets: inherit
