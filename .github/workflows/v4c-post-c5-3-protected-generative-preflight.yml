@@ -5,6 +5,7 @@ on:
     branches: [v4c-universal-product-engine]
     paths:
       - '_system/control/TRIGGER_POST_C5_3_PROTECTED_GENERATIVE_PREFLIGHT'
+      - '.github/workflows/v4c-post-c5-3-protected-generative-preflight.yml'
   workflow_dispatch:
 
 permissions:
