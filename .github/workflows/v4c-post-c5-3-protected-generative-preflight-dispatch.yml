@@ -122,10 +122,10 @@ jobs:
           if($stable -ne $env:STABLE_HEAD){throw "Stable HEAD changed: $stable"}
           git config user.name 'TinySnow Protected Canary Preflight Worker'
           git config user.email 'actions@users.noreply.github.com'
-          git pull --rebase origin v4c-universal-product-engine
           git add -- "$env:OUT" '_system/agent_queue/queue.jsonl' '_system/context/next_decision.json'
           $staged=@(git diff --cached --name-only)
           if($staged.Count -eq 0){Write-Host 'No new preflight evidence.';exit 0}
           foreach($p in $staged){if($p -notin @('_system/control/protected_generative_canary_preflight.json','_system/agent_queue/queue.jsonl','_system/context/next_decision.json')){throw "Unexpected staged path: $p"}}
           git commit -m 'preflight: persist protected generative canary decision [skip ci]'
+          git pull --rebase origin v4c-universal-product-engine
           git push origin HEAD:v4c-universal-product-engine
