@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "ready_products": 145,
+  "ready_slots": 549,
+  "all_slots_accounted": true,
+  "all_products_accounted": true,
+  "unknown_slots": 549,
+  "conflict_slots": 0,
+  "candidate_products": 0,
+  "candidate_slots": 0,
+  "frozen_queue_mutation": false,
+  "paid_api_called": false,
+  "generation_executed": false
+}

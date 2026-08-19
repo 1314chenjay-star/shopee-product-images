@@ -3,7 +3,7 @@
   "stage": "V4-C5.3 Source Truth Repair",
   "last_good_head": "e94e3fa1021321c520dbcf544aece0f6af565cb4",
   "last_successful_workflow": 32132642877,
-  "checkpoint": "DELTA_SCOPE_OVERLAY",
+  "checkpoint": "C5_3_REGRESSION",
   "completed": [
     "sealed upstream verification",
     "existing governance/handoff read",
@@ -15,13 +15,13 @@
     "authoritative workbook SHA validation",
     "source manifest extraction",
     "SourceTruth importer/resolver/bootstrap",
-    "375/2394/2673 reconciliation"
+    "375/2394/2673 reconciliation",
+    "145/549 delta scope overlay"
   ],
   "pending": [
-    "145/549 delta scope overlay",
     "C5.3-only regressions",
     "C5.3 seal"
   ],
   "resume_rule": "Never repeat completed entries; fingerprint then continue first pending action.",
-  "last_replacement_heartbeat_utc": "2026-08-19T03:53:45.743234Z"
+  "last_replacement_heartbeat_utc": "2026-08-19T04:04:07.631705Z"
 }

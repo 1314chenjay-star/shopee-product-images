@@ -1,0 +1,45 @@
+{
+  "schema_version": "tinysnow.c5.3.ready-scope-coverage.1",
+  "status": "PASS",
+  "ready_products_audited": 145,
+  "ready_slots_audited": 549,
+  "slot_scope_counts": {
+    "VARIANT_MAPPING_UNKNOWN": 549
+  },
+  "product_scope_counts": {
+    "VARIANT_MAPPING_UNKNOWN": 145
+  },
+  "paid_canary_scope_eligible_products": 0,
+  "paid_canary_scope_eligible_slots": 0,
+  "specific_variant_ready_slot_candidates": 0,
+  "dedicated_variant_paid_canary_required": false,
+  "paid_canary_scope_blocker_resolved": false,
+  "negative_controls": [
+    "51765547764",
+    "25348397564",
+    "25348397567"
+  ],
+  "frozen_input_fingerprint_reconciliation": {
+    "historical_c5_0_generation_plan_queue_sha256": "51c5c0a2b9129d8b0add74e29ee5316267643657844645ac40f1fe4e675c22b9",
+    "c5_3_recovery_baseline_ref": "9bbf88974f6f4d58f95d768c78ae1749b4dc116c",
+    "c5_3_recovery_baseline_generation_plan_queue_sha256": "fa93ee296500392de4b2ed6a38a5031975be08acc612a26e798813fef484091b",
+    "current_generation_plan_queue_sha256": "fa93ee296500392de4b2ed6a38a5031975be08acc612a26e798813fef484091b",
+    "current_matches_c5_3_recovery_baseline": true,
+    "historical_fingerprint_matches_current": false,
+    "resolution": "PRESERVE_HISTORICAL_FINGERPRINT_AND_USE_UNCHANGED_C5_3_RECOVERY_BASELINE"
+  },
+  "frozen_input_fingerprints": {
+    "execution_ready_queue_sha256": "f28652a488c90cf6a3e684a0ca341e08725cd74bfcd8f432ca3a7540615625e7",
+    "product_execution_readiness_sha256": "510aea1e8b75ca30619853243ed4ffe37adf63cd402d25c0c7dff50b1a2cd312",
+    "generation_plan_queue_sha256": "fa93ee296500392de4b2ed6a38a5031975be08acc612a26e798813fef484091b"
+  },
+  "safety": {
+    "invented_mapping": 0,
+    "cross_product_leakage": 0,
+    "frozen_queue_mutation": 0,
+    "memory_mutation": 0,
+    "generation_executed": false,
+    "paid_api_called": false,
+    "stable_mutation": false
+  }
+}
