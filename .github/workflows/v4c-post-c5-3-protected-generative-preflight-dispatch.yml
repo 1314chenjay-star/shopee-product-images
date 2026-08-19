@@ -1,0 +1,124 @@
+name: V4-C Post-C5.3 Protected Generative Canary Preflight Dispatcher
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v4c-post-c5-3-protected-generative-preflight-dispatch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  EXPERIMENT_BRANCH: v4c-universal-product-engine
+  SOURCE_PREFLIGHT: _system/control/post_c5_3_source_truth_canary_preflight.json
+  GUARD_VALIDATION: _system/control/source_preservation_guard_validation.json
+  OUT: _system/control/protected_generative_canary_preflight.json
+
+jobs:
+  zero-paid-protected-generative-preflight:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout experimental branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard stable and zero-paid state
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){throw "Stable HEAD drifted: $stable"}
+          @'
+          import json
+          from pathlib import Path
+          cp=json.loads(Path('_system/control/execution_checkpoint.json').read_text(encoding='utf-8-sig'))
+          assert cp['checkpoint']=='C5_3_COMPLETE' and not cp.get('pending')
+          g=json.loads(Path('_system/control/source_preservation_guard_validation.json').read_text(encoding='utf-8-sig'))
+          assert g['status']=='PASS' and g['zero_paid'] is True and g['image_generation_called'] is False
+          q=[json.loads(x) for x in Path('_system/agent_queue/queue.jsonl').read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          t=next(x for x in q if x.get('task_id')=='TASK-POST-C5-3-MINIMAL-CANARY-REVIEW')
+          assert t['checkpoint']=='SOURCE_PRESERVATION_GUARD_PASS'
+          assert t['next_action']=='INTEGRATE_GUARD_INTO_EXECUTION_PATH_AND_SELECT_TRUE_GENERATIVE_CANARY'
+          assert int(t.get('paid_requests_already_sent',0))==1
+          assert t.get('second_paid_request_authorized') is False
+          assert t.get('bulk_generation_authorized') is False
+          print('ZERO_PAID_PREFLIGHT_GUARD=PASS')
+          '@ | python -
+
+      - name: Install deterministic image dependency
+        shell: powershell
+        run: |
+          python -m pip install --disable-pip-version-check --quiet Pillow
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+
+      - name: Select true generative canary with explicit protected regions
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Continue'
+          python -B _system/tests/v4c_protected_generative_canary_preflight.py --source-preflight "$env:SOURCE_PREFLIGHT" --guard-validation "$env:GUARD_VALIDATION" --out "$env:OUT"
+          $code=$LASTEXITCODE
+          if($code -ne 0 -and $code -ne 3){exit $code}
+
+      - name: Advance queue from preflight result
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import json
+          from pathlib import Path
+          out=json.loads(Path('_system/control/protected_generative_canary_preflight.json').read_text(encoding='utf-8-sig'))
+          qp=Path('_system/agent_queue/queue.jsonl')
+          rows=[json.loads(x) for x in qp.read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          t=next(x for x in rows if x.get('task_id')=='TASK-POST-C5-3-MINIMAL-CANARY-REVIEW')
+          np=Path('_system/context/next_decision.json')
+          n=json.loads(np.read_text(encoding='utf-8-sig'))
+          if out['status']=='PASS':
+              sel=out['selected']
+              t['status']='OWNER_GATE'
+              t['mode']='PROTECTED_GENERATIVE_CANARY_OWNER_GATE'
+              t['checkpoint']='PROTECTED_GENERATIVE_CANARY_PREFLIGHT_PASS'
+              t['next_action']='OWNER_GATE_FOR_SECOND_MINIMAL_PROTECTED_CANARY'
+              t['owner_decision_required']=True
+              t['candidate_product_id']=sel['product_id']
+              t['candidate_variant_identity_key']=sel['variant_identity_key']
+              t['preflight_path']='_system/control/protected_generative_canary_preflight.json'
+              n['current_stage']='POST_C5_3_PROTECTED_GENERATIVE_CANARY_PREFLIGHT'
+              n['next_action']='OWNER_GATE_FOR_SECOND_MINIMAL_PROTECTED_CANARY'
+              n['reason']='Zero-paid guard integration preflight selected an exact Source Truth variant with deterministic protected regions and a safe editable background. A new explicit Owner authorization is required before any second paid request.'
+              n['owner_decision_required']=True
+              n['protected_canary']={'status':'READY_FOR_OWNER_GATE','preflight_path':'_system/control/protected_generative_canary_preflight.json','product_id':sel['product_id'],'variant_identity_key':sel['variant_identity_key'],'option_name':sel['option_name'],'protected_regions':sel['protected_regions'],'editable_area_ratio':sel['editable_area_ratio'],'max_products':1,'max_variants':1,'max_paid_requests':1,'bulk_generation_authorized':False,'stable_mutation_authorized':False,'requires_new_budget_ntd':True}
+          else:
+              t['status']='RECOVERING'
+              t['mode']='ZERO_PAID_REGION_DISCOVERY'
+              t['checkpoint']='PROTECTED_GENERATIVE_CANARY_PREFLIGHT_HOLD'
+              t['next_action']='IMPROVE_ZERO_PAID_REGION_DISCOVERY'
+              t['owner_decision_required']=False
+              n['current_stage']='POST_C5_3_PROTECTED_GENERATIVE_CANARY_PREFLIGHT'
+              n['next_action']='IMPROVE_ZERO_PAID_REGION_DISCOVERY'
+              n['reason']='No candidate met the deterministic safe editable-background threshold. Continue zero-paid region discovery; do not request Owner funds yet.'
+              n['owner_decision_required']=False
+          qp.write_text('\n'.join(json.dumps(x,ensure_ascii=False,separators=(',',':')) for x in rows)+'\n',encoding='utf-8')
+          np.write_text(json.dumps(n,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          '@ | python -
+
+      - name: Recheck stable and persist zero-paid preflight
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){throw "Stable HEAD changed: $stable"}
+          git config user.name 'TinySnow Protected Canary Preflight Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git pull --rebase origin v4c-universal-product-engine
+          git add -- "$env:OUT" '_system/agent_queue/queue.jsonl' '_system/context/next_decision.json'
+          $staged=@(git diff --cached --name-only)
+          if($staged.Count -eq 0){Write-Host 'No new preflight evidence.';exit 0}
+          foreach($p in $staged){if($p -notin @('_system/control/protected_generative_canary_preflight.json','_system/agent_queue/queue.jsonl','_system/context/next_decision.json')){throw "Unexpected staged path: $p"}}
+          git commit -m 'preflight: persist protected generative canary decision [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
