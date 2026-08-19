@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: v4c-protected-generative-preflight
+  cancel-in-progress: false
+
 env:
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
   EXPERIMENT_BRANCH: v4c-universal-product-engine
