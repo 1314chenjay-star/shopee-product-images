@@ -1,6 +1,7 @@
 name: V4-C5.3 Delta Recovery Bridge
 
 on:
+  workflow_call:
   push:
     branches: [v4c-universal-product-engine]
     paths:
