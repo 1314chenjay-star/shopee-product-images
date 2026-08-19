@@ -1,0 +1,40 @@
+{
+  "schema_version": "tinysnow.post-c5-3-opportunity-scan.1",
+  "status": "PASS",
+  "scanned_at_utc": "2026-08-19T04:16:12.285339Z",
+  "source_truth": {
+    "products": 375,
+    "variant_option_rows": 2673
+  },
+  "frozen_ready": {
+    "products": 145,
+    "no_variant_products": 0,
+    "variant_products": 145
+  },
+  "authoritative_product_shape": {
+    "no_variant_products_total": 0,
+    "variant_products_total": 375,
+    "variant_products_all_option_images_present": 369,
+    "variant_products_with_missing_option_image": 6
+  },
+  "no_variant_ready_product_ids": [],
+  "no_variant_nonready_count": 0,
+  "no_variant_nonready_examples": [],
+  "no_variant_nonready_hold_reason_counts": {},
+  "c5_3_variant_scope_authority": {
+    "execution_ready_slots": 549,
+    "authoritative_exact_variant_bindings": 0,
+    "paid_canary_scope_eligible_products": 0,
+    "action": "HOLD_NO_GUESSING"
+  },
+  "single_next_best_action": "AUTHORITATIVE_SOURCE_GAP_REVIEW_BEFORE_ANY_CANARY",
+  "business_value": "No authoritative no-variant path exists; any canary selection would require a new evidence source or owner-gated generation decision.",
+  "safety": {
+    "frozen_membership_mutated": false,
+    "product_data_mutated": false,
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "stable_mutation": false
+  }
+}
