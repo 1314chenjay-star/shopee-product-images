@@ -1,6 +1,6 @@
-trigger=2026-08-18T12:24Z
+trigger=2026-08-19T12:08+08:00
 mode=C5_3_SCOPED_SOURCE_TRUTH_ONLY
-reason=retry_after_seal_workflow_branch_movement
+reason=post_delta_overlay_checkpoint_C5_3_REGRESSION
 paid=false
 generation=false
 stable_mutation=false
