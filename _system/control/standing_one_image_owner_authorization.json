@@ -1,0 +1,35 @@
+{
+  "schema_version": "tinysnow.standing-one-image-owner-authorization.1",
+  "status": "AUTHORIZED_NOT_YET_CONSUMED",
+  "scope": {
+    "max_products": 1,
+    "max_variants": 1,
+    "max_images": 1,
+    "max_paid_requests": 1,
+    "max_budget_ntd": 50,
+    "bulk_generation_authorized": false,
+    "stable_mutation_authorized": false
+  },
+  "authorization_semantics": "When TinySnow reaches a new paid image-generation/edit gate that otherwise satisfies all zero-paid preflight and source-preservation safety requirements, this authorization may be consumed once without asking the Owner again. It permits at most one image and one paid request, total cost must not exceed NT$50. After the first paid request is sent, this authorization is consumed regardless of success/failure and cannot be reused automatically.",
+  "preconditions": [
+    "All zero-paid preflight/guard checks PASS",
+    "Exact Source Truth product/variant identity is known",
+    "Protected-region/source-preservation contract is active",
+    "No bulk execution",
+    "Stable branch remains unchanged",
+    "No sealed stage rerun",
+    "Provider request can be bounded to one request and one output image",
+    "Expected/known cost does not exceed NT$50"
+  ],
+  "must_stop_and_ask_owner_if": [
+    "More than one image is required",
+    "More than one paid request is required",
+    "Cost may exceed NT$50",
+    "Bulk generation is proposed",
+    "Stable mutation/merge/release is proposed",
+    "Source Truth or preservation guard is not PASS",
+    "A previous request under this authorization has already been sent"
+  ],
+  "owner_instruction": "Do not ask again for this one-image paid generation permission unless the scope would exceed the limits above.",
+  "consumed": false
+}
