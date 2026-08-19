@@ -103,7 +103,7 @@ jobs:
           PY
           if python -c "import json; x=json.load(open('_system/agent_queue/recovery_dispatch_status.json')); raise SystemExit(0 if x.get('dispatch_requested') else 1)"; then
             WF=$(python -c "import json; print(json.load(open('_system/agent_queue/recovery_dispatch_status.json'))['workflow'])")
-            gh workflow run "$WF" --ref v4c-universal-product-engine
+            gh workflow run "$WF" --ref v4c-universal-product-engine || true
           fi
 
       - name: Upload recovery evidence
@@ -119,3 +119,9 @@ jobs:
             _system/control/live_status.json
           if-no-files-found: error
           retention-days: 14
+
+  recover-first-pending-delta:
+    needs: watchdog
+    permissions:
+      contents: write
+    uses: ./.github/workflows/v4c-c5-3-delta-recovery-bridge.yml
