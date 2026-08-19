@@ -1,0 +1,5 @@
+run zero-paid protected-region + deterministic source-preservation guard validation
+paid requests: 0
+image generation/editing: 0
+stable mutation: 0
+C5.3 rerun: forbidden
