@@ -1,36 +1,39 @@
 {
-  "schema_version":"tinysnow.next-decision.1",
-  "current_stage":"POST_C5_3_SOURCE_TRUTH_NATIVE_CANARY_GATE",
-  "next_action":"OWNER_GATE_FOR_MINIMAL_PAID_VARIANT_CANARY",
-  "reason":"C5.3 is sealed. A zero-paid SourceTruth-native preflight found 143 frozen-ready candidate products and 720 exact variant options whose identities and option images come directly from authoritative Source Truth. The next dependency-chain action would execute real image generation / paid work and therefore requires explicit Owner approval.",
-  "owner_decision_required":true,
-  "owner_gate":{
-    "action":"MINIMAL_PAID_VARIANT_CANARY",
-    "preflight_path":"_system/control/post_c5_3_source_truth_canary_preflight.json",
-    "candidate_products":143,
-    "candidate_variant_options":720,
-    "generation_authorized":false,
-    "paid_authorized":false
+  "schema_version": "tinysnow.next-decision.1",
+  "current_stage": "POST_C5_3_MINIMAL_PAID_VARIANT_CANARY_REVIEW",
+  "next_action": "ZERO_PAID_CANARY_HUMAN_REVIEW_AND_QA",
+  "reason": "The explicitly Owner-approved minimal paid variant canary executed exactly one provider request for product 51365698925 / variant_bbe8931ee6b7db12b9062123. Durable result metadata is present. No second paid request is authorized. The next action is zero-paid review/QA of the generated artifact and provenance before any further generation decision.",
+  "owner_decision_required": false,
+  "canary": {
+    "status": "EXECUTED_PENDING_HUMAN_REVIEW",
+    "result_path": "_system/control/minimal_paid_variant_canary_result.json",
+    "approval_path": "_system/control/owner_approval_minimal_paid_variant_canary.json",
+    "product_id": "51365698925",
+    "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+    "paid_requests_sent": 1,
+    "max_paid_requests_authorized": 1,
+    "max_budget_ntd_authorized": 50,
+    "bulk_generation_authorized": false,
+    "stable_mutation": false,
+    "second_paid_request_authorized": false
   },
-  "constraints":[
+  "constraints": [
     "C5.3 sealed no rerun",
-    "use SourceTruth-native variant identity only",
-    "no old 549 gallery-slot inference",
-    "minimal canary only after explicit approval",
-    "set explicit maximum spend before paid execution",
-    "request/job ledger and idempotency guard required",
-    "experimental branch only until release approval",
-    "monitoring remains enabled while waiting at owner gate"
+    "no second paid request",
+    "no second product or variant",
+    "no bulk generation",
+    "no stable mutation",
+    "review generated output against exact Source Truth option image",
+    "verify provenance and source/output SHA before any next paid gate",
+    "experimental branch only until release approval"
   ],
-  "forbidden_actions":[
+  "forbidden_actions": [
     "rerun_completed_c5_3_source_truth_work",
-    "promote_unknown_variant_mapping",
+    "repeat_minimal_paid_canary",
+    "second_paid_request",
+    "bulk_generation",
     "guess_variant_mapping",
-    "paid_api_without_owner_approval",
-    "image_generation_without_owner_approval",
-    "image_editing_without_owner_approval",
     "stable_merge_without_owner_approval",
-    "destructive_operation",
-    "bulk_production_mutation"
+    "destructive_operation"
   ]
 }
