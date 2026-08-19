@@ -20,7 +20,7 @@ jobs:
           ref: v4c-universal-product-engine
           fetch-depth: 0
 
-      - name: Guard stable and current delta
+      - name: Guard stable and current regression checkpoint
         shell: bash
         env:
           STABLE_EXPECTED: 5d49f061e140813b3d229520e9e530f86b27b640
@@ -31,12 +31,26 @@ jobs:
           import json
           cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
           assert cp['stage']=='V4-C5.3 Source Truth Repair'
-          assert cp['checkpoint']=='DELTA_SCOPE_OVERLAY'
-          assert cp['pending'][:2]==['145/549 delta scope overlay','C5.3-only regressions'], cp['pending']
-          overlay=json.load(open('_system/source_truth/ready_scope_overlay.json',encoding='utf-8-sig'))
-          assert overlay['status']=='PASS'
-          assert overlay['safety']=={'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,'sealed_stage_rerun':False,'stable_mutation':False}
-          print('C5_3_DELTA_GUARD_PASS')
+          assert cp['checkpoint']=='C5_3_REGRESSION'
+          assert cp['pending'][:2]==['C5.3-only regressions','C5.3 seal'], cp['pending']
+          historical=json.load(open('_system/source_truth/ready_scope_overlay.json',encoding='utf-8-sig'))
+          recovered=json.load(open('_system/v4c/source_truth_bootstrap/coverage_summary.json',encoding='utf-8-sig'))
+          recovered_validation=json.load(open('_system/v4c/source_truth_bootstrap/validation.json',encoding='utf-8-sig'))
+          assert historical['status']=='PASS'
+          assert historical['safety']=={'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,'sealed_stage_rerun':False,'stable_mutation':False}
+          assert recovered['status']=='PASS'
+          assert recovered['ready_products_audited']==145 and recovered['ready_slots_audited']==549
+          assert recovered['slot_scope_counts']=={'VARIANT_MAPPING_UNKNOWN':549}
+          assert recovered['product_scope_counts']=={'VARIANT_MAPPING_UNKNOWN':145}
+          assert recovered['paid_canary_scope_eligible_products']==0
+          assert recovered['paid_canary_scope_eligible_slots']==0
+          assert recovered_validation['status']=='PASS'
+          assert recovered_validation['all_slots_accounted'] is True
+          assert recovered_validation['all_products_accounted'] is True
+          assert recovered_validation['frozen_queue_mutation'] is False
+          assert recovered_validation['paid_api_called'] is False
+          assert recovered_validation['generation_executed'] is False
+          print('C5_3_REGRESSION_GUARD_PASS')
           PY
 
       - name: Run C5.3-only Source Truth regression
@@ -57,7 +71,7 @@ jobs:
           root=pathlib.Path('.')
           now=dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z')
           validation={
-            'schema_version':'tinysnow.c5-3-source-truth-regression.1',
+            'schema_version':'tinysnow.c5-3-source-truth-regression.2',
             'stage':'V4-C5.3 Source Truth Repair',
             'status':'PASS',
             'tested_head':os.environ['TESTED_HEAD'],
@@ -66,8 +80,11 @@ jobs:
               'authoritative_source_counts':'375/2394/2673 PASS',
               'sqlite_integrity':'PASS',
               'foreign_keys':'PASS',
-              'sealed_c5_2_scope':'145 PRODUCT_READY / 549 execution-ready / 3445 HOLD PASS',
-              'sealed_exact_bindings':'25 PASS',
+              'frozen_ready_scope':'145 PRODUCT_READY / 549 execution-ready PASS',
+              'recovered_145_549_overlay':'PASS; 549/549 VARIANT_MAPPING_UNKNOWN; no guessed promotion',
+              'historical_unverified_exact_bindings':'25 retained audit-only',
+              'authoritative_exact_bindings':'0/549 PASS',
+              'variant_paid_canary':'HOLD',
               'source_truth_precedence':'PASS',
               'unknown_conflict_hold':'PASS',
               'variant_guessing_forbidden':'PASS',
@@ -84,10 +101,10 @@ jobs:
           cp=json.loads(cp_path.read_text(encoding='utf-8-sig'))
           live=json.loads(live_path.read_text(encoding='utf-8-sig'))
           worker=json.loads(worker_path.read_text(encoding='utf-8-sig'))
-          assert cp['pending'][:2]==['145/549 delta scope overlay','C5.3-only regressions'], cp['pending']
-          for name in ['145/549 delta scope overlay','C5.3-only regressions']:
-              cp['pending'].remove(name)
-              if name not in cp['completed']: cp['completed'].append(name)
+          assert cp['checkpoint']=='C5_3_REGRESSION'
+          assert cp['pending'][:2]==['C5.3-only regressions','C5.3 seal'], cp['pending']
+          cp['pending'].remove('C5.3-only regressions')
+          if 'C5.3-only regressions' not in cp['completed']: cp['completed'].append('C5.3-only regressions')
           cp['checkpoint']='C5_3_SEAL'
           cp['last_good_head']=os.environ['TESTED_HEAD']
           cp['last_successful_workflow']=int(os.environ['RUN_ID'])
@@ -99,7 +116,7 @@ jobs:
               if not line.strip(): continue
               r=json.loads(line)
               if r.get('task_id')=='TASK-C5-3-SOURCE-TRUTH-REPAIR':
-                  r['status']='RECOVERING'; r['checkpoint']='C5_3_SEAL'; r['next_action']='C5.3 seal'
+                  r['status']='RECOVERING'; r['checkpoint']='C5_3_SEAL'; r['next_action']='C5.3 seal'; r['next_workflow']='v4c-c5-3-seal.yml'
               rows.append(r)
           cp_path.write_text(json.dumps(cp,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           live_path.write_text(json.dumps(live,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
