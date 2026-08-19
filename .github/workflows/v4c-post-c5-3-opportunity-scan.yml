@@ -1,0 +1,129 @@
+name: V4 Post-C5.3 Zero-Paid Opportunity Scan
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/TRIGGER_POST_C5_3_OPPORTUNITY_SCAN'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tinysnow-post-c5-3-opportunity-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard sealed C5.3 and stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')" = "5d49f061e140813b3d229520e9e530f86b27b640"
+          python - <<'PY'
+          import json
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          seal=json.load(open('_system/source_truth/c5_3_seal.json',encoding='utf-8-sig'))
+          assert cp['checkpoint']=='C5_3_COMPLETE' and cp['pending']==[]
+          assert seal['status']=='SEALED' and seal['schema_version']=='tinysnow.c5-3-seal.2'
+          assert seal['safety']['paid_api_called'] is False
+          assert seal['safety']['image_generation_called'] is False
+          assert seal['safety']['stable_mutation'] is False
+          PY
+
+      - name: Scan full authoritative Source Truth for next safe validation path
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, collections, datetime as dt, json, lzma, pathlib
+          root=pathlib.Path('.')
+          def transport(name):
+              b=(root/f'_system/source_truth/bootstrap_manifest/{name}.jsona.xz.b64').read_bytes()
+              return [json.loads(x) for x in lzma.decompress(base64.b64decode(b)).decode().splitlines() if x.strip()]
+          products=transport('products')
+          variants=transport('variants')
+          readiness=[json.loads(x) for x in (root/'_system/v4c/generation_payload/product_execution_readiness.jsonl').read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          ready_by_pid={str(r['product_id']):r for r in readiness}
+          ready_ids={pid for pid,r in ready_by_pid.items() if r.get('status')=='PRODUCT_READY_FOR_GENERATION'}
+          product_map={str(r[0]):{'has_variants':bool(r[1]),'variant_count':int(r[2]),'image_count':int(r[3]),'source_row':int(r[4])} for r in products}
+          no_variant_ids={pid for pid,p in product_map.items() if not p['has_variants'] and p['variant_count']==0}
+          variant_ids=set(product_map)-no_variant_ids
+          option_rows=collections.defaultdict(list)
+          for r in variants:
+              pid=str(r[0]); url=(str(r[4]).strip() if r[4] else '')
+              option_rows[pid].append(url)
+          all_option_images={pid for pid,urls in option_rows.items() if urls and all(urls)}
+          missing_option_image_products={pid for pid,urls in option_rows.items() if any(not u for u in urls)}
+          no_variant_ready=sorted(no_variant_ids & ready_ids)
+          no_variant_not_ready=sorted(no_variant_ids - ready_ids)
+          variant_ready=sorted(variant_ids & ready_ids)
+          hold_reason_counts=collections.Counter()
+          nonready_examples=[]
+          for pid in no_variant_not_ready:
+              r=ready_by_pid.get(pid,{})
+              reasons=list(r.get('hold_reasons') or [])
+              hold_reason_counts.update(map(str,reasons))
+              if len(nonready_examples)<20:
+                  nonready_examples.append({'product_id':pid,'source_row':product_map[pid]['source_row'],'image_count':product_map[pid]['image_count'],'readiness_status':r.get('status','NO_READINESS_RECORD'),'hold_reasons':reasons})
+          if no_variant_ready:
+              next_action='REAL_WORLD_ZERO_PAID_PREFLIGHT_ON_EXISTING_NO_VARIANT_READY_SAMPLE'
+              rationale='At least one authoritative no-variant product is already in the frozen ready population; validate downstream gates without generation or paid calls.'
+          elif no_variant_not_ready:
+              next_action='DIAGNOSE_NO_VARIANT_NONREADY_BLOCKERS_FOR_MINIMAL_REAL_WORLD_PREFLIGHT'
+              rationale='Frozen 145/549 has no safe no-variant member, but authoritative Source Truth contains no-variant products outside ready membership. Diagnose their existing hold reasons without mutating sealed C5.3 or paying for generation.'
+          else:
+              next_action='AUTHORITATIVE_SOURCE_GAP_REVIEW_BEFORE_ANY_CANARY'
+              rationale='No authoritative no-variant path exists; any canary selection would require a new evidence source or owner-gated generation decision.'
+          out={
+            'schema_version':'tinysnow.post-c5-3-opportunity-scan.1',
+            'status':'PASS',
+            'scanned_at_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'source_truth':{'products':len(products),'variant_option_rows':len(variants)},
+            'frozen_ready':{'products':len(ready_ids),'no_variant_products':len(no_variant_ready),'variant_products':len(variant_ready)},
+            'authoritative_product_shape':{
+              'no_variant_products_total':len(no_variant_ids),
+              'variant_products_total':len(variant_ids),
+              'variant_products_all_option_images_present':len(all_option_images),
+              'variant_products_with_missing_option_image':len(missing_option_image_products)
+            },
+            'no_variant_ready_product_ids':no_variant_ready[:50],
+            'no_variant_nonready_count':len(no_variant_not_ready),
+            'no_variant_nonready_examples':nonready_examples,
+            'no_variant_nonready_hold_reason_counts':dict(hold_reason_counts),
+            'c5_3_variant_scope_authority':{
+              'execution_ready_slots':549,
+              'authoritative_exact_variant_bindings':0,
+              'paid_canary_scope_eligible_products':0,
+              'action':'HOLD_NO_GUESSING'
+            },
+            'single_next_best_action':next_action,
+            'business_value':rationale,
+            'safety':{
+              'frozen_membership_mutated':False,'product_data_mutated':False,'paid_api_called':False,
+              'image_generation_called':False,'image_editing_called':False,'stable_mutation':False
+            }
+          }
+          p=root/'_system/control/post_c5_3_opportunity_scan.json'
+          p.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(out,ensure_ascii=False))
+          PY
+
+      - name: Persist scan only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin v4c-universal-product-engine --quiet
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/v4c-universal-product-engine)" || { echo RACE_ABORT; exit 75; }
+          git config user.name "TinySnow Orchestrator"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/control/post_c5_3_opportunity_scan.json
+          git commit -m "control: persist post-C5.3 next-best-action scan [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
