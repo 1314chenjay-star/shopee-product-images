@@ -1,0 +1,33 @@
+{
+  "schema_version": "tinysnow.post-c5-3-minimal-canary-retry-contract.1",
+  "status": "ZERO_PAID_IMPLEMENTATION_REQUIRED",
+  "source_canary": {
+    "product_id": "51365698925",
+    "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+    "workflow_run_id": 32220176251,
+    "artifact_id": 9353672663,
+    "paid_requests_already_sent": 1,
+    "qa_status": "FAIL_SOURCE_PRESERVATION"
+  },
+  "root_cause": [
+    "The current canary uses a full-frame generative image edit for a task whose contract requires source preservation.",
+    "Prompt-only preservation is insufficient: the provider removed existing source badges/text despite explicit instructions to preserve them.",
+    "The previous workflow had no deterministic protected-region guard capable of rejecting unauthorized text/badge removal before promotion."
+  ],
+  "required_before_any_paid_retry": [
+    "Introduce a protected-region strategy so non-authorized source text/badges are pixel-preserved or otherwise deterministically locked.",
+    "Separate PRESERVE / deterministic cleanup from true generative edit actions; do not send already-acceptable source images through a full-frame generative redraw merely for cosmetic cleanup.",
+    "Add deterministic post-generation QA that compares protected regions and rejects unauthorized removal/change.",
+    "Keep exact Source Truth product/variant identity and source SHA binding.",
+    "Keep max_products=1, max_variants=1, max_paid_requests=1 for any future retry unless Owner explicitly expands scope.",
+    "Obtain a new explicit Owner authorization before any second paid request."
+  ],
+  "forbidden_until_new_owner_gate": [
+    "second paid request",
+    "bulk generation",
+    "promotion of rejected output",
+    "stable mutation",
+    "C5.3 rerun"
+  ],
+  "next_zero_paid_action": "IMPLEMENT_PROTECTED_REGION_AND_DETERMINISTIC_SOURCE_PRESERVATION_GUARDS"
+}
