@@ -1,0 +1,4 @@
+run post-C5.3 SourceTruth-native variant canary preflight
+zero_paid=true
+generation=false
+stable_mutation=false
