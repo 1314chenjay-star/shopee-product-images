@@ -1,5 +1,6 @@
-triggered_at_utc=2026-08-19T10:57:30Z
-reason=zero-paid guard PASS; integrate guard and select true generative canary
+triggered_at_utc=2026-08-19T11:03:00Z
+reason=retry zero-paid protected generative canary preflight because durable preflight result did not land after first trigger
 paid_requests_authorized=0
 image_generation_authorized=false
 stable_mutation_authorized=false
+c5_3_rerun_authorized=false
