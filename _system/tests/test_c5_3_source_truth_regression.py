@@ -16,6 +16,8 @@ def main():
     binding=load("_system/source_truth/c5_3_exact_binding_evidence.json")
     payload_cov=load("_system/v4c/generation_payload/coverage_summary.json")
     canary_preflight=load("_system/v4c/generation_canary_preflight/availability.json")
+    recovered_overlay=load("_system/v4c/source_truth_bootstrap/coverage_summary.json")
+    recovered_validation=load("_system/v4c/source_truth_bootstrap/validation.json")
 
     assert manifest["authoritative_workbook"]["sha256"] == SOURCE_SHA
     assert manifest["row_counts"] == {"gallery_images":2394,"products":375,"variant_options":2673}
@@ -40,6 +42,25 @@ def main():
     assert payload_cov["final_paid_execution_candidate_slots"] == 549
     assert canary_preflight["frozen_ready_products"] == 145
     assert canary_preflight["frozen_execution_ready_slots"] == 549
+
+    # Recovered 145/549 overlay must account for the same frozen ready population without mutation.
+    assert recovered_overlay["status"] == "PASS"
+    assert recovered_overlay["ready_products_audited"] == 145
+    assert recovered_overlay["ready_slots_audited"] == 549
+    assert recovered_overlay["slot_scope_counts"] == {"VARIANT_MAPPING_UNKNOWN":549}
+    assert recovered_overlay["product_scope_counts"] == {"VARIANT_MAPPING_UNKNOWN":145}
+    assert recovered_overlay["paid_canary_scope_eligible_products"] == 0
+    assert recovered_overlay["paid_canary_scope_eligible_slots"] == 0
+    assert recovered_overlay["frozen_input_fingerprint_reconciliation"]["current_matches_c5_3_recovery_baseline"] is True
+    assert recovered_overlay["frozen_input_fingerprint_reconciliation"]["historical_fingerprint_matches_current"] is False
+    assert recovered_validation["status"] == "PASS"
+    assert recovered_validation["ready_products"] == 145
+    assert recovered_validation["ready_slots"] == 549
+    assert recovered_validation["all_slots_accounted"] is True
+    assert recovered_validation["all_products_accounted"] is True
+    assert recovered_validation["paid_api_called"] is False
+    assert recovered_validation["generation_executed"] is False
+    assert recovered_validation["frozen_queue_mutation"] is False
 
     # Historical C5.2 exact-binding claim is not authoritative because its ref is unavailable.
     assert overlay["status"] == "PASS"
@@ -80,12 +101,13 @@ def main():
         finally:
             con.close()
 
-    for safety in (recon["safety"], overlay["safety"], binding["safety"]):
+    for safety in (recon["safety"], overlay["safety"], binding["safety"], recovered_overlay["safety"]):
         assert not any(bool(v) for v in safety.values())
 
     print("C5_3_SOURCE_TRUTH_REGRESSION_PASS", json.dumps({
         "source_truth":[375,2394,2673],
         "frozen_ready_scope":[145,549],
+        "recovered_overlay_scope":"145 products / 549 slots all VARIANT_MAPPING_UNKNOWN",
         "historical_unverified_exact_bindings":25,
         "authoritative_exact_bindings":0,
         "missing_option_images_hold":145,
