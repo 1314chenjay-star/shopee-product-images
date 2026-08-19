@@ -1,0 +1,128 @@
+name: V4 Post-C5.3 SourceTruth-Native Variant Canary Preflight
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/TRIGGER_POST_C5_3_SOURCE_TRUTH_CANARY_PREFLIGHT'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tinysnow-post-c5-3-source-truth-canary-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard sealed C5.3, stable and zero-paid boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')" = "5d49f061e140813b3d229520e9e530f86b27b640"
+          python - <<'PY'
+          import json
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          seal=json.load(open('_system/source_truth/c5_3_seal.json',encoding='utf-8-sig'))
+          scan=json.load(open('_system/control/post_c5_3_opportunity_scan.json',encoding='utf-8-sig'))
+          assert cp['checkpoint']=='C5_3_COMPLETE' and cp['pending']==[]
+          assert seal['status']=='SEALED'
+          assert scan['status']=='PASS'
+          assert scan['single_next_best_action']=='AUTHORITATIVE_SOURCE_GAP_REVIEW_BEFORE_ANY_CANARY'
+          assert not any(bool(v) for v in scan['safety'].values())
+          PY
+
+      - name: Build exact SourceTruth-native variant candidate ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, collections, datetime as dt, hashlib, json, lzma, pathlib
+          root=pathlib.Path('.')
+          SOURCE_SHA='616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a'
+          BATCH='batch_'+SOURCE_SHA[:24]
+          def transport(name):
+              b=(root/f'_system/source_truth/bootstrap_manifest/{name}.jsona.xz.b64').read_bytes()
+              return [json.loads(x) for x in lzma.decompress(base64.b64decode(b)).decode().splitlines() if x.strip()]
+          def canon(v): return json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+          def digest(prefix,payload): return prefix+'_'+hashlib.sha256(canon(payload).encode()).hexdigest()[:24]
+          products=transport('products')
+          variants=transport('variants')
+          readiness=[json.loads(x) for x in (root/'_system/v4c/generation_payload/product_execution_readiness.jsonl').read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          ready={str(r['product_id']):r for r in readiness if r.get('status')=='PRODUCT_READY_FOR_GENERATION'}
+          product_map={str(r[0]):{'has_variants':bool(r[1]),'variant_count':int(r[2]),'image_count':int(r[3]),'source_row':int(r[4])} for r in products}
+          opts=collections.defaultdict(list)
+          for r in variants:
+              pid,varname,idx,opt,url,srow=str(r[0]),str(r[1]),str(r[2]),str(r[3]),(str(r[4]).strip() if r[4] else ''),int(r[5])
+              key=digest('variant',[BATCH,pid,varname,idx,opt])
+              opts[pid].append({'variant_identity_key':key,'variation_name':varname,'option_index':idx,'option_name':opt,'option_image_url':url or None,'source_row':srow})
+          candidates=[]
+          for pid,rdy in ready.items():
+              rows=opts.get(pid,[])
+              if not rows or not all(x.get('option_image_url') for x in rows):
+                  continue
+              p=product_map[pid]
+              candidates.append({
+                'product_id':pid,
+                'product_source_row':p['source_row'],
+                'product_variant_count':p['variant_count'],
+                'product_gallery_image_count':p['image_count'],
+                'frozen_readiness_status':rdy['status'],
+                'frozen_slot_states':rdy.get('slot_states',[]),
+                'variant_options':rows,
+                'exact_variant_identity_provenance':'SOURCE_TRUTH_OPTION_ROW',
+                'uses_old_549_gallery_binding':False,
+                'eligible_for_zero_paid_preflight':True,
+                'eligible_for_paid_generation_now':False
+              })
+          candidates.sort(key=lambda x:(x['product_variant_count'],x['product_gallery_image_count'],x['product_id']))
+          # Keep all candidate counts but persist only the first 20 detailed products to stay compact.
+          option_count=sum(len(x['variant_options']) for x in candidates)
+          minimal=candidates[:20]
+          preferred=minimal[:5]
+          status='PASS' if candidates else 'BLOCKED'
+          next_action='OWNER_GATE_FOR_MINIMAL_PAID_VARIANT_CANARY' if candidates else 'AUTHORITATIVE_SOURCE_EXPANSION_REQUIRED'
+          out={
+            'schema_version':'tinysnow.post-c5-3-source-truth-native-canary-preflight.1',
+            'status':status,
+            'created_at_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'authoritative_source_sha256':SOURCE_SHA,
+            'frozen_ready_products_checked':len(ready),
+            'source_truth_native_candidate_products':len(candidates),
+            'source_truth_native_candidate_variant_options':option_count,
+            'selection_rule':'Frozen PRODUCT_READY product + every authoritative variant option has a non-empty option_image_url; variant identity comes directly from Source Truth option row; no old gallery-slot binding used.',
+            'preferred_minimal_candidate_products':preferred,
+            'first_20_candidate_products':minimal,
+            'old_gallery_slot_binding_dependency':False,
+            'old_145_549_membership_mutated':False,
+            'variant_mapping_guessed':False,
+            'generation_authorized':False,
+            'owner_gate_required_before_generation':True,
+            'single_next_best_action':next_action,
+            'safety':{
+              'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,
+              'stable_mutation':False,'frozen_queue_mutation':False,'product_data_mutation':False
+            }
+          }
+          (root/'_system/control/post_c5_3_source_truth_canary_preflight.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps({'status':status,'candidate_products':len(candidates),'candidate_options':option_count,'next':next_action},ensure_ascii=False))
+          PY
+
+      - name: Persist preflight only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin v4c-universal-product-engine --quiet
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/v4c-universal-product-engine)" || { echo RACE_ABORT; exit 75; }
+          git config user.name "TinySnow Orchestrator"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/control/post_c5_3_source_truth_canary_preflight.json
+          git commit -m "control: persist SourceTruth-native canary preflight [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
