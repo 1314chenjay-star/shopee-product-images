@@ -1,0 +1,201 @@
+name: V4-C Post-C5.3 Protected Generative Canary
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/owner_approval_second_minimal_protected_canary.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  APPROVAL: _system/control/owner_approval_second_minimal_protected_canary.json
+  PREFLIGHT: _system/control/protected_generative_canary_preflight.json
+  LOCK: _system/control/second_minimal_protected_canary_request_lock.json
+  RESULT: _system/control/second_minimal_protected_canary_result.json
+
+jobs:
+  one-request-protected-generative-canary:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout experimental branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard new Owner approval, preflight, queue, and stable
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          if(Test-Path $env:LOCK){throw 'REQUEST_LOCK_ALREADY_EXISTS_DO_NOT_RESEND'}
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){throw "Stable HEAD drifted: $stable"}
+          @'
+          import json, os
+          from pathlib import Path
+          a=json.loads(Path(os.environ['APPROVAL']).read_text(encoding='utf-8-sig'))
+          p=json.loads(Path(os.environ['PREFLIGHT']).read_text(encoding='utf-8-sig'))
+          assert p['status']=='PASS' and p['selected'], 'PROTECTED_PREFLIGHT_NOT_PASS'
+          s=p['selected']
+          assert a.get('approved') is True
+          assert int(a.get('max_products',0))==1 and int(a.get('max_variants',0))==1 and int(a.get('max_paid_requests',0))==1
+          assert float(a.get('max_budget_ntd',0))>0, 'OWNER_BUDGET_REQUIRED'
+          assert a.get('bulk_generation_authorized') is False
+          assert a.get('stable_mutation_authorized') is False
+          assert str(a.get('product_id'))==str(s['product_id'])
+          assert a.get('variant_identity_key')==s['variant_identity_key']
+          q=[json.loads(x) for x in Path('_system/agent_queue/queue.jsonl').read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          t=next(x for x in q if x.get('task_id')=='TASK-POST-C5-3-MINIMAL-CANARY-REVIEW')
+          assert t.get('checkpoint')=='PROTECTED_GENERATIVE_CANARY_PREFLIGHT_PASS'
+          assert t.get('owner_decision_required') is True
+          assert int(t.get('paid_requests_already_sent',0))==1, 'FIRST_CANARY_LEDGER_MISMATCH'
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write('CANARY_PRODUCT_ID='+str(s['product_id'])+'\n')
+              f.write('CANARY_VARIANT_KEY='+s['variant_identity_key']+'\n')
+              f.write('CANARY_VARIANT_NAME='+str(s.get('option_name','')).replace('\n',' ')+'\n')
+              f.write('CANARY_SOURCE_URL='+s['source_url']+'\n')
+              f.write('CANARY_EXPECTED_SOURCE_SHA='+s['source_sha256']+'\n')
+              f.write('CANARY_BUDGET_NTD='+str(a['max_budget_ntd'])+'\n')
+          print(json.dumps({'owner_guard':'PASS','product_id':s['product_id'],'variant_identity_key':s['variant_identity_key'],'max_paid_requests':1,'max_budget_ntd':a['max_budget_ntd']},ensure_ascii=False))
+          '@ | python -
+
+      - name: Persist idempotency request lock before provider call
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import datetime as dt, json, os
+          from pathlib import Path
+          a=json.loads(Path(os.environ['APPROVAL']).read_text(encoding='utf-8-sig'))
+          lock={
+            'schema_version':'tinysnow.second-protected-canary-request-lock.1',
+            'status':'LOCKED_BEFORE_PROVIDER',
+            'locked_at_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'product_id':os.environ['CANARY_PRODUCT_ID'],
+            'variant_identity_key':os.environ['CANARY_VARIANT_KEY'],
+            'max_paid_requests':1,
+            'max_budget_ntd':a['max_budget_ntd'],
+            'purpose':'Prevent duplicate provider submission on workflow rerun.',
+            'resend_without_manual_reconciliation':False
+          }
+          Path(os.environ['LOCK']).write_text(json.dumps(lock,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          '@ | python -
+          git config user.name 'TinySnow Protected Canary Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- $env:LOCK
+          git commit -m 'control: lock second protected canary request before provider [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
+
+      - name: Download exact Source Truth source
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP 'TinySnow-Protected-Generative-Canary'
+          New-Item -ItemType Directory -Path $root -Force | Out-Null
+          $tmp=Join-Path $root 'source.download'
+          $wc=New-Object Net.WebClient
+          try{$wc.DownloadFile($env:CANARY_SOURCE_URL,$tmp)}finally{$wc.Dispose()}
+          $actual=(Get-FileHash $tmp -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($actual -ne $env:CANARY_EXPECTED_SOURCE_SHA){throw "Source SHA changed: $actual"}
+          $b=[IO.File]::ReadAllBytes($tmp);$ext=$null
+          if($b.Length-ge3 -and $b[0]-eq0xFF -and $b[1]-eq0xD8 -and $b[2]-eq0xFF){$ext='.jpg'}
+          elseif($b.Length-ge8 -and $b[0]-eq0x89 -and $b[1]-eq0x50 -and $b[2]-eq0x4E -and $b[3]-eq0x47){$ext='.png'}
+          elseif($b.Length-ge12 -and [Text.Encoding]::ASCII.GetString($b,0,4)-eq'RIFF' -and [Text.Encoding]::ASCII.GetString($b,8,4)-eq'WEBP'){$ext='.webp'}
+          else{throw 'Unsupported source image format.'}
+          $source=Join-Path $root ('source'+$ext);Move-Item $tmp $source -Force
+          "CANARY_DIR=$root" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CANARY_SOURCE_PATH=$source" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Execute exactly one protected background-only image edit
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if([string]::IsNullOrWhiteSpace([string]$env:TINYSNOW_API_KEY)){throw 'TINYSNOW_API_KEY missing.'}
+          . .\_system\guards\source_preservation_guard.ps1
+          . .\_system\start\api_v2.ps1
+          $pf=Get-Content $env:PREFLIGHT -Raw -Encoding UTF8 | ConvertFrom-Json
+          $regions=@($pf.selected.protected_regions)
+          $route=Get-TinySnowSourcePreservationRoute -Action 'BACKGROUND_ONLY_GENERATIVE_CLEANUP' -ProtectedRegions $regions
+          if(-not [bool]$route.paid_generation_allowed -or $route.route -ne 'GENERATIVE_WITH_PROTECTED_REGION_RESTORE'){throw 'Protected generative route not authorized by guard.'}
+          $config=[pscustomobject]@{api_key=[string]$env:TINYSNOW_API_KEY;base_url='https://tinysnow.one/v1';model='gpt-image-2';quality='medium';size='1024x1024';safe_test_mode=$true;max_reference_images=1;transport_profile='r3_120s_safe'}
+          $prompt=@"
+          Edit only the background around the exact provided product image. Preserve the product, every accessory, every logo, every badge, every character of existing text, quantity, color, pattern and geometry. Do not redraw or reinterpret the protected foreground. Do not add any factual text, product feature, accessory, gift, certification, dimension or use scene. The output will have protected source regions restored deterministically after this edit; therefore make only subtle background cleanliness/whitespace improvements outside the protected foreground.
+          "@
+          $raw=Invoke-ImageEditMultiV2 $config @($env:CANARY_SOURCE_PATH) $prompt '1024x1024' 'medium'
+          if(-not(Test-Path $raw -PathType Leaf)){throw 'Provider returned no image.'}
+          $rawCopy=Join-Path $env:CANARY_DIR 'raw_provider_output.png';Copy-Item $raw $rawCopy -Force
+          $final=Join-Path $env:CANARY_DIR 'protected_output.png'
+          Restore-TinySnowProtectedRegions -SourcePath $env:CANARY_SOURCE_PATH -CandidatePath $rawCopy -OutputPath $final -ProtectedRegions $regions | Out-Null
+          $qa=Test-TinySnowProtectedRegions -SourcePath $env:CANARY_SOURCE_PATH -CandidatePath $final -ProtectedRegions $regions
+          if(-not [bool]$qa.passed){throw ('PROTECTED_REGION_QA_FAIL '+($qa|ConvertTo-Json -Depth 10 -Compress))}
+          $qa | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $env:CANARY_DIR 'protected_region_qa.json') -Encoding UTF8
+          "CANARY_RAW_SHA=$((Get-FileHash $rawCopy -Algorithm SHA256).Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CANARY_FINAL_SHA=$((Get-FileHash $final -Algorithm SHA256).Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Persist second canary result and move to zero-paid review
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import datetime as dt, json, os
+          from pathlib import Path
+          p=json.loads(Path(os.environ['PREFLIGHT']).read_text(encoding='utf-8-sig'))
+          result={
+            'schema_version':'tinysnow.second-minimal-protected-canary-result.1',
+            'status':'EXECUTED_PENDING_HUMAN_REVIEW',
+            'executed_at_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'product_id':os.environ['CANARY_PRODUCT_ID'],
+            'variant_identity_key':os.environ['CANARY_VARIANT_KEY'],
+            'variant_option_name':os.environ['CANARY_VARIANT_NAME'],
+            'source_sha256':os.environ['CANARY_EXPECTED_SOURCE_SHA'],
+            'raw_provider_output_sha256':os.environ['CANARY_RAW_SHA'],
+            'protected_output_sha256':os.environ['CANARY_FINAL_SHA'],
+            'protected_regions':p['selected']['protected_regions'],
+            'protected_region_qa':'PASS',
+            'paid_requests_sent_this_canary':1,
+            'prior_paid_requests_sent':1,
+            'max_budget_ntd_authorized':float(os.environ['CANARY_BUDGET_NTD']),
+            'bulk_generation_authorized':False,
+            'stable_mutation':False,
+            'c5_3_rerun':False,
+            'second_retry_authorized':False
+          }
+          Path(os.environ['RESULT']).write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          Path(os.environ['CANARY_DIR'],'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          qp=Path('_system/agent_queue/queue.jsonl')
+          rows=[json.loads(x) for x in qp.read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          t=next(x for x in rows if x.get('task_id')=='TASK-POST-C5-3-MINIMAL-CANARY-REVIEW')
+          t['status']='PENDING';t['mode']='ZERO_PAID_PROTECTED_CANARY_REVIEW_QA';t['checkpoint']='SECOND_PROTECTED_CANARY_EXECUTED_PENDING_HUMAN_REVIEW';t['next_action']='REVIEW_PROTECTED_CANARY_ARTIFACT_AND_PROVENANCE';t['owner_decision_required']=False;t['paid']=False;t['generation']=False;t['paid_requests_already_sent']=2;t['second_paid_request_authorized']=False
+          qp.write_text('\n'.join(json.dumps(x,ensure_ascii=False,separators=(',',':')) for x in rows)+'\n',encoding='utf-8')
+          np=Path('_system/context/next_decision.json');n=json.loads(np.read_text(encoding='utf-8-sig'))
+          n['current_stage']='POST_C5_3_SECOND_PROTECTED_CANARY_REVIEW';n['next_action']='REVIEW_PROTECTED_CANARY_ARTIFACT_AND_PROVENANCE';n['reason']='One newly Owner-approved protected canary request executed with deterministic protected-region restore and QA PASS. No further paid request is authorized. Next step is zero-paid human/visual QA.';n['owner_decision_required']=False
+          np.write_text(json.dumps(n,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          '@ | python -
+          git config user.name 'TinySnow Protected Canary Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git pull --rebase origin v4c-universal-product-engine
+          git add -- $env:RESULT '_system/agent_queue/queue.jsonl' '_system/context/next_decision.json'
+          git commit -m 'v4c: persist protected canary result for zero-paid review [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
+
+      - name: Upload protected canary review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-Post-C5.3-Protected-Canary-${{ github.run_id }}
+          path: ${{ env.CANARY_DIR }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Clean transient provider outputs
+        if: always()
+        shell: powershell
+        run: |
+          Remove-Item '_system/output','_system/logs' -Recurse -Force -ErrorAction SilentlyContinue
