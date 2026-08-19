@@ -1,0 +1,8 @@
+{
+  "schema_version": "tinysnow.c5.3.delta-recovery-diagnostic.1",
+  "status": "FAIL",
+  "timestamp_utc": "2026-08-19T03:59:33.728389Z",
+  "error_type": "AssertionError",
+  "error": "",
+  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 11, in <module>\n  File \"v4c-c5-3-delta-scope-overlay.yml\", line 25, in <module>\nAssertionError\n"
+}
