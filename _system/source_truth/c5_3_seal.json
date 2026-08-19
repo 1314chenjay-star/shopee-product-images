@@ -1,0 +1,52 @@
+{
+  "schema_version": "tinysnow.c5-3-seal.2",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "status": "SEALED",
+  "sealed_head": "48932c650d5d62fc46fe40ecd49beea05cc028e4",
+  "workflow_run_id": 32214899138,
+  "sealed_at_utc": "2026-08-19T04:12:33.879981Z",
+  "authoritative_source_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+  "source_truth_counts": {
+    "products": 375,
+    "gallery_images": 2394,
+    "variant_options": 2673
+  },
+  "frozen_ready_scope": {
+    "product_ready": 145,
+    "execution_ready_slots": 549,
+    "recovered_slot_scope": {
+      "VARIANT_MAPPING_UNKNOWN": 549
+    },
+    "recovered_product_scope": {
+      "VARIANT_MAPPING_UNKNOWN": 145
+    },
+    "paid_canary_scope_eligible_products": 0,
+    "paid_canary_scope_eligible_slots": 0
+  },
+  "variant_binding_authority": {
+    "historical_c5_2_claim_exact_bindings": 25,
+    "historical_claim_status": "AUDIT_ONLY_REF_UNRESOLVABLE",
+    "authoritative_source_truth_exact_bindings": 0,
+    "authoritative_non_binding_slots": 549,
+    "variant_paid_canary": "HOLD",
+    "variant_mapping_guessing_allowed": false
+  },
+  "evidence": [
+    "_system/source_truth/bootstrap_manifest/manifest.json",
+    "_system/source_truth/bootstrap_validation.json",
+    "_system/source_truth/reconciliation_validation.json",
+    "_system/source_truth/ready_scope_overlay.json",
+    "_system/source_truth/c5_3_exact_binding_evidence.json",
+    "_system/v4c/source_truth_bootstrap/coverage_summary.json",
+    "_system/v4c/source_truth_bootstrap/validation.json",
+    "_system/source_truth/c5_3_regression_validation.json"
+  ],
+  "safety": {
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "stable_mutation": false,
+    "sealed_upstream_rerun": false
+  },
+  "next_boundary": "Stage closure / next-best-action scan; continue zero-paid safe work automatically; no stable merge, paid API, or image generation without owner approval."
+}

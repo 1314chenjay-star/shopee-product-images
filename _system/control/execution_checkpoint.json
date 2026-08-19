@@ -1,9 +1,9 @@
 {
   "schema_version": "tinysnow.execution-checkpoint.1",
   "stage": "V4-C5.3 Source Truth Repair",
-  "last_good_head": "79d79e2c24d5bdb1589f58318aea6074755439b4",
-  "last_successful_workflow": 32214766713,
-  "checkpoint": "C5_3_SEAL",
+  "last_good_head": "48932c650d5d62fc46fe40ecd49beea05cc028e4",
+  "last_successful_workflow": 32214899138,
+  "checkpoint": "C5_3_COMPLETE",
   "completed": [
     "sealed upstream verification",
     "existing governance/handoff read",
@@ -17,11 +17,10 @@
     "SourceTruth importer/resolver/bootstrap",
     "375/2394/2673 reconciliation",
     "145/549 delta scope overlay",
-    "C5.3-only regressions"
-  ],
-  "pending": [
+    "C5.3-only regressions",
     "C5.3 seal"
   ],
+  "pending": [],
   "resume_rule": "Never repeat completed entries; fingerprint then continue first pending action.",
-  "last_replacement_heartbeat_utc": "2026-08-19T04:10:24.347532Z"
+  "last_replacement_heartbeat_utc": "2026-08-19T04:12:33.879981Z"
 }
