@@ -1,0 +1,146 @@
+name: V4-C5.3 Regression Recovery Bridge
+
+on:
+  workflow_call:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/TRIGGER_C5_3_REGRESSION_RECOVERY_BRIDGE'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tinysnow-c5-3-regression-recovery-bridge
+  cancel-in-progress: false
+
+jobs:
+  recover-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Determine whether regression recovery is required
+        id: state
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          should=cp.get('checkpoint')=='C5_3_REGRESSION' and cp.get('pending',[None])[0]=='C5.3-only regressions'
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f: f.write('should_run='+('true' if should else 'false')+'\n')
+          print({'checkpoint':cp.get('checkpoint'),'pending':cp.get('pending'),'should_run':should})
+          PY
+
+      - name: Guard stable and recovered overlay
+        if: steps.state.outputs.should_run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')" = "5d49f061e140813b3d229520e9e530f86b27b640"
+          python - <<'PY'
+          import json
+          cov=json.load(open('_system/v4c/source_truth_bootstrap/coverage_summary.json',encoding='utf-8-sig'))
+          val=json.load(open('_system/v4c/source_truth_bootstrap/validation.json',encoding='utf-8-sig'))
+          assert cov['status']=='PASS' and cov['ready_products_audited']==145 and cov['ready_slots_audited']==549
+          assert cov['paid_canary_scope_eligible_products']==0 and cov['paid_canary_scope_eligible_slots']==0
+          assert val['status']=='PASS' and val['all_slots_accounted'] and val['all_products_accounted']
+          assert val['frozen_queue_mutation'] is False and val['paid_api_called'] is False and val['generation_executed'] is False
+          PY
+
+      - name: Run regression with durable diagnostics
+        id: regression
+        if: steps.state.outputs.should_run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import datetime as dt, json, os, pathlib, subprocess
+          p=pathlib.Path('_system/control/c5_3_regression_recovery_diagnostic.json')
+          proc=subprocess.run(['python','-B','_system/tests/test_c5_3_source_truth_regression.py'],text=True,capture_output=True)
+          diag={
+            'schema_version':'tinysnow.c5.3.regression-recovery-diagnostic.1',
+            'status':'PASS' if proc.returncode==0 else 'FAIL',
+            'timestamp_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'returncode':proc.returncode,
+            'stdout':proc.stdout[-12000:],
+            'stderr':proc.stderr[-12000:]
+          }
+          p.write_text(json.dumps(diag,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f: f.write('result='+diag['status']+'\n')
+          print(json.dumps(diag,ensure_ascii=False))
+          PY
+
+      - name: Advance checkpoint after PASS
+        if: steps.regression.outputs.result == 'PASS'
+        shell: bash
+        env:
+          TESTED_HEAD: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import datetime as dt, json, os, pathlib
+          root=pathlib.Path('.')
+          now=dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z')
+          validation={
+            'schema_version':'tinysnow.c5-3-source-truth-regression.2',
+            'stage':'V4-C5.3 Source Truth Repair','status':'PASS',
+            'tested_head':os.environ['TESTED_HEAD'],'workflow_run_id':int(os.environ['RUN_ID']),
+            'checks':{
+              'authoritative_source_counts':'375/2394/2673 PASS','sqlite_integrity':'PASS','foreign_keys':'PASS',
+              'frozen_ready_scope':'145 PRODUCT_READY / 549 execution-ready PASS',
+              'recovered_145_549_overlay':'PASS; 549/549 VARIANT_MAPPING_UNKNOWN; no guessed promotion',
+              'historical_unverified_exact_bindings':'25 retained audit-only','authoritative_exact_bindings':'0/549 PASS',
+              'variant_paid_canary':'HOLD','source_truth_precedence':'PASS','unknown_conflict_hold':'PASS','variant_guessing_forbidden':'PASS'
+            },
+            'safety':{'paid_api_called':False,'image_generation_called':False,'image_editing_called':False,'stable_mutation':False,'sealed_stage_rerun':False}
+          }
+          (root/'_system/source_truth/c5_3_regression_validation.json').write_text(json.dumps(validation,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          cp_path=root/'_system/control/execution_checkpoint.json'; live_path=root/'_system/control/live_status.json'; worker_path=root/'_system/control/worker_state.json'; queue_path=root/'_system/agent_queue/queue.jsonl'
+          cp=json.loads(cp_path.read_text(encoding='utf-8-sig')); live=json.loads(live_path.read_text(encoding='utf-8-sig')); worker=json.loads(worker_path.read_text(encoding='utf-8-sig'))
+          assert cp['checkpoint']=='C5_3_REGRESSION' and cp['pending'][0]=='C5.3-only regressions'
+          cp['pending'].remove('C5.3-only regressions')
+          if 'C5.3-only regressions' not in cp['completed']: cp['completed'].append('C5.3-only regressions')
+          cp['checkpoint']='C5_3_SEAL'; cp['last_good_head']=os.environ['TESTED_HEAD']; cp['last_successful_workflow']=int(os.environ['RUN_ID']); cp['last_replacement_heartbeat_utc']=now
+          live.update({'status':'RECOVERING','checkpoint':'C5_3_SEAL','last_update':now,'worker_state':'RECOVERING','next_action':'Resume first pending delta only: C5.3 seal','original_task_retry_allowed':False,'sealed_data_modified':False})
+          worker.update({'status':'RECOVERING','last_heartbeat_utc':now,'last_durable_worker_signal_utc':now,'resume_mode':'FIRST_PENDING_DELTA_ONLY','original_task_retry_allowed':False,'human_orchestration_required':False})
+          rows=[]
+          for line in queue_path.read_text(encoding='utf-8-sig').splitlines():
+              if not line.strip(): continue
+              r=json.loads(line)
+              if r.get('task_id')=='TASK-C5-3-SOURCE-TRUTH-REPAIR':
+                  r['status']='RECOVERING'; r['checkpoint']='C5_3_SEAL'; r['next_action']='C5.3 seal'; r['next_workflow']='v4c-c5-3-seal.yml'
+              rows.append(r)
+          cp_path.write_text(json.dumps(cp,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); live_path.write_text(json.dumps(live,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); worker_path.write_text(json.dumps(worker,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); queue_path.write_text(''.join(json.dumps(r,ensure_ascii=False,separators=(',',':'))+'\n' for r in rows),encoding='utf-8')
+          PY
+
+      - name: Persist PASS evidence
+        if: steps.regression.outputs.result == 'PASS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin v4c-universal-product-engine --quiet
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/v4c-universal-product-engine)" || { echo RACE_ABORT; exit 75; }
+          git config user.name "TinySnow Source Truth Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/source_truth/c5_3_regression_validation.json _system/control/c5_3_regression_recovery_diagnostic.json _system/control/execution_checkpoint.json _system/control/live_status.json _system/control/worker_state.json _system/agent_queue/queue.jsonl
+          git commit -m "v4c5.3: pass scoped Source Truth regressions [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
+
+      - name: Persist regression failure diagnostic
+        if: steps.state.outputs.should_run == 'true' && steps.regression.outputs.result == 'FAIL'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp _system/control/c5_3_regression_recovery_diagnostic.json /tmp/c5_3_regression_recovery_diagnostic.json
+          git reset --hard HEAD
+          cp /tmp/c5_3_regression_recovery_diagnostic.json _system/control/c5_3_regression_recovery_diagnostic.json
+          git config user.name "TinySnow Source Truth Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/control/c5_3_regression_recovery_diagnostic.json
+          git commit -m "control: persist C5.3 regression recovery failure diagnostic [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
