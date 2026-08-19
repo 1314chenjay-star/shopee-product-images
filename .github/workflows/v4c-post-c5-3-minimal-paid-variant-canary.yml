@@ -1,0 +1,164 @@
+name: V4-C Post-C5.3 Minimal Paid Variant Canary
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/owner_approval_minimal_paid_variant_canary.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  APPROVAL: _system/control/owner_approval_minimal_paid_variant_canary.json
+  PREFLIGHT: _system/control/post_c5_3_source_truth_canary_preflight.json
+  RESULT: _system/control/minimal_paid_variant_canary_result.json
+
+jobs:
+  minimal-paid-variant-canary:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout experimental branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard Owner approval, C5.3 seal, Source Truth candidate, and stable
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){ throw "Stable HEAD drifted: $stable" }
+          @'
+          import json, os
+          from pathlib import Path
+          approval=json.loads(Path(os.environ['APPROVAL']).read_text(encoding='utf-8-sig'))
+          cp=json.loads(Path('_system/control/execution_checkpoint.json').read_text(encoding='utf-8-sig'))
+          nxt=json.loads(Path('_system/context/next_decision.json').read_text(encoding='utf-8-sig'))
+          pf=json.loads(Path(os.environ['PREFLIGHT']).read_text(encoding='utf-8-sig'))
+          assert cp['checkpoint']=='C5_3_COMPLETE' and not cp.get('pending'), 'C5.3_NOT_SEALED'
+          assert nxt['next_action']=='OWNER_GATE_FOR_MINIMAL_PAID_VARIANT_CANARY', 'OWNER_GATE_MISMATCH'
+          assert approval['approved'] is True
+          assert approval['max_products']==1 and approval['max_variants']==1 and approval['max_paid_requests']==1
+          assert approval['max_budget_ntd']==50
+          assert approval['bulk_generation_authorized'] is False
+          assert approval['stable_mutation_authorized'] is False
+          assert approval['product_id']=='51365698925'
+          assert approval['variant_identity_key']=='variant_bbe8931ee6b7db12b9062123'
+          assert pf['status']=='PASS'
+          candidates=pf['preferred_minimal_candidate_products']
+          p=next(x for x in candidates if str(x['product_id'])==approval['product_id'])
+          assert p['exact_variant_identity_provenance']=='SOURCE_TRUTH_OPTION_ROW'
+          assert p['uses_old_549_gallery_binding'] is False
+          v=next(x for x in p['variant_options'] if x['variant_identity_key']==approval['variant_identity_key'])
+          assert v['option_image_url']
+          env=os.environ['GITHUB_ENV']
+          with open(env,'a',encoding='utf-8') as f:
+              f.write('CANARY_PRODUCT_ID='+approval['product_id']+'\n')
+              f.write('CANARY_VARIANT_KEY='+approval['variant_identity_key']+'\n')
+              f.write('CANARY_VARIANT_NAME='+str(v['option_name']).replace('\n',' ')+'\n')
+              f.write('CANARY_SOURCE_URL='+v['option_image_url']+'\n')
+          print(json.dumps({'guard':'PASS','product_id':approval['product_id'],'variant_identity_key':approval['variant_identity_key'],'max_paid_requests':1,'max_budget_ntd':50},ensure_ascii=False))
+          '@ | python -
+
+      - name: Download exact Source Truth variant image
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP 'TinySnow-Post-C5.3-Minimal-Canary'
+          New-Item -ItemType Directory -Path $root -Force | Out-Null
+          $tmp=Join-Path $root 'source.download'
+          $wc=New-Object Net.WebClient
+          try{$wc.DownloadFile($env:CANARY_SOURCE_URL,$tmp)}finally{$wc.Dispose()}
+          $b=[IO.File]::ReadAllBytes($tmp)
+          $ext=$null
+          if($b.Length-ge3 -and $b[0]-eq0xFF -and $b[1]-eq0xD8 -and $b[2]-eq0xFF){$ext='.jpg'}
+          elseif($b.Length-ge8 -and $b[0]-eq0x89 -and $b[1]-eq0x50 -and $b[2]-eq0x4E -and $b[3]-eq0x47){$ext='.png'}
+          elseif($b.Length-ge12 -and [Text.Encoding]::ASCII.GetString($b,0,4)-eq'RIFF' -and [Text.Encoding]::ASCII.GetString($b,8,4)-eq'WEBP'){$ext='.webp'}
+          else{throw 'Unsupported source image format.'}
+          $source=Join-Path $root ('source'+$ext)
+          Move-Item $tmp $source -Force
+          "CANARY_DIR=$root" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CANARY_SOURCE_PATH=$source" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CANARY_SOURCE_SHA256=$((Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Execute exactly one paid source-preserving image edit
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if([string]::IsNullOrWhiteSpace([string]$env:TINYSNOW_API_KEY)){throw 'TINYSNOW_API_KEY missing.'}
+          . .\_system\start\api_v2.ps1
+          $config=[pscustomobject]@{api_key=[string]$env:TINYSNOW_API_KEY;base_url='https://tinysnow.one/v1';model='gpt-image-2';quality='medium';size='1024x1024';safe_test_mode=$true;max_reference_images=1;transport_profile='r3_120s_safe'}
+          $prompt=@"
+          Edit the exact provided source image only. This is a one-request Source Truth variant canary for product $env:CANARY_PRODUCT_ID, variant $env:CANARY_VARIANT_NAME.
+          Preserve the exact product identity, body, shape, colors, pattern, logo, brand, model, quantity, accessories, and all factual text.
+          Do not invent or add dimensions, material, functions, accessories, gifts, brands, certifications, claims, or use scenes.
+          Do not borrow anything from any other product or variant.
+          Make only minimal source-preserving cleanup: improve centering, whitespace, background cleanliness, and visual clarity without changing the product.
+          No new factual text is authorized.
+          "@
+          $before=@(Get-ChildItem '_system/output' -File -ErrorAction SilentlyContinue).Count
+          $out=Invoke-ImageEditMultiV2 $config @($env:CANARY_SOURCE_PATH) $prompt '1024x1024' 'medium'
+          if(-not(Test-Path $out -PathType Leaf)){throw 'Provider returned no image.'}
+          $after=@(Get-ChildItem '_system/output' -File -ErrorAction SilentlyContinue).Count
+          if(($after-$before)-ne1){throw 'Exactly-one-output guard failed.'}
+          Copy-Item $out (Join-Path $env:CANARY_DIR 'output.png') -Force
+          "CANARY_OUTPUT_SHA256=$((Get-FileHash $out -Algorithm SHA256).Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Persist one-request result metadata only
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import datetime as dt, json, os
+          from pathlib import Path
+          result={
+            'schema_version':'tinysnow.post-c5-3-minimal-paid-variant-canary-result.1',
+            'status':'EXECUTED_PENDING_HUMAN_REVIEW',
+            'executed_at_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'product_id':os.environ['CANARY_PRODUCT_ID'],
+            'variant_identity_key':os.environ['CANARY_VARIANT_KEY'],
+            'variant_option_name':os.environ['CANARY_VARIANT_NAME'],
+            'source_truth_option_image_url':os.environ['CANARY_SOURCE_URL'],
+            'source_sha256':os.environ['CANARY_SOURCE_SHA256'],
+            'output_sha256':os.environ['CANARY_OUTPUT_SHA256'],
+            'paid_requests_sent':1,
+            'max_paid_requests_authorized':1,
+            'max_budget_ntd_authorized':50,
+            'bulk_generation_authorized':False,
+            'stable_mutation':False,
+            'c5_3_rerun':False,
+            'provider':'TinySnow',
+            'model':'gpt-image-2',
+            'quality':'medium',
+            'note':'Provider interface exposes request execution but no preflight NTD price field; monetary cap is recorded and request count is hard-capped at one.'
+          }
+          Path(os.environ['RESULT']).write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          Path(os.environ['CANARY_DIR'],'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          '@ | python -
+          git config user.name 'TinySnow Minimal Canary Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- $env:RESULT
+          git commit -m 'v4c: persist one-request SourceTruth variant canary result [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
+
+      - name: Upload review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-Post-C5.3-Minimal-Variant-Canary-${{ github.run_id }}
+          path: ${{ env.CANARY_DIR }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Clean transient outputs
+        if: always()
+        shell: powershell
+        run: |
+          Remove-Item '_system/output','_system/logs' -Recurse -Force -ErrorAction SilentlyContinue
