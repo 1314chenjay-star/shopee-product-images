@@ -1,14 +1,15 @@
 {
   "schema_version": "tinysnow.next-decision.1",
   "current_stage": "POST_C5_3_MINIMAL_PAID_VARIANT_CANARY_REVIEW",
-  "next_action": "ZERO_PAID_FAILURE_ANALYSIS_AND_RETRY_PREPARATION",
-  "reason": "The explicitly Owner-approved one-request canary executed successfully at the provider level, but human visual QA rejected the output for source-preservation regression: existing source badges/text were removed. No second paid request is authorized. Continue only zero-paid failure analysis and retry preparation until a new Owner gate is reached.",
+  "next_action": "IMPLEMENT_PROTECTED_REGION_AND_DETERMINISTIC_SOURCE_PRESERVATION_GUARDS",
+  "reason": "Visual QA rejected the one-request canary because existing source badges/text were removed by a full-frame generative edit. A zero-paid retry contract is now durable. The next work is engineering source-preservation guards; no second paid request is allowed until this is complete and a new Owner gate is approved.",
   "owner_decision_required": false,
   "canary": {
     "status": "FAIL_SOURCE_PRESERVATION",
     "result_path": "_system/control/minimal_paid_variant_canary_result.json",
     "qa_path": "_system/control/minimal_paid_variant_canary_qa.json",
     "artifact_locator_path": "_system/control/minimal_paid_variant_canary_artifact_locator.json",
+    "retry_contract_path": "_system/control/minimal_paid_variant_canary_retry_contract.json",
     "product_id": "51365698925",
     "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
     "paid_requests_sent": 1,
@@ -25,7 +26,8 @@
     "no bulk generation",
     "no stable mutation",
     "rejected output must not be promoted",
-    "prepare stricter text/badge preservation and deterministic QA before any retry",
+    "implement protected-region strategy and deterministic post-generation preservation QA",
+    "separate PRESERVE/deterministic cleanup from generative edit actions",
     "experimental branch only until release approval"
   ],
   "forbidden_actions": [
