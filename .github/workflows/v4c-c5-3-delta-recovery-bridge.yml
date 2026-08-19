@@ -59,8 +59,23 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import json, os, textwrap, traceback, datetime as dt
+          import hashlib, json, os, textwrap, traceback, datetime as dt
           diag_path=Path('_system/control/c5_3_delta_recovery_diagnostic.json')
+          queue_path=Path('_system/v4c/generation_plan/generation_plan_queue.jsonl')
+          ready_path=Path('_system/v4c/generation_payload/execution_ready_queue.jsonl')
+          readiness_path=Path('_system/v4c/generation_payload/product_execution_readiness.jsonl')
+          cov=json.loads(Path('_system/v4c/generation_payload/coverage_summary.json').read_text(encoding='utf-8-sig'))
+          actual_queue_sha=hashlib.sha256(queue_path.read_bytes()).hexdigest()
+          expected_queue_sha=cov.get('frozen_fingerprints',{}).get('generation_plan_queue_sha256')
+          frozen={
+            'expected_generation_plan_queue_sha256':expected_queue_sha,
+            'actual_generation_plan_queue_sha256':actual_queue_sha,
+            'generation_plan_queue_sha_match':actual_queue_sha==expected_queue_sha,
+            'coverage_ready_products':cov.get('final_paid_execution_candidate_products'),
+            'coverage_ready_slots':cov.get('final_paid_execution_candidate_slots'),
+            'execution_ready_queue_rows':sum(1 for x in ready_path.read_text(encoding='utf-8-sig').splitlines() if x.strip()),
+            'product_readiness_ready_rows':sum(1 for x in readiness_path.read_text(encoding='utf-8-sig').splitlines() if x.strip() and json.loads(x).get('status')=='PRODUCT_READY_FOR_GENERATION')
+          }
           result='FAIL'
           try:
               src=Path('.github/workflows/v4c-c5-3-delta-scope-overlay.yml').read_text(encoding='utf-8')
@@ -70,9 +85,9 @@ jobs:
               code=textwrap.dedent(src[start:end])
               exec(compile(code,'v4c-c5-3-delta-scope-overlay.yml','exec'),{'__name__':'__main__'})
               result='PASS'
-              diag={'schema_version':'tinysnow.c5.3.delta-recovery-diagnostic.1','status':'PASS','timestamp_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),'error':None}
+              diag={'schema_version':'tinysnow.c5.3.delta-recovery-diagnostic.1','status':'PASS','timestamp_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),'frozen_input_check':frozen,'error':None}
           except BaseException as e:
-              diag={'schema_version':'tinysnow.c5.3.delta-recovery-diagnostic.1','status':'FAIL','timestamp_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),'error_type':type(e).__name__,'error':str(e),'traceback':traceback.format_exc()}
+              diag={'schema_version':'tinysnow.c5.3.delta-recovery-diagnostic.1','status':'FAIL','timestamp_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),'frozen_input_check':frozen,'error_type':type(e).__name__,'error':str(e),'traceback':traceback.format_exc()}
           diag_path.write_text(json.dumps(diag,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f: f.write('result='+result+'\n')
           print(json.dumps(diag,ensure_ascii=False))
@@ -114,9 +129,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cp _system/control/c5_3_delta_recovery_diagnostic.json /tmp/c5_3_delta_recovery_diagnostic.json
           git reset --hard HEAD
           git clean -fd _system/v4c/source_truth_bootstrap || true
-          test -f _system/control/c5_3_delta_recovery_diagnostic.json || exit 1
+          cp /tmp/c5_3_delta_recovery_diagnostic.json _system/control/c5_3_delta_recovery_diagnostic.json
           git config user.name "TinySnow Delta Recovery Worker"
           git config user.email "actions@users.noreply.github.com"
           git add _system/control/c5_3_delta_recovery_diagnostic.json
