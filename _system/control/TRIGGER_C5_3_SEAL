@@ -1,0 +1,2 @@
+run authoritative C5.3 seal
+mode=zero-paid-no-generation-no-stable-mutation
