@@ -1,3 +1,4 @@
 run C5.3 delta recovery bridge
 2026-08-19T11:37+08:00
 2026-08-19T12:00+08:00 durable diagnostic retry
+2026-08-19T12:02+08:00 fingerprint evidence retry
