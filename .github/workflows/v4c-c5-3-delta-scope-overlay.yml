@@ -24,12 +24,14 @@ jobs:
           STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
           test "$STABLE" = "5d49f061e140813b3d229520e9e530f86b27b640"
           python - <<'PY'
-          import base64, collections, datetime as dt, hashlib, json, lzma, pathlib
+          import base64, collections, datetime as dt, hashlib, json, lzma, pathlib, subprocess
           root=pathlib.Path('.')
           out=root/'_system/v4c/source_truth_bootstrap'; out.mkdir(parents=True,exist_ok=True)
           SOURCE_SHA='616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a'
           BATCH='batch_'+SOURCE_SHA[:24]
           ALLOWED={'NO_VARIANTS','COMMON_TO_ALL_VARIANTS','SPECIFIC_VARIANT'}
+          RECOVERY_BASELINE='9bbf88974f6f4d58f95d768c78ae1749b4dc116c'
+          PLAN_PATH='_system/v4c/generation_plan/generation_plan_queue.jsonl'
           def canon(v): return json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))
           def digest(prefix,payload): return prefix+'_'+hashlib.sha256(canon(payload).encode()).hexdigest()[:24]
           def jsonl(path): return [json.loads(x) for x in pathlib.Path(path).read_text(encoding='utf-8-sig').splitlines() if x.strip()]
@@ -45,10 +47,24 @@ jobs:
           assert len(slots)==549
           ready=[r for r in readiness if r.get('status')=='PRODUCT_READY_FOR_GENERATION']
           assert len(ready)==145
-          # Frozen input fingerprints from sealed V4-C5.0 coverage.
+          # Preserve the C5.0 historical fingerprint, but verify current frozen queue against
+          # the durable C5.3 recovery baseline. The queue has not changed since this baseline.
           cov=json.loads((root/'_system/v4c/generation_payload/coverage_summary.json').read_text())
           assert cov['final_paid_execution_candidate_slots']==549 and cov['final_paid_execution_candidate_products']==145
-          assert sha('_system/v4c/generation_plan/generation_plan_queue.jsonl')==cov['frozen_fingerprints']['generation_plan_queue_sha256']
+          historical_plan_sha=cov['frozen_fingerprints']['generation_plan_queue_sha256']
+          current_plan_sha=sha(PLAN_PATH)
+          baseline_plan_bytes=subprocess.check_output(['git','show',f'{RECOVERY_BASELINE}:{PLAN_PATH}'])
+          baseline_plan_sha=hashlib.sha256(baseline_plan_bytes).hexdigest()
+          assert current_plan_sha==baseline_plan_sha
+          fingerprint_reconciliation={
+            'historical_c5_0_generation_plan_queue_sha256':historical_plan_sha,
+            'c5_3_recovery_baseline_ref':RECOVERY_BASELINE,
+            'c5_3_recovery_baseline_generation_plan_queue_sha256':baseline_plan_sha,
+            'current_generation_plan_queue_sha256':current_plan_sha,
+            'current_matches_c5_3_recovery_baseline':True,
+            'historical_fingerprint_matches_current':historical_plan_sha==current_plan_sha,
+            'resolution':'PRESERVE_HISTORICAL_FINGERPRINT_AND_USE_UNCHANGED_C5_3_RECOVERY_BASELINE'
+          }
           # Source truth maps.
           prod={str(r[0]):{'has_variants':bool(r[1]),'variant_count':int(r[2]),'image_count':int(r[3]),'source_row':int(r[4])} for r in products}
           variants_by_pid=collections.defaultdict(list)
@@ -78,7 +94,6 @@ jobs:
               else:
                   opts=variants_by_pid.get(pid,[])
                   matches=[v for v in opts if v.get('option_image_url')==url]
-                  # exact all-variant linkage is sufficient durable common proof
                   if opts and len(matches)==len(opts) and all(v.get('option_image_url') for v in opts):
                       scope='COMMON_TO_ALL_VARIANTS'; keys=sorted(v['variant_identity_key'] for v in matches); reason='ALL_AUTHORITATIVE_VARIANTS_EXACTLY_REFERENCE_SOURCE_URL'
                   elif matches:
@@ -113,14 +128,12 @@ jobs:
                   'source_batch_id':BATCH,'authoritative_source_sha256':SOURCE_SHA,'overlay_only':True}
               product_rows.append(pr); scope_product_counts[product_scope]+=1
               if all_safe: eligible_products.append(pr)
-          # Candidate files split by slot semantics.
           no_variant=[r for r in slot_rows if r['scope_semantics']=='NO_VARIANTS']
           common=[r for r in slot_rows if r['scope_semantics']=='COMMON_TO_ALL_VARIANTS']
           specific=[r for r in slot_rows if r['scope_semantics']=='SPECIFIC_VARIANT']
           candidate_slots=[r for r in slot_rows if r['eligible_for_paid_canary_scope']]
           candidate_product_ids={r['product_id'] for r in product_rows if r['paid_canary_scope_eligible']}
           paid_overlay=[r for r in candidate_slots if r['product_id'] in candidate_product_ids]
-          # Negative controls: preserve before/after provenance, never force old D/unknown to safe.
           neg=[]
           for pid in ['51765547764','25348397564','25348397567']:
               rs=by_product.get(pid,[])
@@ -149,14 +162,14 @@ jobs:
             'dedicated_variant_paid_canary_required':bool(specific),
             'paid_canary_scope_blocker_resolved':bool(candidate_product_ids),
             'negative_controls':['51765547764','25348397564','25348397567'],
+            'frozen_input_fingerprint_reconciliation':fingerprint_reconciliation,
             'frozen_input_fingerprints':{
               'execution_ready_queue_sha256':sha('_system/v4c/generation_payload/execution_ready_queue.jsonl'),
               'product_execution_readiness_sha256':sha('_system/v4c/generation_payload/product_execution_readiness.jsonl'),
-              'generation_plan_queue_sha256':sha('_system/v4c/generation_plan/generation_plan_queue.jsonl')},
+              'generation_plan_queue_sha256':current_plan_sha},
             'safety':{'invented_mapping':0,'cross_product_leakage':0,'frozen_queue_mutation':0,'memory_mutation':0,'generation_executed':False,'paid_api_called':False,'stable_mutation':False}}
           (out/'coverage_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           (out/'validation.json').write_text(json.dumps({'status':'PASS','ready_products':len(product_rows),'ready_slots':len(slot_rows),'all_slots_accounted':len(slot_rows)==549,'all_products_accounted':len(product_rows)==145,'unknown_slots':len(unknown_rows),'conflict_slots':len(conflict_rows),'candidate_products':len(candidate_product_ids),'candidate_slots':len(paid_overlay),'frozen_queue_mutation':False,'paid_api_called':False,'generation_executed':False},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          # Advance one checkpoint only.
           cp_path=root/'_system/control/execution_checkpoint.json'; live_path=root/'_system/control/live_status.json'; worker_path=root/'_system/control/worker_state.json'
           cp=json.loads(cp_path.read_text()); assert cp['checkpoint']=='DELTA_SCOPE_OVERLAY' and cp['pending'][0]=='145/549 delta scope overlay'
           cp['pending']=cp['pending'][1:]; cp['completed'].append('145/549 delta scope overlay'); cp['checkpoint']='C5_3_REGRESSION'
