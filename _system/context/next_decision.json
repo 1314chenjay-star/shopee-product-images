@@ -1,8 +1,8 @@
 {
   "schema_version": "tinysnow.next-decision.1",
-  "current_stage": "POST_C5_3_MINIMAL_PAID_VARIANT_CANARY_REVIEW",
-  "next_action": "IMPLEMENT_PROTECTED_REGION_AND_DETERMINISTIC_SOURCE_PRESERVATION_GUARDS",
-  "reason": "Visual QA rejected the one-request canary because existing source badges/text were removed by a full-frame generative edit. A zero-paid retry contract is now durable. The next work is engineering source-preservation guards; no second paid request is allowed until this is complete and a new Owner gate is approved.",
+  "current_stage": "POST_C5_3_SOURCE_PRESERVATION_GUARD",
+  "next_action": "INTEGRATE_GUARD_INTO_EXECUTION_PATH_AND_SELECT_TRUE_GENERATIVE_CANARY",
+  "reason": "Zero-paid source-preservation guard passed deterministic routing, negative-control rejection, protected-region restore, and post-restore pixel QA. Next work remains zero-paid: wire the guard into the execution path and select a genuinely generative canary that has explicit authorized edit regions. No second paid request is authorized.",
   "owner_decision_required": false,
   "canary": {
     "status": "FAIL_SOURCE_PRESERVATION",
@@ -28,7 +28,11 @@
     "rejected output must not be promoted",
     "implement protected-region strategy and deterministic post-generation preservation QA",
     "separate PRESERVE/deterministic cleanup from generative edit actions",
-    "experimental branch only until release approval"
+    "experimental branch only until release approval",
+    "PRESERVE/CLEANUP route deterministic-only",
+    "generative edit requires explicit protected regions",
+    "protected regions must be deterministically restored and QA checked before promotion",
+    "no second paid request until new Owner gate"
   ],
   "forbidden_actions": [
     "rerun_completed_c5_3_source_truth_work",
@@ -38,5 +42,12 @@
     "guess_variant_mapping",
     "stable_merge_without_owner_approval",
     "destructive_operation"
-  ]
+  ],
+  "guard": {
+    "status": "PASS",
+    "validation_path": "_system/control/source_preservation_guard_validation.json",
+    "paid_api": 0,
+    "image_generation": 0,
+    "stable_mutation": false
+  }
 }

@@ -1,0 +1,48 @@
+﻿{
+    "schema_version":  "tinysnow.source-preservation-guard-validation.1",
+    "status":  "PASS",
+    "zero_paid":  true,
+    "image_generation_called":  false,
+    "stable_mutation":  false,
+    "c5_3_rerun":  false,
+    "routing":  {
+                    "preserve":  "DETERMINISTIC_ONLY",
+                    "cleanup":  "DETERMINISTIC_ONLY",
+                    "unprotected_generative":  "BLOCKED_NO_PROTECTED_REGION",
+                    "protected_generative":  "GENERATIVE_WITH_PROTECTED_REGION_RESTORE"
+                },
+    "negative_control_rejected":  true,
+    "restored_control_passed":  true,
+    "protected_region_before":  {
+                                    "passed":  false,
+                                    "regions":  [
+                                                    {
+                                                        "name":  "source_badge_text",
+                                                        "mean_absolute_error":  124.879896,
+                                                        "changed_pixel_ratio":  1,
+                                                        "passed":  false
+                                                    }
+                                                ],
+                                    "max_mean_absolute_error":  0.5,
+                                    "max_changed_pixel_ratio":  0.001
+                                },
+    "protected_region_after":  {
+                                   "passed":  true,
+                                   "regions":  [
+                                                   {
+                                                       "name":  "source_badge_text",
+                                                       "mean_absolute_error":  0.012813,
+                                                       "changed_pixel_ratio":  0,
+                                                       "passed":  true
+                                                   }
+                                               ],
+                                   "max_mean_absolute_error":  0.5,
+                                   "max_changed_pixel_ratio":  0.001
+                               },
+    "required_execution_contract":  [
+                                        "PRESERVE/CLEANUP must use deterministic-only path",
+                                        "Generative edit without protected regions is blocked",
+                                        "Generative edit with protected regions requires deterministic source-region restore",
+                                        "Post-generation protected-region difference must pass before promotion"
+                                    ]
+}
