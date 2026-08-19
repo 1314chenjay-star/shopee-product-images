@@ -1,0 +1,84 @@
+name: V4-C Post-C5.3 Canary Artifact Locator
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/TRIGGER_POST_C5_3_CANARY_ARTIFACT_LOCATOR'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  OUT: _system/control/minimal_paid_variant_canary_artifact_locator.json
+  TARGET_WORKFLOW: v4c-post-c5-3-minimal-paid-variant-canary.yml
+
+jobs:
+  locate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Locate paid canary run and artifact without rerunning generation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_json="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$TARGET_WORKFLOW" --branch v4c-universal-product-engine --limit 20 --json databaseId,status,conclusion,createdAt,headSha,event,displayTitle)"
+          RUN_JSON="$run_json" python - <<'PY'
+          import json, os
+          runs=json.loads(os.environ['RUN_JSON'])
+          if not runs:
+              raise SystemExit('NO_CANARY_RUN_FOUND')
+          # Prefer the newest completed run; the paid canary must never be rerun here.
+          completed=[r for r in runs if r.get('status')=='completed']
+          chosen=(completed or runs)[0]
+          open('/tmp/run_id','w').write(str(chosen['databaseId']))
+          open('/tmp/run_meta.json','w').write(json.dumps(chosen,ensure_ascii=False))
+          PY
+          run_id="$(cat /tmp/run_id)"
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts")"
+          RUN_ID="$run_id" ARTIFACTS="$artifacts" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          run=json.loads(Path('/tmp/run_meta.json').read_text())
+          arts=json.loads(os.environ['ARTIFACTS']).get('artifacts',[])
+          target=None
+          for a in arts:
+              if a.get('name','').startswith('TinySnow-Post-C5.3-Minimal-Variant-Canary-'):
+                  target=a; break
+          out={
+            'schema_version':'tinysnow.canary-artifact-locator.1',
+            'status':'FOUND' if target else 'RUN_FOUND_ARTIFACT_MISSING',
+            'workflow_file':'v4c-post-c5-3-minimal-paid-variant-canary.yml',
+            'run_id':int(os.environ['RUN_ID']),
+            'run_status':run.get('status'),
+            'run_conclusion':run.get('conclusion'),
+            'run_created_at':run.get('createdAt'),
+            'run_head_sha':run.get('headSha'),
+            'artifact_id': target.get('id') if target else None,
+            'artifact_name': target.get('name') if target else None,
+            'artifact_size_in_bytes': target.get('size_in_bytes') if target else None,
+            'paid_rerun_performed':False,
+            'second_paid_request_sent':False
+          }
+          Path(os.environ['OUT']).write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(out,ensure_ascii=False))
+          PY
+
+      - name: Persist locator evidence only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'TinySnow Review Locator'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- "$OUT"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'control: persist paid canary artifact locator [skip ci]'
+          git push origin HEAD:v4c-universal-product-engine
