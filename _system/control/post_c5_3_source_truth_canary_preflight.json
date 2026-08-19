@@ -1,0 +1,1119 @@
+{
+  "schema_version": "tinysnow.post-c5-3-source-truth-native-canary-preflight.1",
+  "status": "PASS",
+  "created_at_utc": "2026-08-19T04:17:28.772543Z",
+  "authoritative_source_sha256": "616d1c0639f34433ebe244678f101458e375c1c095677be7d9f5736b2ccecb9a",
+  "frozen_ready_products_checked": 145,
+  "source_truth_native_candidate_products": 143,
+  "source_truth_native_candidate_variant_options": 720,
+  "selection_rule": "Frozen PRODUCT_READY product + every authoritative variant option has a non-empty option_image_url; variant identity comes directly from Source Truth option row; no old gallery-slot binding used.",
+  "preferred_minimal_candidate_products": [
+    {
+      "product_id": "51365698925",
+      "product_source_row": 208,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 6,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "大禮包【12球+拍套】",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ag-mro356zb9vr4c7",
+          "source_row": 1584
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "52815734458",
+      "product_source_row": 307,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 6,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "籃球訓練墊【2.7mm】",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258p-mrpfvx7yaa6g83",
+          "source_row": 2212
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "49465714448",
+      "product_source_row": 225,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 7,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_e325919888a6db8eaf798502",
+          "variation_name": "型號",
+          "option_index": "1",
+          "option_name": "粘性強+細膩",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825a1-mro37245emtjef",
+          "source_row": 1732
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "52515734591",
+      "product_source_row": 309,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 7,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_f2ba07917ad96cf8ce694a9f",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "排球扣球訓練器",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82596-mrpfvrmdwpvs29",
+          "source_row": 2221
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "52915734456",
+      "product_source_row": 305,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 7,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_a69bbce8f875a34c31105017",
+          "variation_name": "顏色",
+          "option_index": "1",
+          "option_name": "通用小巧氣壓打氣筒",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ae-mrpfvysy169yca",
+          "source_row": 2209
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    }
+  ],
+  "first_20_candidate_products": [
+    {
+      "product_id": "51365698925",
+      "product_source_row": 208,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 6,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "大禮包【12球+拍套】",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ag-mro356zb9vr4c7",
+          "source_row": 1584
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "52815734458",
+      "product_source_row": 307,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 6,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "籃球訓練墊【2.7mm】",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258p-mrpfvx7yaa6g83",
+          "source_row": 2212
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "49465714448",
+      "product_source_row": 225,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 7,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_e325919888a6db8eaf798502",
+          "variation_name": "型號",
+          "option_index": "1",
+          "option_name": "粘性強+細膩",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825a1-mro37245emtjef",
+          "source_row": 1732
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "52515734591",
+      "product_source_row": 309,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 7,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_f2ba07917ad96cf8ce694a9f",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "排球扣球訓練器",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82596-mrpfvrmdwpvs29",
+          "source_row": 2221
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "52915734456",
+      "product_source_row": 305,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 7,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_a69bbce8f875a34c31105017",
+          "variation_name": "顏色",
+          "option_index": "1",
+          "option_name": "通用小巧氣壓打氣筒",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ae-mrpfvysy169yca",
+          "source_row": 2209
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "42383412874",
+      "product_source_row": 252,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 8,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_06cb1feeb6d40eccf93c72cd",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "成品拍",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825b3-mroapcoc74siad",
+          "source_row": 1897
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "44965727479",
+      "product_source_row": 351,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 8,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_ceb5341bf879a1bd0bcd4a26",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "專業款",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82596-mroaqkt3ytc44b",
+          "source_row": 2506
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "54865689425",
+      "product_source_row": 186,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 8,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_2c040e2a863c21812ad533b3",
+          "variation_name": "型號",
+          "option_index": "1",
+          "option_name": "黑胡桃木9-戰拍",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ab-mro3co3zsxkwf5",
+          "source_row": 1448
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "42783432157",
+      "product_source_row": 360,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_7d03760683f38131e9cf78d0",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "專業賽事級排球訓練網",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258n-mrpfxgvfyebm1d",
+          "source_row": 2553
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "47065731416",
+      "product_source_row": 343,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_a726d10dc8bb5142153709b9",
+          "variation_name": "顏色",
+          "option_index": "1",
+          "option_name": "黑色雙轉盤",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82599-mroapdlr4x6q47",
+          "source_row": 2454
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "49265764165",
+      "product_source_row": 324,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_8b7b2ab86a71e7312e3ec7a0",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "自動充氣泵配收納袋",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258v-mrpfwnhuku86a8",
+          "source_row": 2337
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "49665731376",
+      "product_source_row": 323,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_7fffb89ae980ed99a818c89e",
+          "variation_name": "屬性",
+          "option_index": "1",
+          "option_name": "官方正品【斷包換/假一賠十】",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82582-mroasa8qchz850",
+          "source_row": 2336
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "53515745081",
+      "product_source_row": 299,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_f9917efa537e046a00d9640f",
+          "variation_name": "款式",
+          "option_index": "1",
+          "option_name": "MP19 推拉雙向進氣球類打氣筒",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258t-mrpfy2d5p5a982",
+          "source_row": 2112
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "53515745149",
+      "product_source_row": 298,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_a305e86103e25b5948e2e798",
+          "variation_name": "組合",
+          "option_index": "1",
+          "option_name": "給（打氣筒 + 球袋 + 網兜 + 氣針",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8259u-mrpfydcval1i5b",
+          "source_row": 2111
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "53815734523",
+      "product_source_row": 296,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_b0c5661144f893d69beb15c4",
+          "variation_name": "顏色",
+          "option_index": "1",
+          "option_name": "5號黑色訓練器適",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82594-mrpfwdfu80soa9",
+          "source_row": 2094
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "54665698449",
+      "product_source_row": 190,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_63cc232562bef69cf920ef4c",
+          "variation_name": "材質",
+          "option_index": "1",
+          "option_name": "【乒乓專用】增粘清潔劑",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825a7-mro34ku6rr40da",
+          "source_row": 1456
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "54865715317",
+      "product_source_row": 288,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "PRESERVE"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_cedfc6b54a8c12d562e7afd0",
+          "variation_name": "型號",
+          "option_index": "1",
+          "option_name": "歐頓DD1網球",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8259b-mroaq5nvqo793b",
+          "source_row": 2065
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "57765745060",
+      "product_source_row": 278,
+      "product_variant_count": 1,
+      "product_gallery_image_count": 9,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_28367ef9a9434dbb950aaf6f",
+          "variation_name": "組合",
+          "option_index": "1",
+          "option_name": "【愛棣爾】專業鑄就品質",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258n-mrpfwgwsb4lk1b",
+          "source_row": 2038
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "52565652509",
+      "product_source_row": 70,
+      "product_variant_count": 2,
+      "product_gallery_image_count": 4,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_c9d5359af2e4e2db477607c7",
+          "variation_name": "顏色",
+          "option_index": "1",
+          "option_name": "白tour一支裝+拍套手膠",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ac-mrmmtcn7gnwk23",
+          "source_row": 571
+        },
+        {
+          "variant_identity_key": "variant_bb70a2dcedea24ef92e6cffb",
+          "variation_name": "顏色",
+          "option_index": "2",
+          "option_name": "黑tour一支裝+拍套手膠",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8259l-mrmmte4m249012",
+          "source_row": 572
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    },
+    {
+      "product_id": "58165657009",
+      "product_source_row": 171,
+      "product_variant_count": 2,
+      "product_gallery_image_count": 4,
+      "frozen_readiness_status": "PRODUCT_READY_FOR_GENERATION",
+      "frozen_slot_states": [
+        {
+          "slot_role": "MAIN",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_1",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_2",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_3",
+          "state": "EXECUTION_READY"
+        },
+        {
+          "slot_role": "DETAIL_4",
+          "state": "EXECUTION_READY"
+        }
+      ],
+      "variant_options": [
+        {
+          "variant_identity_key": "variant_c58e460c23a00a288e941ea9",
+          "variation_name": "型號",
+          "option_index": "1",
+          "option_name": "圓形2粒裝",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ba-mrmmtc9jd1j532",
+          "source_row": 1318
+        },
+        {
+          "variant_identity_key": "variant_d1a48347dade38ecd97b7919",
+          "variation_name": "型號",
+          "option_index": "2",
+          "option_name": "六邊形2粒裝",
+          "option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82597-mrmmtckt9req54",
+          "source_row": 1319
+        }
+      ],
+      "exact_variant_identity_provenance": "SOURCE_TRUTH_OPTION_ROW",
+      "uses_old_549_gallery_binding": false,
+      "eligible_for_zero_paid_preflight": true,
+      "eligible_for_paid_generation_now": false
+    }
+  ],
+  "old_gallery_slot_binding_dependency": false,
+  "old_145_549_membership_mutated": false,
+  "variant_mapping_guessed": false,
+  "generation_authorized": false,
+  "owner_gate_required_before_generation": true,
+  "single_next_best_action": "OWNER_GATE_FOR_MINIMAL_PAID_VARIANT_CANARY",
+  "safety": {
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "stable_mutation": false,
+    "frozen_queue_mutation": false,
+    "product_data_mutation": false
+  }
+}
