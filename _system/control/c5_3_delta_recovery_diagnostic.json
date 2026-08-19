@@ -1,8 +1,17 @@
 {
   "schema_version": "tinysnow.c5.3.delta-recovery-diagnostic.1",
   "status": "FAIL",
-  "timestamp_utc": "2026-08-19T03:59:33.728389Z",
+  "timestamp_utc": "2026-08-19T04:01:42.653583Z",
+  "frozen_input_check": {
+    "expected_generation_plan_queue_sha256": "51c5c0a2b9129d8b0add74e29ee5316267643657844645ac40f1fe4e675c22b9",
+    "actual_generation_plan_queue_sha256": "fa93ee296500392de4b2ed6a38a5031975be08acc612a26e798813fef484091b",
+    "generation_plan_queue_sha_match": false,
+    "coverage_ready_products": 145,
+    "coverage_ready_slots": 549,
+    "execution_ready_queue_rows": 549,
+    "product_readiness_ready_rows": 145
+  },
   "error_type": "AssertionError",
   "error": "",
-  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 11, in <module>\n  File \"v4c-c5-3-delta-scope-overlay.yml\", line 25, in <module>\nAssertionError\n"
+  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 26, in <module>\n  File \"v4c-c5-3-delta-scope-overlay.yml\", line 25, in <module>\nAssertionError\n"
 }
