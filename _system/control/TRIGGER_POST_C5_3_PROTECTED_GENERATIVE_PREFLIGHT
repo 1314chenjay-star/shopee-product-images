@@ -1,0 +1,5 @@
+triggered_at_utc=2026-08-19T10:57:30Z
+reason=zero-paid guard PASS; integrate guard and select true generative canary
+paid_requests_authorized=0
+image_generation_authorized=false
+stable_mutation_authorized=false
