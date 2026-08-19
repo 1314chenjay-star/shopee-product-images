@@ -1,0 +1,85 @@
+name: V4-C5.3 Delta Recovery Bridge
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/TRIGGER_C5_3_DELTA_RECOVERY_BRIDGE'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tinysnow-c5-3-delta-recovery-bridge
+  cancel-in-progress: false
+
+jobs:
+  recover-first-pending-delta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard stable and checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "5d49f061e140813b3d229520e9e530f86b27b640"
+          python - <<'PY'
+          import json
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          assert cp['checkpoint']=='DELTA_SCOPE_OVERLAY'
+          assert cp['pending'][0]=='145/549 delta scope overlay'
+          q=[json.loads(x) for x in open('_system/agent_queue/queue.jsonl',encoding='utf-8-sig') if x.strip()]
+          t=next(x for x in q if x['task_id']=='TASK-C5-3-SOURCE-TRUTH-REPAIR')
+          assert t['checkpoint']=='DELTA_SCOPE_OVERLAY'
+          assert not t['paid'] and not t['generation'] and not t['owner_decision_required']
+          PY
+
+      - name: Reuse authoritative overlay implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+          src=Path('.github/workflows/v4c-c5-3-delta-scope-overlay.yml').read_text(encoding='utf-8')
+          marker="          python - <<'PY'\n"
+          start=src.index(marker)+len(marker)
+          end=src.index("\n          PY",start)
+          code=textwrap.dedent(src[start:end])
+          Path('/tmp/tinysnow_c5_3_overlay.py').write_text(code,encoding='utf-8')
+          PY
+          python /tmp/tinysnow_c5_3_overlay.py
+
+      - name: Synchronize queue with advanced checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, pathlib
+          cp=json.load(open('_system/control/execution_checkpoint.json',encoding='utf-8-sig'))
+          assert cp['checkpoint']=='C5_3_REGRESSION'
+          p=pathlib.Path('_system/agent_queue/queue.jsonl')
+          rows=[json.loads(x) for x in p.read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          for t in rows:
+              if t.get('task_id')=='TASK-C5-3-SOURCE-TRUTH-REPAIR':
+                  t['checkpoint']='C5_3_REGRESSION'
+                  t['next_action']='C5.3-only regressions'
+                  t['next_workflow']='v4c-c5-3-scoped-regression.yml'
+                  t['status']='RECOVERING'
+          p.write_text(''.join(json.dumps(x,ensure_ascii=False,separators=(',',':'))+'\n' for x in rows),encoding='utf-8')
+          PY
+
+      - name: Persist durable overlay evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "TinySnow Delta Recovery Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add _system/v4c/source_truth_bootstrap _system/control/execution_checkpoint.json _system/control/live_status.json _system/control/worker_state.json _system/agent_queue/queue.jsonl
+          git commit -m "v4c5.3: recover 145 ready products and 549 slots [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
