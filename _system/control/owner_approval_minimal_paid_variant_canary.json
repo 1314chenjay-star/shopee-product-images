@@ -1,0 +1,25 @@
+{
+  "schema_version": "tinysnow.owner-approval.minimal-paid-variant-canary.1",
+  "approved": true,
+  "approved_at_local": "2026-08-19T13:35:00+08:00",
+  "scope": "MINIMAL_PAID_VARIANT_CANARY",
+  "product_id": "51365698925",
+  "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+  "variant_option_name": "大禮包【12球+拍套】",
+  "max_products": 1,
+  "max_variants": 1,
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50,
+  "bulk_generation_authorized": false,
+  "stable_mutation_authorized": false,
+  "c5_3_rerun_authorized": false,
+  "approval_source": "Owner explicit chat approval: 最高預算 NT$50；只允許 1 商品 + 1 variant；禁止批量執行。",
+  "stop_conditions": [
+    "second paid request would be required",
+    "second product or variant would be required",
+    "stable mutation would be required",
+    "C5.3 rerun would be required",
+    "source truth identity cannot be verified",
+    "provider key or execution preflight fails"
+  ]
+}
