@@ -1,8 +1,8 @@
 {
   "schema_version": "tinysnow.c5.3.regression-recovery-diagnostic.1",
-  "status": "FAIL",
-  "timestamp_utc": "2026-08-19T04:07:50.620811Z",
-  "returncode": 1,
-  "stdout": "",
-  "stderr": "Traceback (most recent call last):\n  File \"/home/runner/work/shopee-product-images/shopee-product-images/_system/tests/test_c5_3_source_truth_regression.py\", line 118, in <module>\n    main()\n  File \"/home/runner/work/shopee-product-images/shopee-product-images/_system/tests/test_c5_3_source_truth_regression.py\", line 91, in main\n    db_bytes=lzma.decompress(base64.b64decode(snap.read_bytes()))\n                                              ^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/pathlib.py\", line 1021, in read_bytes\n    with self.open(mode='rb') as f:\n         ^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/pathlib.py\", line 1015, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/shopee-product-images/shopee-product-images/_system/source_truth/bootstrap_store.sqlite.xz.b64'\n"
+  "status": "PASS",
+  "timestamp_utc": "2026-08-19T04:10:24.301227Z",
+  "returncode": 0,
+  "stdout": "C5_3_SOURCE_TRUTH_REGRESSION_PASS {\"authoritative_exact_bindings\": 0, \"bootstrap_sqlite_evidence\": \"PASS_DURABLE_VALIDATION\", \"frozen_ready_scope\": [145, 549], \"historical_unverified_exact_bindings\": 25, \"missing_option_images_hold\": 145, \"recovered_overlay_scope\": \"145 products / 549 slots all VARIANT_MAPPING_UNKNOWN\", \"source_truth\": [375, 2394, 2673], \"transport_integrity\": \"PASS\", \"variant_paid_canary\": \"HOLD\"}\n",
+  "stderr": ""
 }

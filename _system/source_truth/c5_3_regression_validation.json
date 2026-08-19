@@ -1,0 +1,27 @@
+{
+  "schema_version": "tinysnow.c5-3-source-truth-regression.2",
+  "stage": "V4-C5.3 Source Truth Repair",
+  "status": "PASS",
+  "tested_head": "79d79e2c24d5bdb1589f58318aea6074755439b4",
+  "workflow_run_id": 32214766713,
+  "checks": {
+    "authoritative_source_counts": "375/2394/2673 PASS",
+    "sqlite_integrity": "PASS",
+    "foreign_keys": "PASS",
+    "frozen_ready_scope": "145 PRODUCT_READY / 549 execution-ready PASS",
+    "recovered_145_549_overlay": "PASS; 549/549 VARIANT_MAPPING_UNKNOWN; no guessed promotion",
+    "historical_unverified_exact_bindings": "25 retained audit-only",
+    "authoritative_exact_bindings": "0/549 PASS",
+    "variant_paid_canary": "HOLD",
+    "source_truth_precedence": "PASS",
+    "unknown_conflict_hold": "PASS",
+    "variant_guessing_forbidden": "PASS"
+  },
+  "safety": {
+    "paid_api_called": false,
+    "image_generation_called": false,
+    "image_editing_called": false,
+    "stable_mutation": false,
+    "sealed_stage_rerun": false
+  }
+}
