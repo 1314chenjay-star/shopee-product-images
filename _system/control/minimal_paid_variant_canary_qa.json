@@ -1,0 +1,35 @@
+{
+  "schema_version": "tinysnow.post-c5-3-minimal-paid-variant-canary-qa.1",
+  "status": "FAIL_SOURCE_PRESERVATION",
+  "reviewed_at_utc": "2026-08-19T09:35:00Z",
+  "product_id": "51365698925",
+  "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+  "source_sha256": "e4276cdd5b2d49b0b00ea02c29850d37176c3aa7dc892deac10bac97ad4526cc",
+  "output_sha256": "19ae4b982b124de40d35b473b2022a7e85a0f1a05469b58cf7addf89c3ffdde1",
+  "workflow_run_id": 32220176251,
+  "artifact_id": 9353672663,
+  "paid_requests_sent": 1,
+  "second_paid_request_authorized": false,
+  "bulk_generation_authorized": false,
+  "stable_mutation": false,
+  "checks": {
+    "core_product_identity_preserved": true,
+    "cross_product_leak_observed": false,
+    "gross_accessory_count_change_observed": false,
+    "existing_text_preserved": false,
+    "source_promotional_badges_preserved": false,
+    "ready_for_bulk": false
+  },
+  "observed_failures": [
+    "Source top-left five-star badge was removed.",
+    "Source top-left gift badge and text '贈 / 原裝拍包 / 乒乓球' were removed.",
+    "The canary prompt explicitly required preserving all factual text, so removal is a source-preservation regression."
+  ],
+  "decision": "REJECT_OUTPUT_AND_HOLD_FURTHER_PAID_GENERATION",
+  "next_action": "ZERO_PAID_FAILURE_ANALYSIS_AND_RETRY_PREPARATION",
+  "notes": [
+    "Do not send a second paid request under the existing Owner approval.",
+    "Do not promote this output to production or bulk generation.",
+    "Prepare a zero-paid retry plan with stricter text/badge preservation and deterministic post-generation QA; any new paid retry requires a new Owner gate."
+  ]
+}
