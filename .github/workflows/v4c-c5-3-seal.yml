@@ -3,7 +3,9 @@ name: V4-C5.3 Source Truth Seal
 on:
   push:
     branches: [v4c-universal-product-engine]
-    paths: ['_system/source_truth/c5_3_regression_validation.json']
+    paths:
+      - '_system/source_truth/c5_3_regression_validation.json'
+      - '_system/control/TRIGGER_C5_3_SEAL'
   workflow_dispatch:
 
 permissions:
