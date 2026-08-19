@@ -121,6 +121,7 @@ jobs:
           retention-days: 14
 
   recover-first-pending-delta:
+    if: ${{ always() }}
     needs: watchdog
     permissions:
       contents: write
