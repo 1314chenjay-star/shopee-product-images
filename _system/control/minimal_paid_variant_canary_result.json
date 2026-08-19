@@ -1,0 +1,21 @@
+{
+  "schema_version": "tinysnow.post-c5-3-minimal-paid-variant-canary-result.1",
+  "status": "EXECUTED_PENDING_HUMAN_REVIEW",
+  "executed_at_utc": "2026-08-19T05:39:17.633108Z",
+  "product_id": "51365698925",
+  "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+  "variant_option_name": "大禮包【12球+拍套】",
+  "source_truth_option_image_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825ag-mro356zb9vr4c7",
+  "source_sha256": "e4276cdd5b2d49b0b00ea02c29850d37176c3aa7dc892deac10bac97ad4526cc",
+  "output_sha256": "19ae4b982b124de40d35b473b2022a7e85a0f1a05469b58cf7addf89c3ffdde1",
+  "paid_requests_sent": 1,
+  "max_paid_requests_authorized": 1,
+  "max_budget_ntd_authorized": 50,
+  "bulk_generation_authorized": false,
+  "stable_mutation": false,
+  "c5_3_rerun": false,
+  "provider": "TinySnow",
+  "model": "gpt-image-2",
+  "quality": "medium",
+  "note": "Provider interface exposes request execution but no preflight NTD price field; monetary cap is recorded and request count is hard-capped at one."
+}
