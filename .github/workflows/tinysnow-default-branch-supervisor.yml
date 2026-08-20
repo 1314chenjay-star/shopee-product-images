@@ -24,3 +24,34 @@ jobs:
       actions: read
     uses: 1314chenjay-star/shopee-product-images/.github/workflows/v4c-source-truth-recovery.yml@v4c-universal-product-engine
     secrets: inherit
+
+  route-protected-generative-preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      dispatch: ${{ steps.route.outputs.dispatch }}
+    steps:
+      - name: Checkout experimental control plane
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 1
+      - name: Route only the current pending zero-paid preflight
+        id: route
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path('_system/agent_queue/queue.jsonl').read_text(encoding='utf-8-sig').splitlines() if x.strip()]
+          t=next((x for x in rows if x.get('task_id')=='TASK-POST-C5-3-MINIMAL-CANARY-REVIEW'),None)
+          ok=bool(t and t.get('checkpoint')=='SOURCE_PRESERVATION_GUARD_PASS' and t.get('next_action')=='EXECUTE_REGISTERED_MAIN_PROTECTED_GENERATIVE_PREFLIGHT_DISPATCHER' and t.get('next_workflow')=='v4c-post-c5-3-protected-generative-preflight-dispatch.yml' and t.get('dispatcher_branch')=='main' and int(t.get('paid_requests_already_sent',0))==1 and t.get('second_paid_request_authorized') is False and t.get('bulk_generation_authorized') is False and t.get('stable_mutation_authorized') is False)
+          print('dispatch=' + ('true' if ok else 'false'))
+          PY
+
+  protected-generative-preflight:
+    needs: route-protected-generative-preflight
+    if: needs.route-protected-generative-preflight.outputs.dispatch == 'true'
+    permissions:
+      contents: write
+    uses: 1314chenjay-star/shopee-product-images/.github/workflows/v4c-post-c5-3-protected-generative-preflight-dispatch.yml@main
+    secrets: inherit
