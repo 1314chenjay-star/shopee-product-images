@@ -1,0 +1,29 @@
+{
+  "schema_version": "tinysnow.second-minimal-protected-canary-result.1",
+  "status": "EXECUTED_PENDING_HUMAN_REVIEW",
+  "executed_at_utc": "2026-08-20T23:05:59.768919Z",
+  "product_id": "52815734458",
+  "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+  "variant_option_name": "籃球訓練墊【2.7mm】",
+  "source_sha256": "66aa3338c86e0a71f51fc624de21a0e160a7efa2ea6dc78493981affcf0830bd",
+  "raw_provider_output_sha256": "d1a15586984d703066c403182f479afe45c0582b4bb2d0a13d3a0ffe772e0d58",
+  "protected_output_sha256": "7aa62934ccdf6c53d39e60dd522f1f501f945da79aa65901da525442e5ce3cbe",
+  "protected_regions": [
+    {
+      "name": "foreground_component_1",
+      "x": 0.0,
+      "y": 0.035,
+      "width": 0.945,
+      "height": 0.945,
+      "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+    }
+  ],
+  "protected_region_qa": "PASS",
+  "paid_requests_sent_this_canary": 1,
+  "prior_paid_requests_sent": 1,
+  "max_budget_ntd_authorized": 50.0,
+  "bulk_generation_authorized": false,
+  "stable_mutation": false,
+  "c5_3_rerun": false,
+  "second_retry_authorized": false
+}

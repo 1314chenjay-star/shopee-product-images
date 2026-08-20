@@ -1,9 +1,9 @@
 {
   "schema_version": "tinysnow.next-decision.1",
-  "current_stage": "POST_C5_3_PROTECTED_GENERATIVE_CANARY_PREFLIGHT",
-  "next_action": "OWNER_GATE_FOR_SECOND_MINIMAL_PROTECTED_CANARY",
-  "reason": "Zero-paid guard integration preflight selected an exact Source Truth variant with deterministic protected regions and a safe editable background. A new explicit Owner authorization is required before any second paid request.",
-  "owner_decision_required": true,
+  "current_stage": "POST_C5_3_SECOND_PROTECTED_CANARY_REVIEW",
+  "next_action": "REVIEW_PROTECTED_CANARY_ARTIFACT_AND_PROVENANCE",
+  "reason": "One newly Owner-approved protected canary request executed with deterministic protected-region restore and QA PASS. No further paid request is authorized. Next step is zero-paid human/visual QA.",
+  "owner_decision_required": false,
   "canary": {
     "status": "FAIL_SOURCE_PRESERVATION",
     "result_path": "_system/control/minimal_paid_variant_canary_result.json",
