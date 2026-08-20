@@ -1,0 +1,85 @@
+{
+  "schema_version": "tinysnow.protected-generative-canary-preflight.1",
+  "status": "PASS",
+  "zero_paid": true,
+  "image_generation_called": false,
+  "stable_mutation": false,
+  "c5_3_rerun": false,
+  "selection_rule": "Source Truth exact variant + deterministic non-OCR foreground protection + >=12% editable background; no full-frame generative edit.",
+  "selected": {
+    "eligible": true,
+    "product_id": "52815734458",
+    "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+    "variation_name": "款式",
+    "option_name": "籃球訓練墊【2.7mm】",
+    "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258p-mrpfvx7yaa6g83",
+    "source_sha256": "66aa3338c86e0a71f51fc624de21a0e160a7efa2ea6dc78493981affcf0830bd",
+    "image_width": 800,
+    "image_height": 800,
+    "estimated_background_rgb": [
+      255,
+      255,
+      255
+    ],
+    "protected_regions": [
+      {
+        "name": "foreground_component_1",
+        "x": 0.0,
+        "y": 0.035,
+        "width": 0.945,
+        "height": 0.945,
+        "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+      }
+    ],
+    "protected_area_ratio": 0.693222,
+    "editable_area_ratio": 0.306778,
+    "edit_contract": "BACKGROUND_ONLY_GENERATIVE_CLEANUP_WITH_POST_GENERATION_PROTECTED_REGION_RESTORE",
+    "region_detection": "DETERMINISTIC_NON_OCR_BACKGROUND_CONTRAST_TILE_MASK"
+  },
+  "attempts": [
+    {
+      "product_id": "51365698925",
+      "result": {
+        "eligible": false,
+        "reason": "INSUFFICIENT_SAFE_EDITABLE_BACKGROUND",
+        "editable_area_ratio": 0.0
+      }
+    },
+    {
+      "product_id": "52815734458",
+      "result": {
+        "eligible": true,
+        "product_id": "52815734458",
+        "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+        "variation_name": "款式",
+        "option_name": "籃球訓練墊【2.7mm】",
+        "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258p-mrpfvx7yaa6g83",
+        "source_sha256": "66aa3338c86e0a71f51fc624de21a0e160a7efa2ea6dc78493981affcf0830bd",
+        "image_width": 800,
+        "image_height": 800,
+        "estimated_background_rgb": [
+          255,
+          255,
+          255
+        ],
+        "protected_regions": [
+          {
+            "name": "foreground_component_1",
+            "x": 0.0,
+            "y": 0.035,
+            "width": 0.945,
+            "height": 0.945,
+            "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+          }
+        ],
+        "protected_area_ratio": 0.693222,
+        "editable_area_ratio": 0.306778,
+        "edit_contract": "BACKGROUND_ONLY_GENERATIVE_CLEANUP_WITH_POST_GENERATION_PROTECTED_REGION_RESTORE",
+        "region_detection": "DETERMINISTIC_NON_OCR_BACKGROUND_CONTRAST_TILE_MASK"
+      }
+    }
+  ],
+  "next_action": "OWNER_GATE_FOR_SECOND_MINIMAL_PROTECTED_CANARY",
+  "second_paid_request_authorized": false,
+  "bulk_generation_authorized": false
+}

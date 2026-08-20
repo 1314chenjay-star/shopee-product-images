@@ -1,9 +1,9 @@
 {
   "schema_version": "tinysnow.next-decision.1",
-  "current_stage": "POST_C5_3_SOURCE_PRESERVATION_GUARD",
-  "next_action": "INTEGRATE_GUARD_INTO_EXECUTION_PATH_AND_SELECT_TRUE_GENERATIVE_CANARY",
-  "reason": "Zero-paid source-preservation guard passed deterministic routing, negative-control rejection, protected-region restore, and post-restore pixel QA. Next work remains zero-paid: wire the guard into the execution path and select a genuinely generative canary that has explicit authorized edit regions. No second paid request is authorized.",
-  "owner_decision_required": false,
+  "current_stage": "POST_C5_3_PROTECTED_GENERATIVE_CANARY_PREFLIGHT",
+  "next_action": "OWNER_GATE_FOR_SECOND_MINIMAL_PROTECTED_CANARY",
+  "reason": "Zero-paid guard integration preflight selected an exact Source Truth variant with deterministic protected regions and a safe editable background. A new explicit Owner authorization is required before any second paid request.",
+  "owner_decision_required": true,
   "canary": {
     "status": "FAIL_SOURCE_PRESERVATION",
     "result_path": "_system/control/minimal_paid_variant_canary_result.json",
@@ -49,5 +49,29 @@
     "paid_api": 0,
     "image_generation": 0,
     "stable_mutation": false
+  },
+  "protected_canary": {
+    "status": "READY_FOR_OWNER_GATE",
+    "preflight_path": "_system/control/protected_generative_canary_preflight.json",
+    "product_id": "52815734458",
+    "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+    "option_name": "籃球訓練墊【2.7mm】",
+    "protected_regions": [
+      {
+        "name": "foreground_component_1",
+        "x": 0.0,
+        "y": 0.035,
+        "width": 0.945,
+        "height": 0.945,
+        "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+      }
+    ],
+    "editable_area_ratio": 0.306778,
+    "max_products": 1,
+    "max_variants": 1,
+    "max_paid_requests": 1,
+    "bulk_generation_authorized": false,
+    "stable_mutation_authorized": false,
+    "requires_new_budget_ntd": true
   }
 }
