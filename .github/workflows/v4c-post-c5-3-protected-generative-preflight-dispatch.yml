@@ -1,6 +1,6 @@
 name: V4-C Post-C5.3 Protected Generative Canary Preflight Dispatcher
 
-# zero-paid retrigger after persistence-order fix; safe/idempotent under queue guard
+# zero-paid retrigger after persistence-order fix; safe/idempotent under queue guard; orchestrator retrigger 2026-08-21
 on:
   push:
     branches: [main]
