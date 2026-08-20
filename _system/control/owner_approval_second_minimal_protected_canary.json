@@ -1,0 +1,18 @@
+{
+  "schema_version": "tinysnow.owner-approval-second-minimal-protected-canary.1",
+  "approved": true,
+  "authorization_source": "_system/control/standing_one_image_owner_authorization.json",
+  "standing_authorization_status_at_dispatch": "AUTHORIZED_NOT_YET_CONSUMED",
+  "max_products": 1,
+  "max_variants": 1,
+  "max_images": 1,
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50,
+  "bulk_generation_authorized": false,
+  "stable_mutation_authorized": false,
+  "product_id": "52815734458",
+  "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+  "preflight_path": "_system/control/protected_generative_canary_preflight.json",
+  "guard_path": "_system/control/source_preservation_guard_validation.json",
+  "instruction": "Consume at most one paid request for this exact protected canary. Do not bulk generate, mutate stable, or rerun sealed C5.3."
+}
