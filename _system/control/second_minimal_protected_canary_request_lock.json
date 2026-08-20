@@ -1,0 +1,11 @@
+{
+  "schema_version": "tinysnow.second-protected-canary-request-lock.1",
+  "status": "LOCKED_BEFORE_PROVIDER",
+  "locked_at_utc": "2026-08-20T23:05:19.488625Z",
+  "product_id": "52815734458",
+  "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50,
+  "purpose": "Prevent duplicate provider submission on workflow rerun.",
+  "resend_without_manual_reconciliation": false
+}
