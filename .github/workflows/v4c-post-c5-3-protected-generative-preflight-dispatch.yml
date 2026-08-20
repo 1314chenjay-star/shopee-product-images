@@ -17,6 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  PYTHONIOENCODING: utf-8
   STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
   EXPERIMENT_BRANCH: v4c-universal-product-engine
   SOURCE_PREFLIGHT: _system/control/post_c5_3_source_truth_canary_preflight.json
