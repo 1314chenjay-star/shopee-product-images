@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/v4c-post-c5-3-protected-generative-preflight-dispatch.yml'
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: write
