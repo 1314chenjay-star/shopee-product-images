@@ -1,0 +1,100 @@
+name: TinySnow Durable Hourly Monitor
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tinysnow-hourly-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout experiment branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Build report-only durable snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _system/reports
+          python3 <<'PY'
+          import datetime as dt
+          import json
+          import pathlib
+          import subprocess
+
+          root = pathlib.Path('.')
+          def load_json(path):
+              p = root / path
+              if not p.exists():
+                  return {'present': False, 'path': path}
+              try:
+                  return json.loads(p.read_text(encoding='utf-8-sig'))
+              except Exception as exc:
+                  return {'present': True, 'path': path, 'parse_error': str(exc)}
+
+          def load_jsonl(path):
+              p = root / path
+              if not p.exists():
+                  return {'present': False, 'path': path}
+              rows = []
+              try:
+                  for line in p.read_text(encoding='utf-8-sig').splitlines():
+                      if line.strip():
+                          rows.append(json.loads(line))
+                  return rows
+              except Exception as exc:
+                  return {'present': True, 'path': path, 'parse_error': str(exc)}
+
+          def git_head(ref):
+              out = subprocess.check_output(['git','ls-remote','origin',f'refs/heads/{ref}'], text=True).strip()
+              return out.split()[0] if out else None
+
+          report = {
+              'schema_version': 'tinysnow.hourly-monitor-report.1',
+              'role': 'MONITOR_REPORT_ONLY',
+              'generated_at_utc': dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+              'experiment_branch': 'v4c-universal-product-engine',
+              'experiment_head': git_head('v4c-universal-product-engine'),
+              'main_head': git_head('main'),
+              'stable_head': git_head('tinysnow-tool-only'),
+              'checkpoint': load_json('_system/control/execution_checkpoint.json'),
+              'live_status': load_json('_system/control/live_status.json'),
+              'worker_state': load_json('_system/control/worker_state.json'),
+              'next_decision': load_json('_system/context/next_decision.json'),
+              'queue': load_jsonl('_system/agent_queue/queue.jsonl'),
+              'command_inbox': load_jsonl('_system/agent_queue/inbox/pending_commands.jsonl'),
+              'protected_preflight': load_json('_system/control/protected_generative_canary_preflight.json'),
+              'protected_canary_result': load_json('_system/control/second_minimal_protected_canary_result.json'),
+              'source_preservation_guard': load_json('_system/control/source_preservation_guard_validation.json'),
+              'note': 'Report only. This workflow does not decide, dispatch, generate images, call paid APIs, or mutate stable.'
+          }
+          (root / '_system/reports/tinysnow_hourly_monitor.json').write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Commit report to experiment branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add _system/reports/tinysnow_hourly_monitor.json
+          if git diff --cached --quiet; then
+            echo "No report change"
+            exit 0
+          fi
+          git commit -m "monitor: update TinySnow hourly durable report [skip ci]"
+          git pull --rebase origin v4c-universal-product-engine
+          git push origin HEAD:v4c-universal-product-engine
