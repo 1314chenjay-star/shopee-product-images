@@ -1,0 +1,37 @@
+name: TinySnow Durable Hourly Monitor
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read TinySnow state
+        run: |
+          mkdir -p _system/reports
+          cat > _system/reports/tinysnow_hourly_monitor.json <<'EOF'
+          {
+            "monitor": "tinysnow-hourly",
+            "role": "MONITOR_ORCHESTRATOR_VERIFY",
+            "timestamp": "${{ github.event.repository.updated_at }}",
+            "branch": "v4c-universal-product-engine",
+            "note": "Durable hourly checkpoint monitor placeholder"
+          }
+          EOF
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add _system/reports/tinysnow_hourly_monitor.json
+          git commit -m "chore: update TinySnow hourly monitor report" || echo "no changes"
+          git push || echo "no push needed"
