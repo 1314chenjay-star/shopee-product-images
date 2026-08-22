@@ -1,0 +1,11 @@
+{
+  "queue_version": "1.0",
+  "role": "ORCHESTRATOR_ACTION_QUEUE",
+  "status": "ACTIVE",
+  "rules": {
+    "monitor_must_decide": true,
+    "heartbeat_is_not_progress": true,
+    "require_durable_evidence": true
+  },
+  "actions": []
+}
