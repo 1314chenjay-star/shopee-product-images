@@ -12,26 +12,48 @@ jobs:
   monitor:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout experiment branch
         uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
 
-      - name: Read TinySnow state
+      - name: Read TinySnow durable state
+        shell: bash
         run: |
           mkdir -p _system/reports
-          cat > _system/reports/tinysnow_hourly_monitor.json <<'EOF'
-          {
-            "monitor": "tinysnow-hourly",
-            "role": "MONITOR_ORCHESTRATOR_VERIFY",
-            "timestamp": "${{ github.event.repository.updated_at }}",
-            "branch": "v4c-universal-product-engine",
-            "note": "Durable hourly checkpoint monitor placeholder"
+          python3 <<'PY'
+          import json, pathlib, datetime
+          base = pathlib.Path('.')
+          files = {
+              'checkpoint': '_system/control/execution_checkpoint.json',
+              'queue': '_system/agent_queue/queue.jsonl',
+              'preflight': '_system/control/protected_generative_canary_preflight.json',
+              'canary': '_system/control/second_minimal_protected_canary_result.json',
           }
-          EOF
+          out = {
+              'monitor': 'tinysnow-hourly',
+              'role': 'MONITOR_ORCHESTRATOR_VERIFY',
+              'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
+              'branch': 'v4c-universal-product-engine',
+          }
+          for key, path in files.items():
+              p = base / path
+              if p.exists():
+                  try:
+                      out[key] = json.loads(p.read_text())
+                  except Exception:
+                      out[key] = {'present': True, 'parse': 'failed'}
+              else:
+                  out[key] = {'present': False}
+          pathlib.Path('_system/reports/tinysnow_hourly_monitor.json').write_text(
+              json.dumps(out, ensure_ascii=False, indent=2)
+          )
+          PY
 
-      - name: Commit report
+      - name: Commit durable monitor report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add _system/reports/tinysnow_hourly_monitor.json
-          git commit -m "chore: update TinySnow hourly monitor report" || echo "no changes"
+          git commit -m "chore: update TinySnow durable monitor report" || echo "no changes"
           git push || echo "no push needed"
