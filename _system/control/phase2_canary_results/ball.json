@@ -1,0 +1,39 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-result.1",
+  "status": "EXECUTED_QA_PASS",
+  "executed_at_utc": "2026-08-23T12:47:32.973414Z",
+  "workflow_run_id": 32640364329,
+  "category": "ball",
+  "preflight_result": "PASS",
+  "product_id": "52515734591",
+  "variant_identity_key": "variant_f2ba07917ad96cf8ce694a9f",
+  "variant_option_name": "排球扣球訓練器",
+  "source_sha256": "38354d5bfa582ab58f58013709cef169d8c1cbdcbb3b45d335d09f7b31202e07",
+  "raw_provider_output_sha256": "0273e8635d24643515656c256382ff58029067aa973d54f1e7d99c71bb20eba8",
+  "protected_output_sha256": "e9ffa1fea7c9f69c6406566f825a5b047e9e688d34d4cf95f34780b4383caec2",
+  "protected_regions": [
+    {
+      "name": "foreground_component_1",
+      "x": 0.525,
+      "y": 0.0,
+      "width": 0.315,
+      "height": 1.0,
+      "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+    },
+    {
+      "name": "foreground_component_2",
+      "x": 0.175,
+      "y": 0.42,
+      "width": 0.315,
+      "height": 0.58,
+      "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+    }
+  ],
+  "protected_region_qa": "PASS",
+  "paid_requests_sent_this_canary": 1,
+  "max_budget_ntd_authorized": 50.0,
+  "bulk_generation_authorized": false,
+  "stable_mutation": false,
+  "qa_relaxation": false,
+  "retry_authorized": false
+}
