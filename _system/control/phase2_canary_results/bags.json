@@ -1,0 +1,31 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-result.1",
+  "status": "EXECUTED_QA_PASS",
+  "executed_at_utc": "2026-08-23T12:51:09.754871Z",
+  "workflow_run_id": 32640545225,
+  "category": "bags",
+  "preflight_result": "PASS_CLOSEST_EXACT_VARIANT",
+  "product_id": "46165714394",
+  "variant_identity_key": "variant_79f7c70cd4ac9056fed84ba7",
+  "variant_option_name": "紅色+小包（圓形款）",
+  "source_sha256": "3b23e72b9e62e2e4bf95cdb198ede61f40cb9eb7b6968e6057ca84564e5d60a7",
+  "raw_provider_output_sha256": "380aba0dc7384bbfdd956f132bd5ba1f87791ec4b0d36b9e7c0301585c197eef",
+  "protected_output_sha256": "cf069c2a34fa94ffdb24a74992397bd43e4e2901c117a6ebeff2b7c8ced3ebd9",
+  "protected_regions": [
+    {
+      "name": "foreground_component_1",
+      "x": 0.0,
+      "y": 0.105,
+      "width": 1.0,
+      "height": 0.77,
+      "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+    }
+  ],
+  "protected_region_qa": "PASS",
+  "paid_requests_sent_this_canary": 1,
+  "max_budget_ntd_authorized": 50.0,
+  "bulk_generation_authorized": false,
+  "stable_mutation": false,
+  "qa_relaxation": false,
+  "retry_authorized": false
+}
