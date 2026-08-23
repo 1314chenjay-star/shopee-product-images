@@ -1,0 +1,227 @@
+name: V4-C Phase 2 Protected Generative Canary
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - '_system/control/phase2_canary_requests/*.json'
+
+permissions:
+  contents: write
+
+env:
+  STABLE_HEAD: 5d49f061e140813b3d229520e9e530f86b27b640
+  MANIFEST: _system/control/phase2_protected_canary_manifest.json
+
+jobs:
+  one-request-protected-generative-canary:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    concurrency:
+      group: tinysnow-phase2-protected-generative-canary
+      cancel-in-progress: false
+    steps:
+      - name: Checkout experimental branch
+        uses: actions/checkout@v4
+        with:
+          ref: v4c-universal-product-engine
+          fetch-depth: 0
+
+      - name: Guard Owner approval, exact request, preflight, and stable
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $changed=@(git diff-tree --no-commit-id --name-only -r $env:GITHUB_SHA | Where-Object {$_ -like '_system/control/phase2_canary_requests/*.json'})
+          if($changed.Count -ne 1){throw "Expected exactly one Phase 2 request file; found $($changed.Count)."}
+          $env:PHASE2_REQUEST_PATH=$changed[0]
+          $request=Get-Content $env:PHASE2_REQUEST_PATH -Raw -Encoding UTF8 | ConvertFrom-Json
+          $env:PHASE2_CATEGORY=[string]$request.category
+          if($env:PHASE2_CATEGORY -notin @('ball','apparel','bags')){throw 'REQUESTED_CATEGORY_NOT_EXECUTABLE'}
+          $env:PHASE2_LOCK="_system/control/phase2_canary_locks/$($env:PHASE2_CATEGORY).json"
+          $env:PHASE2_RESULT="_system/control/phase2_canary_results/$($env:PHASE2_CATEGORY).json"
+          if(Test-Path $env:PHASE2_LOCK){throw 'REQUEST_LOCK_ALREADY_EXISTS_DO_NOT_RESEND'}
+          if(Test-Path $env:PHASE2_RESULT){throw 'RESULT_ALREADY_EXISTS_DO_NOT_RESEND'}
+          $stable=(git ls-remote origin refs/heads/tinysnow-tool-only).Split("`t")[0].Trim()
+          if($stable -ne $env:STABLE_HEAD){throw "Stable HEAD drifted: $stable"}
+          New-Item -ItemType Directory -Path (Split-Path $env:PHASE2_LOCK) -Force | Out-Null
+          New-Item -ItemType Directory -Path (Split-Path $env:PHASE2_RESULT) -Force | Out-Null
+          @'
+          import json, os
+          from pathlib import Path
+          m=json.loads(Path(os.environ['MANIFEST']).read_text(encoding='utf-8-sig'))
+          r=json.loads(Path(os.environ['PHASE2_REQUEST_PATH']).read_text(encoding='utf-8-sig'))
+          assert m.get('approved') is True and m.get('status')=='OWNER_APPROVED_PHASE2_CANARY'
+          assert m.get('single_product_scope') is True and m.get('single_variant_scope') is True
+          assert int(m.get('max_paid_requests_per_category',0))==1
+          assert int(m.get('max_paid_requests_total',0))<=5
+          assert float(m.get('max_budget_ntd_per_category',0))>0
+          assert m.get('bulk_generation_authorized') is False
+          assert m.get('stable_mutation_authorized') is False
+          assert m.get('qa_relaxation_authorized') is False
+          assert m.get('monitoring_chain_mutation_authorized') is False
+          g=m['golden_baseline']
+          assert str(g['product_id'])=='52815734458'
+          assert g['variant_identity_key']=='variant_d7d3486ab401e33046181dbd'
+          assert int(g['workflow_run_id'])==32427126464 and g['protected_region_qa']=='PASS'
+          old=json.loads(Path('_system/control/second_minimal_protected_canary_result.json').read_text(encoding='utf-8-sig'))
+          assert str(old['product_id'])==str(g['product_id']) and old['variant_identity_key']==g['variant_identity_key']
+          assert old['protected_region_qa']=='PASS'
+          c=next(x for x in m['candidates'] if x['category']==r['category'])
+          assert c['preflight_result'] in ('PASS','PASS_CLOSEST_EXACT_VARIANT')
+          assert str(r['product_id'])==str(c['product_id']) and r['variant_identity_key']==c['variant_identity_key']
+          assert int(r.get('max_paid_requests',0))==1 and float(r.get('max_budget_ntd',0))==float(m['max_budget_ntd_per_category'])
+          assert r.get('single_product_scope') is True and r.get('single_variant_scope') is True
+          assert c['source_url'] and len(c['source_sha256'])==64
+          assert float(c['editable_area_ratio'])>=0.12
+          regions=c.get('protected_regions') or []
+          assert 0<len(regions)<=20
+          for x in regions:
+              assert all(float(x[k])>=0 for k in ('x','y','width','height'))
+              assert float(x['width'])>0 and float(x['height'])>0
+              assert float(x['x'])+float(x['width'])<=1.000001
+              assert float(x['y'])+float(x['height'])<=1.000001
+          p=Path(os.environ['RUNNER_TEMP'])/('TinySnow-Phase2-Preflight-'+c['category']+'.json')
+          p.write_text(json.dumps({'status':'PASS','selected':c},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write('PHASE2_CATEGORY='+c['category']+'\n')
+              f.write('PHASE2_LOCK=_system/control/phase2_canary_locks/'+c['category']+'.json\n')
+              f.write('PHASE2_RESULT=_system/control/phase2_canary_results/'+c['category']+'.json\n')
+              f.write('CANARY_PREFLIGHT_PATH='+str(p)+'\n')
+              f.write('CANARY_PRODUCT_ID='+str(c['product_id'])+'\n')
+              f.write('CANARY_VARIANT_KEY='+c['variant_identity_key']+'\n')
+              f.write('CANARY_VARIANT_NAME='+str(c.get('option_name','')).replace('\n',' ')+'\n')
+              f.write('CANARY_SOURCE_URL='+c['source_url']+'\n')
+              f.write('CANARY_EXPECTED_SOURCE_SHA='+c['source_sha256']+'\n')
+              f.write('CANARY_BUDGET_NTD='+str(r['max_budget_ntd'])+'\n')
+          print(json.dumps({'phase2_guard':'PASS','category':c['category'],'product_id':c['product_id'],'variant_identity_key':c['variant_identity_key'],'preflight_result':c['preflight_result'],'max_paid_requests':1},ensure_ascii=False))
+          '@ | python -
+
+      - name: Persist category idempotency request lock before provider call
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import datetime as dt, json, os
+          from pathlib import Path
+          lock={
+            'schema_version':'tinysnow.phase2-protected-canary-request-lock.1',
+            'status':'LOCKED_BEFORE_PROVIDER',
+            'locked_at_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'category':os.environ['PHASE2_CATEGORY'],
+            'product_id':os.environ['CANARY_PRODUCT_ID'],
+            'variant_identity_key':os.environ['CANARY_VARIANT_KEY'],
+            'max_paid_requests':1,
+            'max_budget_ntd':float(os.environ['CANARY_BUDGET_NTD']),
+            'resend_without_manual_reconciliation':False
+          }
+          Path(os.environ['PHASE2_LOCK']).write_text(json.dumps(lock,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          '@ | python -
+          git config user.name 'TinySnow Protected Canary Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- $env:PHASE2_LOCK
+          git commit -m "control: lock Phase 2 $env:PHASE2_CATEGORY canary before provider [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
+
+      - name: Download exact Source Truth source
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP "TinySnow-Phase2-$($env:PHASE2_CATEGORY)-Protected-Canary"
+          New-Item -ItemType Directory -Path $root -Force | Out-Null
+          $tmp=Join-Path $root 'source.download'
+          $wc=New-Object Net.WebClient
+          try{$wc.DownloadFile($env:CANARY_SOURCE_URL,$tmp)}finally{$wc.Dispose()}
+          $actual=(Get-FileHash $tmp -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($actual -ne $env:CANARY_EXPECTED_SOURCE_SHA){throw "Source SHA changed: $actual"}
+          $b=[IO.File]::ReadAllBytes($tmp);$ext=$null
+          if($b.Length-ge3 -and $b[0]-eq0xFF -and $b[1]-eq0xD8 -and $b[2]-eq0xFF){$ext='.jpg'}
+          elseif($b.Length-ge8 -and $b[0]-eq0x89 -and $b[1]-eq0x50 -and $b[2]-eq0x4E -and $b[3]-eq0x47){$ext='.png'}
+          elseif($b.Length-ge12 -and [Text.Encoding]::ASCII.GetString($b,0,4)-eq'RIFF' -and [Text.Encoding]::ASCII.GetString($b,8,4)-eq'WEBP'){$ext='.webp'}
+          else{throw 'Unsupported source image format.'}
+          $source=Join-Path $root ('source'+$ext);Move-Item $tmp $source -Force
+          "CANARY_DIR=$root" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CANARY_SOURCE_PATH=$source" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Execute exactly one protected background-only image edit
+        shell: powershell
+        env:
+          TINYSNOW_API_KEY: ${{ secrets.TINYSNOW_API_KEY }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if([string]::IsNullOrWhiteSpace([string]$env:TINYSNOW_API_KEY)){throw 'TINYSNOW_API_KEY missing.'}
+          . .\_system\guards\source_preservation_guard.ps1
+          . .\_system\start\api_v2.ps1
+          $pf=Get-Content $env:CANARY_PREFLIGHT_PATH -Raw -Encoding UTF8 | ConvertFrom-Json
+          $regions=@($pf.selected.protected_regions)
+          $route=Get-TinySnowSourcePreservationRoute -Action 'BACKGROUND_ONLY_GENERATIVE_CLEANUP' -ProtectedRegions $regions
+          if(-not [bool]$route.paid_generation_allowed -or $route.route -ne 'GENERATIVE_WITH_PROTECTED_REGION_RESTORE'){throw 'Protected generative route not authorized by guard.'}
+          $config=[pscustomobject]@{api_key=[string]$env:TINYSNOW_API_KEY;base_url='https://tinysnow.one/v1';model='gpt-image-2';quality='medium';size='1024x1024';safe_test_mode=$true;max_reference_images=1;transport_profile='r3_120s_safe'}
+          $prompt=@"
+          Edit only the background around the exact provided product image. Preserve the product, every accessory, every logo, every badge, every character of existing text, quantity, color, pattern and geometry. Do not redraw or reinterpret the protected foreground. Do not add any factual text, product feature, accessory, gift, certification, dimension or use scene. The output will have protected source regions restored deterministically after this edit; therefore make only subtle background cleanliness/whitespace improvements outside the protected foreground.
+          "@
+          $raw=Invoke-ImageEditMultiV2 $config @($env:CANARY_SOURCE_PATH) $prompt '1024x1024' 'medium'
+          if(-not(Test-Path $raw -PathType Leaf)){throw 'Provider returned no image.'}
+          $rawCopy=Join-Path $env:CANARY_DIR 'raw_provider_output.png';Copy-Item $raw $rawCopy -Force
+          $final=Join-Path $env:CANARY_DIR 'protected_output.png'
+          Restore-TinySnowProtectedRegions -SourcePath $env:CANARY_SOURCE_PATH -CandidatePath $rawCopy -OutputPath $final -ProtectedRegions $regions | Out-Null
+          $qa=Test-TinySnowProtectedRegions -SourcePath $env:CANARY_SOURCE_PATH -CandidatePath $final -ProtectedRegions $regions
+          $qa | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $env:CANARY_DIR 'protected_region_qa.json') -Encoding UTF8
+          if(-not [bool]$qa.passed){throw ('PROTECTED_REGION_QA_FAIL '+($qa|ConvertTo-Json -Depth 10 -Compress))}
+          "CANARY_RAW_SHA=$((Get-FileHash $rawCopy -Algorithm SHA256).Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "CANARY_FINAL_SHA=$((Get-FileHash $final -Algorithm SHA256).Hash.ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Persist category canary result
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import datetime as dt, json, os
+          from pathlib import Path
+          p=json.loads(Path(os.environ['CANARY_PREFLIGHT_PATH']).read_text(encoding='utf-8-sig'))
+          result={
+            'schema_version':'tinysnow.phase2-protected-canary-result.1',
+            'status':'EXECUTED_QA_PASS',
+            'executed_at_utc':dt.datetime.now(dt.timezone.utc).isoformat().replace('+00:00','Z'),
+            'workflow_run_id':int(os.environ['GITHUB_RUN_ID']),
+            'category':os.environ['PHASE2_CATEGORY'],
+            'preflight_result':p['selected']['preflight_result'],
+            'product_id':os.environ['CANARY_PRODUCT_ID'],
+            'variant_identity_key':os.environ['CANARY_VARIANT_KEY'],
+            'variant_option_name':os.environ['CANARY_VARIANT_NAME'],
+            'source_sha256':os.environ['CANARY_EXPECTED_SOURCE_SHA'],
+            'raw_provider_output_sha256':os.environ['CANARY_RAW_SHA'],
+            'protected_output_sha256':os.environ['CANARY_FINAL_SHA'],
+            'protected_regions':p['selected']['protected_regions'],
+            'protected_region_qa':'PASS',
+            'paid_requests_sent_this_canary':1,
+            'max_budget_ntd_authorized':float(os.environ['CANARY_BUDGET_NTD']),
+            'bulk_generation_authorized':False,
+            'stable_mutation':False,
+            'qa_relaxation':False,
+            'retry_authorized':False
+          }
+          Path(os.environ['PHASE2_RESULT']).write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          Path(os.environ['CANARY_DIR'],'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          '@ | python -
+          git config user.name 'TinySnow Protected Canary Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git pull --rebase origin v4c-universal-product-engine
+          git add -- $env:PHASE2_RESULT
+          git commit -m "v4c: persist Phase 2 $env:PHASE2_CATEGORY protected canary result [skip ci]"
+          git push origin HEAD:v4c-universal-product-engine
+
+      - name: Upload protected canary review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinySnow-Phase2-${{ env.PHASE2_CATEGORY }}-Protected-Canary-${{ github.run_id }}
+          path: ${{ env.CANARY_DIR }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Clean transient provider outputs
+        if: always()
+        shell: powershell
+        run: |
+          Remove-Item '_system/output','_system/logs' -Recurse -Force -ErrorAction SilentlyContinue
+
