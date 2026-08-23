@@ -1,0 +1,11 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-request-lock.1",
+  "status": "LOCKED_BEFORE_PROVIDER",
+  "locked_at_utc": "2026-08-23T12:48:53.224901Z",
+  "category": "apparel",
+  "product_id": "56515693360",
+  "variant_identity_key": "variant_7c451244af936ceb3d45f09e",
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50.0,
+  "resend_without_manual_reconciliation": false
+}
