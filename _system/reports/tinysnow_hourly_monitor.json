@@ -1,0 +1,428 @@
+{
+  "schema_version": "tinysnow.hourly-monitor-report.1",
+  "role": "MONITOR_REPORT_ONLY",
+  "generated_at_utc": "2026-08-23T03:30:53.559300Z",
+  "experiment_branch": "v4c-universal-product-engine",
+  "experiment_head": "e2e21956d11c018525515386428894a00b20bcb2",
+  "main_head": "c12c11e3fe068489e57ccdfcf84881e732054088",
+  "stable_head": "5d49f061e140813b3d229520e9e530f86b27b640",
+  "checkpoint": {
+    "schema_version": "tinysnow.execution-checkpoint.1",
+    "stage": "V4-C5.3 Source Truth Repair",
+    "last_good_head": "48932c650d5d62fc46fe40ecd49beea05cc028e4",
+    "last_successful_workflow": 32214899138,
+    "checkpoint": "C5_3_COMPLETE",
+    "completed": [
+      "sealed upstream verification",
+      "existing governance/handoff read",
+      "existing snapshot parts preserved",
+      "existing SourceTruthStore preserved",
+      "Library authoritative workbook capability restored",
+      "GitHub write capability verified",
+      "agent queue/watchdog validation",
+      "authoritative workbook SHA validation",
+      "source manifest extraction",
+      "SourceTruth importer/resolver/bootstrap",
+      "375/2394/2673 reconciliation",
+      "145/549 delta scope overlay",
+      "C5.3-only regressions",
+      "C5.3 seal"
+    ],
+    "pending": [],
+    "resume_rule": "Never repeat completed entries; fingerprint then continue first pending action.",
+    "last_replacement_heartbeat_utc": "2026-08-19T04:12:33.879981Z"
+  },
+  "live_status": {
+    "schema_version": "tinysnow.live-status.1",
+    "status": "SUCCESS",
+    "stage": "V4-C5.3 Source Truth Repair",
+    "checkpoint": "C5_3_COMPLETE",
+    "last_update": "2026-08-19T04:12:33.879981Z",
+    "worker_state": "SUCCESS",
+    "next_action": "C5.3 sealed; perform stage closure and next-best-action scan",
+    "original_task_retry_allowed": false,
+    "sealed_data_modified": false
+  },
+  "worker_state": {
+    "schema_version": "tinysnow.worker-state.2",
+    "worker_mode": "STATELESS_REPLACEABLE",
+    "status": "SUCCESS",
+    "stage": "V4-C5.3 Source Truth Repair",
+    "branch": "v4c-universal-product-engine",
+    "must_read_before_write": [
+      "_system/governance/TINYSNOW_PROJECT_CONSTITUTION.md",
+      "_system/governance/failure_registry.jsonl",
+      "_system/handoff/TinySnow_current_state.json",
+      "_system/control/execution_checkpoint.json",
+      "_system/control/timeout_policy.json",
+      "_system/control/live_status.json",
+      "_system/context/next_decision.json",
+      "_system/agent_queue/inbox/pending_commands.jsonl",
+      "_system/control/command_policy.json",
+      "_system/control/retry_policy.json",
+      "_system/agent_queue/queue.jsonl"
+    ],
+    "pre_execution_order": [
+      "read_checkpoint",
+      "read_timeout_policy",
+      "read_live_status",
+      "read_next_decision",
+      "read_inbox_command",
+      "validate_command_authority",
+      "confirm_frozen_lock",
+      "fingerprint_completed_outputs",
+      "execute_allowed_delta_scope_only",
+      "write_execution_result"
+    ],
+    "command_bridge": "_system/agent_queue/command_bridge.py",
+    "concurrent_worker_rule": "Re-fetch HEAD before each write; absorb compatible new commits; never force push.",
+    "human_orchestration_required": false,
+    "stalled_detected_at_utc": "2026-08-18T00:43:47Z",
+    "last_durable_worker_signal_utc": "2026-08-19T04:12:33.879981Z",
+    "last_heartbeat_utc": "2026-08-19T04:12:33.879981Z",
+    "timeout_policy": "_system/control/timeout_policy.json",
+    "resume_mode": "SEALED_NO_RERUN",
+    "original_task_retry_allowed": false
+  },
+  "next_decision": {
+    "schema_version": "tinysnow.next-decision.1",
+    "current_stage": "POST_C5_3_SECOND_PROTECTED_CANARY_REVIEW",
+    "next_action": "REVIEW_PROTECTED_CANARY_ARTIFACT_AND_PROVENANCE",
+    "reason": "One newly Owner-approved protected canary request executed with deterministic protected-region restore and QA PASS. No further paid request is authorized. Next step is zero-paid human/visual QA.",
+    "owner_decision_required": false,
+    "canary": {
+      "status": "FAIL_SOURCE_PRESERVATION",
+      "result_path": "_system/control/minimal_paid_variant_canary_result.json",
+      "qa_path": "_system/control/minimal_paid_variant_canary_qa.json",
+      "artifact_locator_path": "_system/control/minimal_paid_variant_canary_artifact_locator.json",
+      "retry_contract_path": "_system/control/minimal_paid_variant_canary_retry_contract.json",
+      "product_id": "51365698925",
+      "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+      "paid_requests_sent": 1,
+      "max_paid_requests_authorized": 1,
+      "max_budget_ntd_authorized": 50,
+      "bulk_generation_authorized": false,
+      "stable_mutation": false,
+      "second_paid_request_authorized": false
+    },
+    "constraints": [
+      "C5.3 sealed no rerun",
+      "no second paid request",
+      "no second product or variant",
+      "no bulk generation",
+      "no stable mutation",
+      "rejected output must not be promoted",
+      "implement protected-region strategy and deterministic post-generation preservation QA",
+      "separate PRESERVE/deterministic cleanup from generative edit actions",
+      "experimental branch only until release approval",
+      "PRESERVE/CLEANUP route deterministic-only",
+      "generative edit requires explicit protected regions",
+      "protected regions must be deterministically restored and QA checked before promotion",
+      "no second paid request until new Owner gate"
+    ],
+    "forbidden_actions": [
+      "rerun_completed_c5_3_source_truth_work",
+      "repeat_minimal_paid_canary_without_new_owner_approval",
+      "second_paid_request",
+      "bulk_generation",
+      "guess_variant_mapping",
+      "stable_merge_without_owner_approval",
+      "destructive_operation"
+    ],
+    "guard": {
+      "status": "PASS",
+      "validation_path": "_system/control/source_preservation_guard_validation.json",
+      "paid_api": 0,
+      "image_generation": 0,
+      "stable_mutation": false
+    },
+    "protected_canary": {
+      "status": "READY_FOR_OWNER_GATE",
+      "preflight_path": "_system/control/protected_generative_canary_preflight.json",
+      "product_id": "52815734458",
+      "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+      "option_name": "籃球訓練墊【2.7mm】",
+      "protected_regions": [
+        {
+          "name": "foreground_component_1",
+          "x": 0.0,
+          "y": 0.035,
+          "width": 0.945,
+          "height": 0.945,
+          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+        }
+      ],
+      "editable_area_ratio": 0.306778,
+      "max_products": 1,
+      "max_variants": 1,
+      "max_paid_requests": 1,
+      "bulk_generation_authorized": false,
+      "stable_mutation_authorized": false,
+      "requires_new_budget_ntd": true
+    }
+  },
+  "queue": [
+    {
+      "task_id": "TASK-C5-3-SOURCE-TRUTH-REPAIR",
+      "stage": "V4-C5.3 Source Truth Repair",
+      "priority": 1,
+      "status": "SUCCESS",
+      "mode": "ZERO_PAID_DETERMINISTIC",
+      "checkpoint": "C5_3_COMPLETE",
+      "next_action": "Stage closure / next-best-action scan",
+      "next_workflow": null,
+      "owner_decision_required": false,
+      "paid": false,
+      "generation": false,
+      "sealed_dependencies": "V4-C1 through V4-C5.2",
+      "anti_repeat": "fingerprint_only"
+    },
+    {
+      "task_id": "TASK-POST-C5-3-MINIMAL-CANARY-REVIEW",
+      "stage": "POST_C5_3_MINIMAL_PAID_VARIANT_CANARY_REVIEW",
+      "priority": 1,
+      "status": "PENDING",
+      "mode": "ZERO_PAID_PROTECTED_CANARY_REVIEW_QA",
+      "checkpoint": "SECOND_PROTECTED_CANARY_EXECUTED_PENDING_HUMAN_REVIEW",
+      "next_action": "REVIEW_PROTECTED_CANARY_ARTIFACT_AND_PROVENANCE",
+      "next_workflow": "v4c-post-c5-3-protected-generative-preflight-dispatch.yml",
+      "owner_decision_required": false,
+      "paid": false,
+      "generation": false,
+      "product_id": "51365698925",
+      "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
+      "paid_requests_already_sent": 2,
+      "second_paid_request_authorized": false,
+      "bulk_generation_authorized": false,
+      "stable_mutation_authorized": false,
+      "qa_path": "_system/control/minimal_paid_variant_canary_qa.json",
+      "retry_contract_path": "_system/control/minimal_paid_variant_canary_retry_contract.json",
+      "guard_validation_path": "_system/control/source_preservation_guard_validation.json",
+      "dispatcher_branch": "main",
+      "dispatcher_head": "ab3210a9f75e3d3aadbbc1f1618f968ca440217b",
+      "orchestration_state": "DISPATCH_REQUIRED",
+      "orchestration_reason": "Registered zero-paid dispatcher exists on main, but no durable protected_generative_canary_preflight result is present. Do not retrigger experimental trigger or authorize a second paid request.",
+      "candidate_product_id": "52815734458",
+      "candidate_variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+      "preflight_path": "_system/control/protected_generative_canary_preflight.json"
+    }
+  ],
+  "command_inbox": [
+    {
+      "command_id": "ORCH-MVP-PRODUCTIZE-20260823-001",
+      "created_at": "2026-08-22T23:35:07Z",
+      "priority": 1,
+      "action": "resume_checkpoint",
+      "scope": "Continue TinySnow generator MVP productization from the validated protected-canary baseline while deferring visual human review until later.",
+      "reason": "Owner instructed that artifact/human review must not block other work. Continue the existing image-generation-program task: implement reusable zero-paid program structure around the already validated Source Truth -> protected region -> generation -> deterministic restore -> QA contract.",
+      "allowed_operations": [
+        "read_existing_mvp_contract",
+        "implement_product_task_schema",
+        "implement_worker_pipeline_scaffold",
+        "implement_output_artifact_manager",
+        "implement_qa_result_schema",
+        "implement_single_task_zero_paid_validation",
+        "commit_experimental_branch_progress"
+      ],
+      "forbidden_operations": [
+        "paid_api",
+        "image_generation",
+        "image_editing",
+        "stable_merge",
+        "destructive_operation",
+        "bulk_production_mutation",
+        "rerun_completed_c5_3_source_truth_work",
+        "repeat_minimal_paid_canary_without_new_owner_approval",
+        "second_paid_request",
+        "third_paid_request"
+      ],
+      "required_validation": [
+        "no_paid_api_call",
+        "no_image_generation_call",
+        "no_image_editing_call",
+        "stable_head_unchanged",
+        "c5_3_not_rerun",
+        "existing_canary_results_preserved",
+        "task_schema_machine_readable",
+        "worker_pipeline_has_dry_run_path",
+        "artifact_manager_uses_deterministic_job_directory",
+        "qa_schema_records_source_generated_protected_and_result_metadata",
+        "durable_commit_required"
+      ],
+      "status": "PENDING",
+      "owner_approval": false,
+      "retry_count": 0,
+      "checkpoint": "SECOND_PROTECTED_CANARY_EXECUTED_PENDING_HUMAN_REVIEW",
+      "issuer_role": "ORCHESTRATOR",
+      "repository_full_name": "1314chenjay-star/shopee-product-images",
+      "branch": "v4c-universal-product-engine",
+      "task_id": "TASK-TINYSNOW-GENERATOR-MVP-PRODUCTIZATION",
+      "expected_checkpoint": "C5_3_COMPLETE",
+      "observed_head": "b9915ecdf4fd4e62d2af117e5b51e79967657cd2",
+      "idempotency_key": "mvp-productize-20260823-001"
+    }
+  ],
+  "protected_preflight": {
+    "schema_version": "tinysnow.protected-generative-canary-preflight.1",
+    "status": "PASS",
+    "zero_paid": true,
+    "image_generation_called": false,
+    "stable_mutation": false,
+    "c5_3_rerun": false,
+    "selection_rule": "Source Truth exact variant + deterministic non-OCR foreground protection + >=12% editable background; no full-frame generative edit.",
+    "selected": {
+      "eligible": true,
+      "product_id": "52815734458",
+      "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+      "variation_name": "款式",
+      "option_name": "籃球訓練墊【2.7mm】",
+      "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258p-mrpfvx7yaa6g83",
+      "source_sha256": "66aa3338c86e0a71f51fc624de21a0e160a7efa2ea6dc78493981affcf0830bd",
+      "image_width": 800,
+      "image_height": 800,
+      "estimated_background_rgb": [
+        255,
+        255,
+        255
+      ],
+      "protected_regions": [
+        {
+          "name": "foreground_component_1",
+          "x": 0.0,
+          "y": 0.035,
+          "width": 0.945,
+          "height": 0.945,
+          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+        }
+      ],
+      "protected_area_ratio": 0.693222,
+      "editable_area_ratio": 0.306778,
+      "edit_contract": "BACKGROUND_ONLY_GENERATIVE_CLEANUP_WITH_POST_GENERATION_PROTECTED_REGION_RESTORE",
+      "region_detection": "DETERMINISTIC_NON_OCR_BACKGROUND_CONTRAST_TILE_MASK"
+    },
+    "attempts": [
+      {
+        "product_id": "51365698925",
+        "result": {
+          "eligible": false,
+          "reason": "INSUFFICIENT_SAFE_EDITABLE_BACKGROUND",
+          "editable_area_ratio": 0.0
+        }
+      },
+      {
+        "product_id": "52815734458",
+        "result": {
+          "eligible": true,
+          "product_id": "52815734458",
+          "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+          "variation_name": "款式",
+          "option_name": "籃球訓練墊【2.7mm】",
+          "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8258p-mrpfvx7yaa6g83",
+          "source_sha256": "66aa3338c86e0a71f51fc624de21a0e160a7efa2ea6dc78493981affcf0830bd",
+          "image_width": 800,
+          "image_height": 800,
+          "estimated_background_rgb": [
+            255,
+            255,
+            255
+          ],
+          "protected_regions": [
+            {
+              "name": "foreground_component_1",
+              "x": 0.0,
+              "y": 0.035,
+              "width": 0.945,
+              "height": 0.945,
+              "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+            }
+          ],
+          "protected_area_ratio": 0.693222,
+          "editable_area_ratio": 0.306778,
+          "edit_contract": "BACKGROUND_ONLY_GENERATIVE_CLEANUP_WITH_POST_GENERATION_PROTECTED_REGION_RESTORE",
+          "region_detection": "DETERMINISTIC_NON_OCR_BACKGROUND_CONTRAST_TILE_MASK"
+        }
+      }
+    ],
+    "next_action": "OWNER_GATE_FOR_SECOND_MINIMAL_PROTECTED_CANARY",
+    "second_paid_request_authorized": false,
+    "bulk_generation_authorized": false
+  },
+  "protected_canary_result": {
+    "schema_version": "tinysnow.second-minimal-protected-canary-result.1",
+    "status": "EXECUTED_PENDING_HUMAN_REVIEW",
+    "executed_at_utc": "2026-08-20T23:05:59.768919Z",
+    "product_id": "52815734458",
+    "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+    "variant_option_name": "籃球訓練墊【2.7mm】",
+    "source_sha256": "66aa3338c86e0a71f51fc624de21a0e160a7efa2ea6dc78493981affcf0830bd",
+    "raw_provider_output_sha256": "d1a15586984d703066c403182f479afe45c0582b4bb2d0a13d3a0ffe772e0d58",
+    "protected_output_sha256": "7aa62934ccdf6c53d39e60dd522f1f501f945da79aa65901da525442e5ce3cbe",
+    "protected_regions": [
+      {
+        "name": "foreground_component_1",
+        "x": 0.0,
+        "y": 0.035,
+        "width": 0.945,
+        "height": 0.945,
+        "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+      }
+    ],
+    "protected_region_qa": "PASS",
+    "paid_requests_sent_this_canary": 1,
+    "prior_paid_requests_sent": 1,
+    "max_budget_ntd_authorized": 50.0,
+    "bulk_generation_authorized": false,
+    "stable_mutation": false,
+    "c5_3_rerun": false,
+    "second_retry_authorized": false
+  },
+  "source_preservation_guard": {
+    "schema_version": "tinysnow.source-preservation-guard-validation.1",
+    "status": "PASS",
+    "zero_paid": true,
+    "image_generation_called": false,
+    "stable_mutation": false,
+    "c5_3_rerun": false,
+    "routing": {
+      "preserve": "DETERMINISTIC_ONLY",
+      "cleanup": "DETERMINISTIC_ONLY",
+      "unprotected_generative": "BLOCKED_NO_PROTECTED_REGION",
+      "protected_generative": "GENERATIVE_WITH_PROTECTED_REGION_RESTORE"
+    },
+    "negative_control_rejected": true,
+    "restored_control_passed": true,
+    "protected_region_before": {
+      "passed": false,
+      "regions": [
+        {
+          "name": "source_badge_text",
+          "mean_absolute_error": 124.879896,
+          "changed_pixel_ratio": 1,
+          "passed": false
+        }
+      ],
+      "max_mean_absolute_error": 0.5,
+      "max_changed_pixel_ratio": 0.001
+    },
+    "protected_region_after": {
+      "passed": true,
+      "regions": [
+        {
+          "name": "source_badge_text",
+          "mean_absolute_error": 0.012813,
+          "changed_pixel_ratio": 0,
+          "passed": true
+        }
+      ],
+      "max_mean_absolute_error": 0.5,
+      "max_changed_pixel_ratio": 0.001
+    },
+    "required_execution_contract": [
+      "PRESERVE/CLEANUP must use deterministic-only path",
+      "Generative edit without protected regions is blocked",
+      "Generative edit with protected regions requires deterministic source-region restore",
+      "Post-generation protected-region difference must pass before promotion"
+    ]
+  },
+  "note": "Report only. This workflow does not decide, dispatch, generate images, call paid APIs, or mutate stable."
+}
