@@ -1,0 +1,16 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-request.1",
+  "approved": true,
+  "category": "bags",
+  "product_id": "46165714394",
+  "variant_identity_key": "variant_79f7c70cd4ac9056fed84ba7",
+  "single_product_scope": true,
+  "single_variant_scope": true,
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50,
+  "bulk_generation_authorized": false,
+  "stable_mutation_authorized": false,
+  "qa_relaxation_authorized": false,
+  "retry_authorized": false
+}
+
