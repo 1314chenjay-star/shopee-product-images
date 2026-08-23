@@ -1,0 +1,11 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-request-lock.1",
+  "status": "LOCKED_BEFORE_PROVIDER",
+  "locked_at_utc": "2026-08-23T12:50:36.784039Z",
+  "category": "bags",
+  "product_id": "46165714394",
+  "variant_identity_key": "variant_79f7c70cd4ac9056fed84ba7",
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50.0,
+  "resend_without_manual_reconciliation": false
+}
