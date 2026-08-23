@@ -1,0 +1,11 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-request-lock.1",
+  "status": "LOCKED_BEFORE_PROVIDER",
+  "locked_at_utc": "2026-08-23T12:47:00.348156Z",
+  "category": "ball",
+  "product_id": "52515734591",
+  "variant_identity_key": "variant_f2ba07917ad96cf8ce694a9f",
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50.0,
+  "resend_without_manual_reconciliation": false
+}
