@@ -1,0 +1,135 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-manifest.1",
+  "status": "OWNER_APPROVED_PHASE2_CANARY",
+  "approved": true,
+  "approved_at_utc": "2026-08-23T00:00:00Z",
+  "single_product_scope": true,
+  "single_variant_scope": true,
+  "max_categories": 5,
+  "max_paid_requests_total": 5,
+  "max_paid_requests_per_category": 1,
+  "max_budget_ntd_per_category": 50,
+  "max_budget_ntd_total": 250,
+  "bulk_generation_authorized": false,
+  "stable_mutation_authorized": false,
+  "qa_relaxation_authorized": false,
+  "monitoring_chain_mutation_authorized": false,
+  "golden_baseline": {
+    "product_id": "52815734458",
+    "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
+    "workflow_run_id": 32427126464,
+    "protected_region_qa": "PASS"
+  },
+  "candidates": [
+    {
+      "category": "ball",
+      "category_label": "球類",
+      "preflight_result": "PASS",
+      "product_id": "52515734591",
+      "variant_identity_key": "variant_f2ba07917ad96cf8ce694a9f",
+      "variation_name": "款式",
+      "option_name": "排球扣球訓練器",
+      "parent_product_variant_count": 1,
+      "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-82596-mrpfvrmdwpvs29",
+      "source_sha256": "38354d5bfa582ab58f58013709cef169d8c1cbdcbb3b45d335d09f7b31202e07",
+      "image_width": 800,
+      "image_height": 800,
+      "protected_regions": [
+        {
+          "name": "foreground_component_1",
+          "x": 0.525,
+          "y": 0.0,
+          "width": 0.315,
+          "height": 1.0,
+          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+        },
+        {
+          "name": "foreground_component_2",
+          "x": 0.175,
+          "y": 0.42,
+          "width": 0.315,
+          "height": 0.58,
+          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+        }
+      ],
+      "protected_area_ratio": 0.280618,
+      "editable_area_ratio": 0.719382,
+      "selection_note": "Single-option Source Truth product; clean white background without corner badges or large copy."
+    },
+    {
+      "category": "apparel",
+      "category_label": "衣服",
+      "preflight_result": "PASS_CLOSEST_EXACT_VARIANT",
+      "product_id": "56515693360",
+      "variant_identity_key": "variant_7c451244af936ceb3d45f09e",
+      "variation_name": "顏色分類",
+      "option_name": "白藍漸變三件套",
+      "parent_product_variant_count": 3,
+      "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-825a1-mro1axb0sn4186",
+      "source_sha256": "2ea645bf22c7193aeca4dd1c9283761242bc1e875f3b445c49af5169b32792fb",
+      "image_width": 1024,
+      "image_height": 1024,
+      "protected_regions": [
+        {
+          "name": "foreground_component_1",
+          "x": 0.0,
+          "y": 0.035156,
+          "width": 0.984375,
+          "height": 0.964844,
+          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+        },
+        {
+          "name": "foreground_component_2",
+          "x": 0.0,
+          "y": 0.316406,
+          "width": 0.140625,
+          "height": 0.105469,
+          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+        }
+      ],
+      "protected_area_ratio": 0.558859,
+      "editable_area_ratio": 0.441141,
+      "selection_note": "No single-option apparel product exists in the ready pool; locked to one exact Source Truth variant with clean background and no overlay copy."
+    },
+    {
+      "category": "bags",
+      "category_label": "包包",
+      "preflight_result": "PASS_CLOSEST_EXACT_VARIANT",
+      "product_id": "46165714394",
+      "variant_identity_key": "variant_79f7c70cd4ac9056fed84ba7",
+      "variation_name": "顏色",
+      "option_name": "紅色+小包（圓形款）",
+      "parent_product_variant_count": 3,
+      "source_url": "https://s-cf-tw.shopeesz.com/file/sg-11134201-8259j-mro3495034zk50",
+      "source_sha256": "3b23e72b9e62e2e4bf95cdb198ede61f40cb9eb7b6968e6057ca84564e5d60a7",
+      "image_width": 1000,
+      "image_height": 1000,
+      "protected_regions": [
+        {
+          "name": "foreground_component_1",
+          "x": 0.0,
+          "y": 0.105,
+          "width": 1.0,
+          "height": 0.77,
+          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+        }
+      ],
+      "protected_area_ratio": 0.416171,
+      "editable_area_ratio": 0.583829,
+      "selection_note": "No single-option bag product exists in the ready pool; locked to one exact Source Truth variant with clean white background and no corner overlay."
+    },
+    {
+      "category": "hardware",
+      "category_label": "五金",
+      "preflight_result": "SKIP_NO_SOURCE_TRUTH_CATEGORY_CANDIDATE",
+      "selection_note": "No hardware category exists in the current 375-product Source Truth candidate pool."
+    },
+    {
+      "category": "misc",
+      "category_label": "雜貨",
+      "preflight_result": "SKIP_NO_SOURCE_TRUTH_CATEGORY_CANDIDATE",
+      "selection_note": "No general-merchandise category exists in the current 375-product Source Truth candidate pool."
+    }
+  ]
+}
+
