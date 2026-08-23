@@ -1,0 +1,16 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-request.1",
+  "approved": true,
+  "category": "ball",
+  "product_id": "52515734591",
+  "variant_identity_key": "variant_f2ba07917ad96cf8ce694a9f",
+  "single_product_scope": true,
+  "single_variant_scope": true,
+  "max_paid_requests": 1,
+  "max_budget_ntd": 50,
+  "bulk_generation_authorized": false,
+  "stable_mutation_authorized": false,
+  "qa_relaxation_authorized": false,
+  "retry_authorized": false
+}
+
