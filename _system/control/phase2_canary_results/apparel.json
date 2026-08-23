@@ -1,0 +1,39 @@
+{
+  "schema_version": "tinysnow.phase2-protected-canary-result.1",
+  "status": "EXECUTED_QA_PASS",
+  "executed_at_utc": "2026-08-23T12:49:30.318383Z",
+  "workflow_run_id": 32640459376,
+  "category": "apparel",
+  "preflight_result": "PASS_CLOSEST_EXACT_VARIANT",
+  "product_id": "56515693360",
+  "variant_identity_key": "variant_7c451244af936ceb3d45f09e",
+  "variant_option_name": "白藍漸變三件套",
+  "source_sha256": "2ea645bf22c7193aeca4dd1c9283761242bc1e875f3b445c49af5169b32792fb",
+  "raw_provider_output_sha256": "25da6a735768e22915df58e835f7311eb819ccd1d3a5e378d24f1f8644621bc2",
+  "protected_output_sha256": "8268d8cccadb8f3c4a97235f8eace953c896f8574744630088c1809668db426e",
+  "protected_regions": [
+    {
+      "name": "foreground_component_1",
+      "x": 0.0,
+      "y": 0.035156,
+      "width": 0.984375,
+      "height": 0.964844,
+      "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+    },
+    {
+      "name": "foreground_component_2",
+      "x": 0.0,
+      "y": 0.316406,
+      "width": 0.140625,
+      "height": 0.105469,
+      "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
+    }
+  ],
+  "protected_region_qa": "PASS",
+  "paid_requests_sent_this_canary": 1,
+  "max_budget_ntd_authorized": 50.0,
+  "bulk_generation_authorized": false,
+  "stable_mutation": false,
+  "qa_relaxation": false,
+  "retry_authorized": false
+}
