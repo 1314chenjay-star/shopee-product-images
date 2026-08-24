@@ -126,3 +126,5 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/v4c-c5-3-delta-recovery-bridge.yml
+
+# orchestrator wake: 2026-08-24 control-plane idle diagnosis; zero-paid/no-generation/no-stable-mutation
