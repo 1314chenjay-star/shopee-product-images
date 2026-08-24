@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tinysnow.mvp.product-task.1",
+  "title": "TinySnow Generator MVP Product Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "product_id",
+    "variant_id",
+    "source_image",
+    "generation_mode",
+    "protected_regions"
+  ],
+  "properties": {
+    "task_id": {"type": "string", "minLength": 1},
+    "product_id": {"type": "string", "minLength": 1},
+    "variant_id": {"type": "string", "minLength": 1},
+    "source_image": {"type": "string", "minLength": 1},
+    "generation_mode": {"type": "string", "enum": ["dry_run", "protected_generate"]},
+    "protected_regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "x", "y", "width", "height"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "x": {"type": "number", "minimum": 0, "maximum": 1},
+          "y": {"type": "number", "minimum": 0, "maximum": 1},
+          "width": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+          "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+          "source": {"type": "string"}
+        }
+      }
+    }
+  }
+}
