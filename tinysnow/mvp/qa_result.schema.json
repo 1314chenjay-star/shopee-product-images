@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tinysnow.mvp.qa-result.1",
+  "title": "TinySnow Generator MVP QA Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "status",
+    "source_reference",
+    "generated_reference",
+    "protected_reference",
+    "protected_regions_restored",
+    "qa_checks",
+    "execution_metadata"
+  ],
+  "properties": {
+    "task_id": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "enum": ["PASS", "FAIL", "DRY_RUN_PASS"]},
+    "source_reference": {"type": "string", "minLength": 1},
+    "generated_reference": {"type": ["string", "null"]},
+    "protected_reference": {"type": ["string", "null"]},
+    "protected_regions_restored": {"type": "boolean"},
+    "qa_checks": {"type": "object"},
+    "execution_metadata": {
+      "type": "object",
+      "required": ["generation_mode", "paid_api_called", "image_generation_called", "image_editing_called", "stable_mutation"],
+      "properties": {
+        "generation_mode": {"type": "string"},
+        "paid_api_called": {"type": "boolean"},
+        "image_generation_called": {"type": "boolean"},
+        "image_editing_called": {"type": "boolean"},
+        "stable_mutation": {"type": "boolean"}
+      }
+    }
+  }
+}
