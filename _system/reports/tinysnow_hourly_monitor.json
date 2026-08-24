@@ -1,9 +1,9 @@
 {
   "schema_version": "tinysnow.hourly-monitor-report.1",
   "role": "MONITOR_REPORT_ONLY",
-  "generated_at_utc": "2026-08-24T03:33:25.851400Z",
+  "generated_at_utc": "2026-08-24T05:58:43.478325Z",
   "experiment_branch": "v4c-universal-product-engine",
-  "experiment_head": "cd3e7ba3f26d189f1b98217ce0e4c8bd0afa09d4",
+  "experiment_head": "79d6ac11d849f404f9c9da4238fc4ae1194f7c5c",
   "main_head": "c12c11e3fe068489e57ccdfcf84881e732054088",
   "stable_head": "5d49f061e140813b3d229520e9e530f86b27b640",
   "checkpoint": {
@@ -86,48 +86,49 @@
   },
   "next_decision": {
     "schema_version": "tinysnow.next-decision.1",
-    "current_stage": "POST_C5_3_SECOND_PROTECTED_CANARY_REVIEW",
-    "next_action": "REVIEW_PROTECTED_CANARY_ARTIFACT_AND_PROVENANCE",
-    "reason": "One newly Owner-approved protected canary request executed with deterministic protected-region restore and QA PASS. No further paid request is authorized. Next step is zero-paid human/visual QA.",
+    "current_stage": "TINYSNOW_GENERATOR_MVP_PRODUCTIZATION",
+    "next_action": "PRESERVE_MVP_ZERO_PAID_SCAFFOLD_AND_SCAN_FOR_NEW_SAFE_WORK",
+    "reason": "The zero-paid MVP scaffold is durably validated PASS. The protected-canary human review is deferred and nonblocking, and no further paid request is authorized. Continue with fingerprint-only monitoring and only execute newly discovered zero-paid/no-generation/no-stable-mutation work.",
     "owner_decision_required": false,
-    "canary": {
-      "status": "FAIL_SOURCE_PRESERVATION",
-      "result_path": "_system/control/minimal_paid_variant_canary_result.json",
-      "qa_path": "_system/control/minimal_paid_variant_canary_qa.json",
-      "artifact_locator_path": "_system/control/minimal_paid_variant_canary_artifact_locator.json",
-      "retry_contract_path": "_system/control/minimal_paid_variant_canary_retry_contract.json",
-      "product_id": "51365698925",
-      "variant_identity_key": "variant_bbe8931ee6b7db12b9062123",
-      "paid_requests_sent": 1,
-      "max_paid_requests_authorized": 1,
-      "max_budget_ntd_authorized": 50,
-      "bulk_generation_authorized": false,
+    "checkpoint": "MVP_ZERO_PAID_SCAFFOLD_VALIDATED",
+    "mvp": {
+      "status": "PASS",
+      "task_id": "TASK-TINYSNOW-GENERATOR-MVP-PRODUCTIZATION",
+      "validation_path": "tinysnow/mvp/zero_paid_validation.json",
+      "paid_api_called": false,
+      "image_generation_called": false,
+      "image_editing_called": false,
       "stable_mutation": false,
-      "second_paid_request_authorized": false
+      "c5_3_rerun": false
+    },
+    "protected_canary_review": {
+      "status": "DEFERRED_NONBLOCKING",
+      "task_id": "TASK-POST-C5-3-MINIMAL-CANARY-REVIEW",
+      "next_action": "HUMAN_VISUAL_REVIEW_DEFERRED_NONBLOCKING",
+      "owner_decision_required": false,
+      "second_paid_request_authorized": false,
+      "bulk_generation_authorized": false,
+      "stable_mutation_authorized": false,
+      "preflight_path": "_system/control/protected_generative_canary_preflight.json"
     },
     "constraints": [
       "C5.3 sealed no rerun",
       "no second paid request",
-      "no second product or variant",
       "no bulk generation",
       "no stable mutation",
       "rejected output must not be promoted",
-      "implement protected-region strategy and deterministic post-generation preservation QA",
-      "separate PRESERVE/deterministic cleanup from generative edit actions",
       "experimental branch only until release approval",
       "PRESERVE/CLEANUP route deterministic-only",
-      "generative edit requires explicit protected regions",
-      "protected regions must be deterministically restored and QA checked before promotion",
-      "no second paid request until new Owner gate"
+      "no real provider integration or real image generation without a new Owner gate"
     ],
     "forbidden_actions": [
       "rerun_completed_c5_3_source_truth_work",
       "repeat_minimal_paid_canary_without_new_owner_approval",
       "second_paid_request",
       "bulk_generation",
-      "guess_variant_mapping",
       "stable_merge_without_owner_approval",
-      "destructive_operation"
+      "destructive_operation",
+      "rerun_completed_mvp_scaffold_command"
     ],
     "guard": {
       "status": "PASS",
@@ -135,30 +136,6 @@
       "paid_api": 0,
       "image_generation": 0,
       "stable_mutation": false
-    },
-    "protected_canary": {
-      "status": "READY_FOR_OWNER_GATE",
-      "preflight_path": "_system/control/protected_generative_canary_preflight.json",
-      "product_id": "52815734458",
-      "variant_identity_key": "variant_d7d3486ab401e33046181dbd",
-      "option_name": "籃球訓練墊【2.7mm】",
-      "protected_regions": [
-        {
-          "name": "foreground_component_1",
-          "x": 0.0,
-          "y": 0.035,
-          "width": 0.945,
-          "height": 0.945,
-          "source": "DETERMINISTIC_BACKGROUND_CONTRAST_TILE_MASK"
-        }
-      ],
-      "editable_area_ratio": 0.306778,
-      "max_products": 1,
-      "max_variants": 1,
-      "max_paid_requests": 1,
-      "bulk_generation_authorized": false,
-      "stable_mutation_authorized": false,
-      "requires_new_budget_ntd": true
     }
   },
   "queue": [
