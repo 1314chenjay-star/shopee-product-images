@@ -1,0 +1,32 @@
+name: TinySnow MVP Zero-Paid Validation
+
+on:
+  push:
+    branches: [v4c-universal-product-engine]
+    paths:
+      - 'tinysnow/mvp/**'
+      - '.github/workflows/tinysnow-mvp-zero-paid-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tinysnow-mvp-zero-paid-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile MVP Python
+        run: python -m py_compile tinysnow/mvp/artifact_manager.py tinysnow/mvp/worker.py tinysnow/mvp/validate_zero_paid.py
+      - name: Run zero-paid single-task validation
+        run: python -B tinysnow/mvp/validate_zero_paid.py
+      - name: Assert stable branch unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STABLE=$(git ls-remote origin refs/heads/tinysnow-tool-only | awk '{print $1}')
+          test "$STABLE" = "5d49f061e140813b3d229520e9e530f86b27b640"
