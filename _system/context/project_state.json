@@ -2,7 +2,7 @@
   "schema_version": "tinysnow.project-state.1",
   "active_stage": "TINYSNOW_GENERATOR_MVP_PRODUCTIZATION",
   "branch": "v4c-universal-product-engine",
-  "latest_observed_head": "da220c7e2c27149a72b1f5cf399b5687a805ad14",
+  "latest_observed_head": "4b5e9c6d8425754dbb81b0837030f1e5b9063d7f",
   "stable_expected": "5d49f061e140813b3d229520e9e530f86b27b640",
   "sealed": "V4-C1 through V4-C5.3",
   "ready_targets": {"products": 145, "slots": 549},
