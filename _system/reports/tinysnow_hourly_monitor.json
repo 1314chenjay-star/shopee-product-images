@@ -1,9 +1,9 @@
 {
   "schema_version": "tinysnow.hourly-monitor-report.1",
   "role": "MONITOR_REPORT_ONLY",
-  "generated_at_utc": "2026-08-30T19:04:59.345892Z",
+  "generated_at_utc": "2026-08-30T20:05:16.068528Z",
   "experiment_branch": "v4c-universal-product-engine",
-  "experiment_head": "32900960697be7429b58158a5f9c8ec4f49a721a",
+  "experiment_head": "1c393f1822c71a485c19a6e72f0a7bbd244dcae1",
   "main_head": "c12c11e3fe068489e57ccdfcf84881e732054088",
   "stable_head": "5d49f061e140813b3d229520e9e530f86b27b640",
   "checkpoint": {
