@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <rect width="1200" height="1200" fill="#ffffff"/>
+  <text x="600" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="700" fill="#222">SIZE GUIDE</text>
+  <text x="600" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#333">尺寸選購表</text>
+
+  <rect x="120" y="280" width="960" height="620" fill="#ffffff" stroke="#222" stroke-width="6"/>
+  <line x1="120" y1="400" x2="1080" y2="400" stroke="#222" stroke-width="4"/>
+  <line x1="120" y1="500" x2="1080" y2="500" stroke="#222" stroke-width="3"/>
+  <line x1="120" y1="600" x2="1080" y2="600" stroke="#222" stroke-width="3"/>
+  <line x1="120" y1="700" x2="1080" y2="700" stroke="#222" stroke-width="3"/>
+  <line x1="120" y1="800" x2="1080" y2="800" stroke="#222" stroke-width="3"/>
+  <line x1="390" y1="280" x2="390" y2="900" stroke="#222" stroke-width="4"/>
+
+  <rect x="120" y="280" width="960" height="120" fill="#f3f3f3"/>
+  <text x="255" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="700" fill="#222">尺碼</text>
+  <text x="735" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="700" fill="#222">選購方式</text>
+
+  <text x="255" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" fill="#222">S</text>
+  <text x="735" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#222">依商品頁面可選規格選擇</text>
+
+  <text x="255" y="570" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" fill="#222">M</text>
+  <text x="735" y="570" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#222">依商品頁面可選規格選擇</text>
+
+  <text x="255" y="670" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" fill="#222">L</text>
+  <text x="735" y="670" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#222">依商品頁面可選規格選擇</text>
+
+  <text x="255" y="770" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" fill="#222">XL</text>
+  <text x="735" y="770" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#222">依商品頁面可選規格選擇</text>
+
+  <text x="255" y="870" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#222">其他</text>
+  <text x="735" y="870" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#222">請以商品實際可選規格為準</text>
+
+  <text x="600" y="1010" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#444">不同商品版型可能不同，請依商品頁面實際可選尺碼選購</text>
+</svg>
